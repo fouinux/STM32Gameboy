@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 uint8_t mem_read_u8(uint16_t Addr);
+int8_t mem_read_s8(uint16_t Addr);
 uint16_t mem_read_u16(uint16_t Addr);
 void mem_write_u8(uint16_t Addr, uint8_t Value);
 void mem_write_u16(uint16_t Addr, uint16_t Value);

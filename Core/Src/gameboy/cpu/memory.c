@@ -44,6 +44,11 @@ uint8_t mem_read_u8(uint16_t Addr)
 	return *((uint8_t *) mem_translation(Addr));
 }
 
+int8_t mem_read_s8(uint16_t Addr)
+{
+	return *((int8_t *) mem_translation(Addr));
+}
+
 uint16_t mem_read_u16(uint16_t Addr)
 {
 	return *((uint16_t *) mem_translation(Addr));

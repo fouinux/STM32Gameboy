@@ -68,4 +68,6 @@ struct core_reg_t
 
 extern struct core_reg_t core_reg;
 
+void core_execute(void);
+
 #endif /* INC_GAMEBOY_CPU_CORE_H_ */
