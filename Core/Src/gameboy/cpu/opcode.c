@@ -78,6 +78,8 @@ MACRO_LD_r1_r2(A, H);    // LD A, H
 MACRO_LD_r1_r2(A, L);    // LD A, L
 MACRO_LD_r1_r2(A, A);    // LD A, A
 
+#undef MACRO_LD_r1_r2
+
 // Macro: LD r1, (HL)
 #define MACRO_LD_r1_HL(r1) \
 static void LD_##r1##_HL(void) \
@@ -92,6 +94,8 @@ MACRO_LD_r1_HL(E);        // LD E, (HL)
 MACRO_LD_r1_HL(H);        // LD H, (HL)
 MACRO_LD_r1_HL(L);        // LD L, (HL)
 MACRO_LD_r1_HL(A);        // LD A, (HL)
+
+#undef MACRO_LD_r1_HL
 
 // Macro: LD (HL), r1
 #define MACRO_LD_HL_r1(r1) \
@@ -108,6 +112,8 @@ MACRO_LD_HL_r1(H);        // LD (HL), H
 MACRO_LD_HL_r1(L);        // LD (HL), L
 MACRO_LD_HL_r1(A);        // LD (HL), A
 
+#undef MACRO_LD_HL_r1
+
 // Macro: LD (HL), r1
 #define MACRO_LD_r1_d8(r1) \
 static void LD_##r1##_d8(void) \
@@ -122,6 +128,8 @@ MACRO_LD_r1_d8(E);        // LD E, d8
 MACRO_LD_r1_d8(H);        // LD H, d8
 MACRO_LD_r1_d8(L);        // LD L, d8
 MACRO_LD_r1_d8(A);        // LD A, d8
+
+#undef MACRO_LD_r1_d8
 
 // LD (HL), d8
 static void LD_HL_d8(void)
@@ -138,6 +146,8 @@ static void LD_##r1##_A(void) \
 
 MACRO_LD_r1_A(BC);        // LD (BC), A
 MACRO_LD_r1_A(DE);        // LD (DE), A
+
+#undef MACRO_LD_r1_A
 
 // LD (HL+), A
 static void LD_HLp_A(void)
@@ -160,6 +170,8 @@ static void LD_A_##r1(void) \
 
 MACRO_LD_A_r1(BC);        // LD A, (BC)
 MACRO_LD_A_r1(DE);        // LD A, (DE)
+
+#undef MACRO_LD_A_r1
 
 // LD A, (HL+)
 static void LD_A_HLp(void)
@@ -189,6 +201,8 @@ MACRO_LD_r1_d16(BC);        // LD BC, d16
 MACRO_LD_r1_d16(DE);        // LD DE, d16
 MACRO_LD_r1_d16(HL);        // LD HL, d16
 MACRO_LD_r1_d16(SP);        // LD SP, d16
+
+#undef MACRO_LD_r1_d16
 
 // Load (a16) with SP - LD (a16), SP
 void LD_a16_SP(void)
@@ -221,6 +235,8 @@ MACRO_ADD_A_r1(E);    // ADD A, E
 MACRO_ADD_A_r1(H);    // ADD A, H
 MACRO_ADD_A_r1(L);    // ADD A, L
 MACRO_ADD_A_r1(A);    // ADD A, A
+
+#undef MACRO_ADD_A_r1
 
 // ADD A, (HL)
 static void ADD_A_HL(void)
@@ -266,6 +282,8 @@ MACRO_ADC_A_r1(H);    // ADC A, H
 MACRO_ADC_A_r1(L);    // ADC A, L
 MACRO_ADC_A_r1(A);    // ADC A, A
 
+#undef MACRO_ADC_A_r1
+
 // ADC A, (HL)
 static void ADC_A_HL(void)
 {
@@ -309,6 +327,8 @@ MACRO_SUB_A_r1(E);    // SUB A, E
 MACRO_SUB_A_r1(H);    // SUB A, H
 MACRO_SUB_A_r1(L);    // SUB A, L
 MACRO_SUB_A_r1(A);    // SUB A, A
+
+#undef MACRO_SUB_A_r1
 
 // SUB A, (HL)
 static void SUB_A_HL(void)
@@ -355,6 +375,8 @@ MACRO_SBC_A_r1(H);    // SBC A, H
 MACRO_SBC_A_r1(L);    // SBC A, L
 MACRO_SBC_A_r1(A);    // SBC A, A
 
+#undef MACRO_SBC_A_r1
+
 // SBC A, (HL)
 static void SBC_A_HL(void)
 {
@@ -396,6 +418,8 @@ MACRO_AND_A_r1(H);    // AND A, H
 MACRO_AND_A_r1(L);    // AND A, L
 MACRO_AND_A_r1(A);    // AND A, A
 
+#undef MACRO_AND_A_r1
+
 // AND A, (HL)
 static void AND_A_HL(void)
 {
@@ -432,6 +456,8 @@ MACRO_XOR_A_r1(H);    // XOR A, H
 MACRO_XOR_A_r1(L);    // XOR A, L
 MACRO_XOR_A_r1(A);    // XOR A, A
 
+#undef MACRO_XOR_A_r1
+
 // XOR A, (HL)
 static void XOR_A_HL(void)
 {
@@ -466,6 +492,8 @@ MACRO_OR_A_r1(E);    // OR A, E
 MACRO_OR_A_r1(H);    // OR A, H
 MACRO_OR_A_r1(L);    // OR A, L
 MACRO_OR_A_r1(A);    // OR A, A
+
+#undef MACRO_OR_A_r1
 
 // OR A, (HL)
 static void OR_A_HL(void)
@@ -503,6 +531,8 @@ MACRO_CP_A_r1(E);    // CP A, E
 MACRO_CP_A_r1(H);    // CP A, H
 MACRO_CP_A_r1(L);    // CP A, L
 MACRO_CP_A_r1(A);    // CP A, A
+
+#undef MACRO_CP_A_r1
 
 // CP A, (HL)
 static void CP_A_HL(void)
@@ -608,6 +638,8 @@ MACRO_INC_r1(DE);    // INC DE
 MACRO_INC_r1(HL);    // INC HL
 MACRO_INC_r1(SP);    // INC SP
 
+#undef MACRO_INC_r1
+
 // Macro: DEC r1
 #define MACRO_DEC_r1(r1) \
 static void DEC_##r1(void) \
@@ -619,6 +651,8 @@ MACRO_DEC_r1(BC);    // DEC BC
 MACRO_DEC_r1(DE);    // DEC DE
 MACRO_DEC_r1(HL);    // DEC HL
 MACRO_DEC_r1(SP);    // DEC SP
+
+#undef MACRO_DEC_r1
 
 // Macro: ADD HL r1
 #define MACRO_ADD_HL_r1(r1) \
