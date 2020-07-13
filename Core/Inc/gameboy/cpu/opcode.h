@@ -13,7 +13,7 @@
 
 struct opcode_t
 {
-	void (*func)(uint8_t);
+	void (*func)(void);
 	uint8_t length;
 	uint8_t cycles;
 	bool updatePC;

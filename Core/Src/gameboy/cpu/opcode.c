@@ -6,7 +6,6 @@
  */
 
 #include <gameboy/cpu/opcode.h>
-#include <gameboy/cpu/opcode_ll.h>
 #include <gameboy/cpu/core.h>
 #include <gameboy/cpu/memory.h>
 
@@ -18,7 +17,7 @@
 
 // Macro: LD r1, r2
 #define MACRO_LD_r1_r2(r1, r2) \
-static void LD_##r1##_##r2(uint8_t optcode) \
+static void LD_##r1##_##r2(void) \
 { \
     core_reg.r1 = core_reg.r2; \
 }
@@ -81,7 +80,7 @@ MACRO_LD_r1_r2(A, A);    // LD A, A
 
 // Macro: LD r1, (HL)
 #define MACRO_LD_r1_HL(r1) \
-static void LD_##r1##_HL(uint8_t optcode) \
+static void LD_##r1##_HL(void) \
 { \
     core_reg.r1 = mem_read_u8(core_reg.HL); \
 }
@@ -96,7 +95,7 @@ MACRO_LD_r1_HL(A);        // LD A, (HL)
 
 // Macro: LD (HL), r1
 #define MACRO_LD_HL_r1(r1) \
-static void LD_HL_##r1(uint8_t optcode) \
+static void LD_HL_##r1(void) \
 { \
     mem_write_u8(core_reg.HL, core_reg.r1); \
 }
@@ -111,7 +110,7 @@ MACRO_LD_HL_r1(A);        // LD (HL), A
 
 // Macro: LD (HL), r1
 #define MACRO_LD_r1_d8(r1) \
-static void LD_##r1##_d8(uint8_t optcode) \
+static void LD_##r1##_d8(void) \
 { \
     core_reg.r1 = mem_read_u8(core_reg.PC + 1); \
 }
@@ -125,14 +124,14 @@ MACRO_LD_r1_d8(L);        // LD L, d8
 MACRO_LD_r1_d8(A);        // LD A, d8
 
 // LD (HL), d8
-static void LD_HL_d8(uint8_t optcode)
+static void LD_HL_d8(void)
 {
     mem_write_u8(core_reg.HL, mem_read_u8(core_reg.PC + 1));
 }
 
 // Macro: LD (r1), A
 #define MACRO_LD_r1_A(r1) \
-static void LD_##r1##_A(uint8_t optcode) \
+static void LD_##r1##_A(void) \
 { \
     mem_write_u8(core_reg.r1, core_reg.A); \
 }
@@ -141,20 +140,20 @@ MACRO_LD_r1_A(BC);        // LD (BC), A
 MACRO_LD_r1_A(DE);        // LD (DE), A
 
 // LD (HL+), A
-static void LD_HLp_A(uint8_t optcode)
+static void LD_HLp_A(void)
 {
     mem_write_u8(core_reg.HL++, core_reg.A);
 }
 
 // LD (HL-), A
-static void LD_HLm_A(uint8_t optcode)
+static void LD_HLm_A(void)
 {
     mem_write_u8(core_reg.HL--, core_reg.A);
 }
 
 // Macro: LD (r1), A
 #define MACRO_LD_A_r1(r1) \
-static void LD_A_##r1(uint8_t optcode) \
+static void LD_A_##r1(void) \
 { \
     core_reg.A = mem_read_u8(core_reg.r1); \
 }
@@ -163,13 +162,13 @@ MACRO_LD_A_r1(BC);        // LD A, (BC)
 MACRO_LD_A_r1(DE);        // LD A, (DE)
 
 // LD A, (HL+)
-static void LD_A_HLp(uint8_t optcode)
+static void LD_A_HLp(void)
 {
     core_reg.A = mem_read_u8(core_reg.HL++);
 }
 
 // LD A, (HL-)
-static void LD_A_HLm(uint8_t optcode)
+static void LD_A_HLm(void)
 {
     core_reg.A = mem_read_u8(core_reg.HL--);
 }
@@ -181,7 +180,7 @@ static void LD_A_HLm(uint8_t optcode)
 
 // Macro: LD r1, d16
 #define MACRO_LD_r1_d16(r1) \
-static void LD_##r1##_d16(uint8_t optcode) \
+static void LD_##r1##_d16(void) \
 { \
     core_reg.r1 = mem_read_u16(core_reg.PC + 1); \
 }
@@ -192,7 +191,7 @@ MACRO_LD_r1_d16(HL);        // LD HL, d16
 MACRO_LD_r1_d16(SP);        // LD SP, d16
 
 // Load (a16) with SP - LD (a16), SP
-void LD_a16_SP(uint8_t opcode)
+void LD_a16_SP(void)
 {
     uint16_t a16 = mem_read_u16(core_reg.PC + 1);
 
@@ -205,7 +204,7 @@ void LD_a16_SP(uint8_t opcode)
 
 // Macro: ADD A, r1
 #define MACRO_ADD_A_r1(r1) \
-static void ADD_A_##r1(uint8_t optcode) \
+static void ADD_A_##r1(void) \
 { \
     uint16_t t = core_reg.A + core_reg.r1; \
     core_reg.F = 0; \
@@ -224,7 +223,7 @@ MACRO_ADD_A_r1(L);    // ADD A, L
 MACRO_ADD_A_r1(A);    // ADD A, A
 
 // ADD A, (HL)
-static void ADD_A_HL(uint8_t optcode)
+static void ADD_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     uint16_t t = core_reg.A + reg;
@@ -236,7 +235,7 @@ static void ADD_A_HL(uint8_t optcode)
 }
 
 // ADD A, d8
-static void ADD_A_d8(uint8_t optcode)
+static void ADD_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.PC + 1);
     uint16_t t = core_reg.A + d8;
@@ -249,7 +248,7 @@ static void ADD_A_d8(uint8_t optcode)
 
 // Macro: ADC A, r1
 #define MACRO_ADC_A_r1(r1) \
-static void ADC_A_##r1(uint8_t optcode) \
+static void ADC_A_##r1(void) \
 { \
     uint16_t t = core_reg.A + core_reg.r1 + core_reg.Flags.C; \
     core_reg.F = 0; \
@@ -268,7 +267,7 @@ MACRO_ADC_A_r1(L);    // ADC A, L
 MACRO_ADC_A_r1(A);    // ADC A, A
 
 // ADC A, (HL)
-static void ADC_A_HL(uint8_t optcode)
+static void ADC_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     uint16_t t = core_reg.A + reg +  core_reg.Flags.C;
@@ -280,7 +279,7 @@ static void ADC_A_HL(uint8_t optcode)
 }
 
 // ADC A, d8
-static void ADC_A_d8(uint8_t optcode)
+static void ADC_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.PC + 1);
     uint16_t t = core_reg.A + d8 +  core_reg.Flags.C;
@@ -293,7 +292,7 @@ static void ADC_A_d8(uint8_t optcode)
 
 // Macro: SUB A, r1
 #define MACRO_SUB_A_r1(r1) \
-static void SUB_A_##r1(uint8_t optcode) \
+static void SUB_A_##r1(void) \
 { \
     int16_t t = core_reg.A - core_reg.r1; \
     core_reg.F = 0x40; \
@@ -312,7 +311,7 @@ MACRO_SUB_A_r1(L);    // SUB A, L
 MACRO_SUB_A_r1(A);    // SUB A, A
 
 // SUB A, (HL)
-static void SUB_A_HL(uint8_t optcode)
+static void SUB_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     int16_t t = core_reg.A - reg;
@@ -324,7 +323,7 @@ static void SUB_A_HL(uint8_t optcode)
 }
 
 // SUB A, d8
-static void SUB_A_d8(uint8_t optcode)
+static void SUB_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.PC + 1);
     int16_t t = core_reg.A - d8;
@@ -338,7 +337,7 @@ static void SUB_A_d8(uint8_t optcode)
 
 // Macro: SBC A, r1
 #define MACRO_SBC_A_r1(r1) \
-static void SBC_A_##r1(uint8_t optcode) \
+static void SBC_A_##r1(void) \
 { \
     int16_t t = core_reg.A - core_reg.r1 - core_reg.Flags.C; \
     core_reg.F = 0x40; \
@@ -357,7 +356,7 @@ MACRO_SBC_A_r1(L);    // SBC A, L
 MACRO_SBC_A_r1(A);    // SBC A, A
 
 // SBC A, (HL)
-static void SBC_A_HL(uint8_t optcode)
+static void SBC_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     int16_t t = core_reg.A - reg - core_reg.Flags.C;
@@ -369,7 +368,7 @@ static void SBC_A_HL(uint8_t optcode)
 }
 
 // SBC A, d8
-static void SBC_A_d8(uint8_t optcode)
+static void SBC_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.PC + 1);
     int16_t t = core_reg.A - d8 - core_reg.Flags.C;
@@ -382,7 +381,7 @@ static void SBC_A_d8(uint8_t optcode)
 
 // Macro: AND A, r1
 #define MACRO_AND_A_r1(r1) \
-static void AND_A_##r1(uint8_t optcode) \
+static void AND_A_##r1(void) \
 { \
     core_reg.A &= core_reg.r1; \
     core_reg.F = 0x20; /* N = 0, H = 1, C = 0 */ \
@@ -398,7 +397,7 @@ MACRO_AND_A_r1(L);    // AND A, L
 MACRO_AND_A_r1(A);    // AND A, A
 
 // AND A, (HL)
-static void AND_A_HL(uint8_t optcode)
+static void AND_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     core_reg.A &= reg;
@@ -407,7 +406,7 @@ static void AND_A_HL(uint8_t optcode)
 }
 
 // AND A, d8
-static void AND_A_d8(uint8_t optcode)
+static void AND_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.PC + 1);
     core_reg.A &= d8;
@@ -418,7 +417,7 @@ static void AND_A_d8(uint8_t optcode)
 
 // Macro: XOR A, r1
 #define MACRO_XOR_A_r1(r1) \
-static void XOR_A_##r1(uint8_t optcode) \
+static void XOR_A_##r1(void) \
 { \
     core_reg.A ^= core_reg.r1; \
     core_reg.F = 0x00; /* N = 0, H = 0, C = 0 */ \
@@ -434,7 +433,7 @@ MACRO_XOR_A_r1(L);    // XOR A, L
 MACRO_XOR_A_r1(A);    // XOR A, A
 
 // XOR A, (HL)
-static void XOR_A_HL(uint8_t optcode)
+static void XOR_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     core_reg.A ^= reg;
@@ -443,7 +442,7 @@ static void XOR_A_HL(uint8_t optcode)
 }
 
 // XOR A, d8
-static void XOR_A_d8(uint8_t optcode)
+static void XOR_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.PC + 1);
     core_reg.A ^= d8;
@@ -453,7 +452,7 @@ static void XOR_A_d8(uint8_t optcode)
 
 // Macro: OR A, r1
 #define MACRO_OR_A_r1(r1) \
-static void OR_A_##r1(uint8_t optcode) \
+static void OR_A_##r1(void) \
 { \
     core_reg.A |= core_reg.r1; \
     core_reg.F = 0x00; /* N = 0, H = 0, C = 0 */ \
@@ -469,7 +468,7 @@ MACRO_OR_A_r1(L);    // OR A, L
 MACRO_OR_A_r1(A);    // OR A, A
 
 // OR A, (HL)
-static void OR_A_HL(uint8_t optcode)
+static void OR_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     core_reg.A |= reg;
@@ -478,7 +477,7 @@ static void OR_A_HL(uint8_t optcode)
 }
 
 // OR A, d8
-static void OR_A_d8(uint8_t optcode)
+static void OR_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.PC + 1);
     core_reg.A |= d8;
@@ -488,7 +487,7 @@ static void OR_A_d8(uint8_t optcode)
 
 // Macro: CP A, r1
 #define MACRO_CP_A_r1(r1) \
-static void CP_A_##r1(uint8_t optcode) \
+static void CP_A_##r1(void) \
 { \
     int16_t t = core_reg.A - core_reg.r1; \
     core_reg.F = 0x40; /* N = 1 */ \
@@ -506,7 +505,7 @@ MACRO_CP_A_r1(L);    // CP A, L
 MACRO_CP_A_r1(A);    // CP A, A
 
 // CP A, (HL)
-static void CP_A_HL(uint8_t optcode)
+static void CP_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     int16_t t = core_reg.A - reg;
@@ -517,7 +516,7 @@ static void CP_A_HL(uint8_t optcode)
 }
 
 // CP A, d8
-static void CP_A_d8(uint8_t optcode)
+static void CP_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.HL);
     int16_t t = core_reg.A - d8;
@@ -529,7 +528,7 @@ static void CP_A_d8(uint8_t optcode)
 
 // Macro: INC r1
 #define MACRO_INC_r1(r1) \
-static void INC_##r1(uint8_t optcode) \
+static void INC_##r1(void) \
 { \
     core_reg.r1++; \
     core_reg.Flags.Z = (core_reg.r1 == 0x00); \
@@ -548,7 +547,7 @@ MACRO_INC_r1(A);    // INC A
 #undef MACRO_INC_r1
 
 // INC (HL)
-static void INC_pHL(uint8_t optcode)
+static void INC_pHL(void)
 {
     uint8_t t = mem_read_u8(core_reg.HL);
 
@@ -562,7 +561,7 @@ static void INC_pHL(uint8_t optcode)
 
 // Macro: DEC r1
 #define MACRO_DEC_r1(r1) \
-static void DEC_##r1(uint8_t optcode) \
+static void DEC_##r1(void) \
 { \
     core_reg.r1--; \
     core_reg.Flags.Z = (core_reg.r1 == 0x00); \
@@ -581,7 +580,7 @@ MACRO_DEC_r1(A);    // DEC A
 #undef MACRO_DEC_r1
 
 // DEC (HL)
-static void DEC_pHL(uint8_t optcode)
+static void DEC_pHL(void)
 {
     uint8_t t = mem_read_u8(core_reg.HL);
 
@@ -599,7 +598,7 @@ static void DEC_pHL(uint8_t optcode)
 
 // Macro: INC r1
 #define MACRO_INC_r1(r1) \
-static void INC_##r1(uint8_t optcode) \
+static void INC_##r1(void) \
 { \
     core_reg.r1++; \
 }
@@ -611,7 +610,7 @@ MACRO_INC_r1(SP);    // INC SP
 
 // Macro: DEC r1
 #define MACRO_DEC_r1(r1) \
-static void DEC_##r1(uint8_t optcode) \
+static void DEC_##r1(void) \
 { \
     core_reg.r1--; \
 }
@@ -623,7 +622,7 @@ MACRO_DEC_r1(SP);    // DEC SP
 
 // Macro: ADD HL r1
 #define MACRO_ADD_HL_r1(r1) \
-static void ADD_HL_##r1(uint8_t optcode) \
+static void ADD_HL_##r1(void) \
 { \
     uint32_t result = (uint32_t) core_reg.HL + (uint32_t) core_reg.r1; \
  \
@@ -649,21 +648,21 @@ MACRO_ADD_HL_r1(SP);    // ADD HL, SP
 //////////////////////
 
 // Complement A register - CPL
-static void CPL(uint8_t opcode)
+static void CPL(void)
 {
     core_reg.F |= 0x90; // Set N & H
     core_reg.A ^= 0xFF;
 }
 
 // Complement Carry Flag - CCF
-static void CCF(uint8_t opcode)
+static void CCF(void)
 {
     core_reg.F &= 0x90; // Reset N & H
     core_reg.Flags.C = !core_reg.Flags.C;
 }
 
 // Set Carry Flag - SCF
-static void SCF(uint8_t opcode)
+static void SCF(void)
 {
     core_reg.F &= 0x90; // Reset N & H
     core_reg.Flags.C = 1;
@@ -671,7 +670,7 @@ static void SCF(uint8_t opcode)
 
 
 // NOP
-static void NOP(uint8_t opcode)
+static void NOP(void)
 {
     // Do nothing for one cycle
 }
@@ -681,39 +680,38 @@ static void NOP(uint8_t opcode)
 //////////////////////
 
 // Rotate A Left
-static void RLCA(uint8_t opcode)
+static void RLCA(void)
 {
-    ll_RLC(&core_reg.A);
-
-    // Update flags
-    core_reg.Flags.Z = 0;
+    core_reg.A = (core_reg.A << 1) | (core_reg.A >> 7);
+    core_reg.F = 0x00;
+    core_reg.Flags.C = core_reg.A & 0x01;
 }
 
 // Rotate A Left through Carry flag
-static void RLA(uint8_t opcode)
+static void RLA(void)
 {
-    ll_RL(&core_reg.A);
-
-    // Update flags
-    core_reg.Flags.Z = 0;
+    uint16_t t = (core_reg.A << 1) | core_reg.Flags.C;
+    core_reg.A = t & 0xFF;
+    core_reg.F = 0x00;
+    core_reg.Flags.C = (t > 0xFF);
 }
 
 // Rotate A Right
-static void RRCA(uint8_t opcode)
+static void RRCA(void)
 {
-    ll_RRC(&core_reg.A);
-
-    // Update flags
-    core_reg.Flags.Z = 0;
+    core_reg.F = 0x00; \
+    core_reg.Flags.C = core_reg.A & 0x01; \
+    core_reg.Flags.Z = (core_reg.A == 0); \
+    core_reg.A = (core_reg.A >> 1) | (core_reg.A << 7); \
 }
 
 // Rotate A Right through Carry flag
-static void RRA(uint8_t opcode)
+static void RRA(void)
 {
-    ll_RR(&core_reg.A);
-
-    // Update flags
-    core_reg.Flags.Z = 0;
+    uint8_t t = (core_reg.A >> 1) | (core_reg.Flags.C << 7);
+    core_reg.F = 0x00;
+    core_reg.Flags.C = core_reg.A & 0x01;
+    core_reg.A = t;
 }
 
 //////////////////////
@@ -721,14 +719,14 @@ static void RRA(uint8_t opcode)
 //////////////////////
 
 // Jump relative - JR r8
-static void JR_n(uint8_t opcode)
+static void JR_n(void)
 {
     int8_t r8 = mem_read_s8(core_reg.PC + 1);
     core_reg.PC += r8;
 }
 
 // JR NZ, r8
-static void JR_NZ_r8(uint8_t opcode)
+static void JR_NZ_r8(void)
 {
     // TODO Add 4 cycles in case of jump?
     int8_t r8 = mem_read_s8(core_reg.PC + 1);
@@ -740,7 +738,7 @@ static void JR_NZ_r8(uint8_t opcode)
 }
 
 // JR Z, r8
-static void JR_Z_r8(uint8_t opcode)
+static void JR_Z_r8(void)
 {
     // TODO Add 4 cycles in case of jump?
     int8_t r8 = mem_read_s8(core_reg.PC + 1);
@@ -752,7 +750,7 @@ static void JR_Z_r8(uint8_t opcode)
 }
 
 // JR NC, r8
-static void JR_NC_r8(uint8_t opcode)
+static void JR_NC_r8(void)
 {
     // TODO Add 4 cycles in case of jump?
     int8_t r8 = mem_read_s8(core_reg.PC + 1);
@@ -764,7 +762,7 @@ static void JR_NC_r8(uint8_t opcode)
 }
 
 // JR C, r8
-static void JR_C_r8(uint8_t opcode)
+static void JR_C_r8(void)
 {
     // TODO Add 4 cycles in case of jump?
     int8_t r8 = mem_read_s8(core_reg.PC + 1);
