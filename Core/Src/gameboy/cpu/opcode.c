@@ -12,6 +12,104 @@
 
 #include <stdio.h>
 
+//////////////////////
+//    8-bit Load    //
+//////////////////////
+
+// Macro: LD r1, r2
+#define MACRO_OP_LD_r1_r2(r1, r2) \
+static void op_LD_##r1##_##r2(uint8_t optcode) \
+{ \
+	core_reg.r1 = core_reg.r2; \
+}
+
+MACRO_OP_LD_r1_r2(B, B);	// LD B, B
+MACRO_OP_LD_r1_r2(B, C);	// LD B, C
+MACRO_OP_LD_r1_r2(B, D);	// LD B, D
+MACRO_OP_LD_r1_r2(B, E);	// LD B, E
+MACRO_OP_LD_r1_r2(B, H);	// LD B, H
+MACRO_OP_LD_r1_r2(B, L);	// LD B, L
+MACRO_OP_LD_r1_r2(B, A);	// LD B, A
+
+MACRO_OP_LD_r1_r2(C, B);	// LD C, B
+MACRO_OP_LD_r1_r2(C, C);	// LD C, C
+MACRO_OP_LD_r1_r2(C, D);	// LD C, D
+MACRO_OP_LD_r1_r2(C, E);	// LD C, E
+MACRO_OP_LD_r1_r2(C, H);	// LD C, H
+MACRO_OP_LD_r1_r2(C, L);	// LD C, L
+MACRO_OP_LD_r1_r2(C, A);	// LD C, A
+
+MACRO_OP_LD_r1_r2(D, B);	// LD D, B
+MACRO_OP_LD_r1_r2(D, C);	// LD D, C
+MACRO_OP_LD_r1_r2(D, D);	// LD D, D
+MACRO_OP_LD_r1_r2(D, E);	// LD D, E
+MACRO_OP_LD_r1_r2(D, H);	// LD D, H
+MACRO_OP_LD_r1_r2(D, L);	// LD D, L
+MACRO_OP_LD_r1_r2(D, A);	// LD D, A
+
+MACRO_OP_LD_r1_r2(E, B);	// LD E, B
+MACRO_OP_LD_r1_r2(E, C);	// LD E, C
+MACRO_OP_LD_r1_r2(E, D);	// LD E, D
+MACRO_OP_LD_r1_r2(E, E);	// LD E, E
+MACRO_OP_LD_r1_r2(E, H);	// LD E, H
+MACRO_OP_LD_r1_r2(E, L);	// LD E, L
+MACRO_OP_LD_r1_r2(E, A);	// LD E, A
+
+MACRO_OP_LD_r1_r2(H, B);	// LD H, B
+MACRO_OP_LD_r1_r2(H, C);	// LD H, C
+MACRO_OP_LD_r1_r2(H, D);	// LD H, D
+MACRO_OP_LD_r1_r2(H, E);	// LD H, E
+MACRO_OP_LD_r1_r2(H, H);	// LD H, H
+MACRO_OP_LD_r1_r2(H, L);	// LD H, L
+MACRO_OP_LD_r1_r2(H, A);	// LD H, A
+
+MACRO_OP_LD_r1_r2(L, B);	// LD L, B
+MACRO_OP_LD_r1_r2(L, C);	// LD L, C
+MACRO_OP_LD_r1_r2(L, D);	// LD L, D
+MACRO_OP_LD_r1_r2(L, E);	// LD L, E
+MACRO_OP_LD_r1_r2(L, H);	// LD L, H
+MACRO_OP_LD_r1_r2(L, L);	// LD L, L
+MACRO_OP_LD_r1_r2(L, A);	// LD L, A
+
+MACRO_OP_LD_r1_r2(A, B);	// LD A, B
+MACRO_OP_LD_r1_r2(A, C);	// LD A, C
+MACRO_OP_LD_r1_r2(A, D);	// LD A, D
+MACRO_OP_LD_r1_r2(A, E);	// LD A, E
+MACRO_OP_LD_r1_r2(A, H);	// LD A, H
+MACRO_OP_LD_r1_r2(A, L);	// LD A, L
+MACRO_OP_LD_r1_r2(A, A);	// LD A, A
+
+// Macro: LD r1, (HL)
+#define MACRO_OP_LD_r1_HL(r1) \
+static void op_LD_##r1##_HL(uint8_t optcode) \
+{ \
+	core_reg.r1 = mem_read_u8(core_reg.HL); \
+}
+
+MACRO_OP_LD_r1_HL(B);		// LD B, (HL)
+MACRO_OP_LD_r1_HL(C);		// LD C, (HL)
+MACRO_OP_LD_r1_HL(D);		// LD D, (HL)
+MACRO_OP_LD_r1_HL(E);		// LD E, (HL)
+MACRO_OP_LD_r1_HL(H);		// LD H, (HL)
+MACRO_OP_LD_r1_HL(L);		// LD L, (HL)
+MACRO_OP_LD_r1_HL(A);		// LD A, (HL)
+
+// Macro: LD (HL), r1
+#define MACRO_OP_LD_HL_r1(r1) \
+static void op_LD_HL_##r1(uint8_t optcode) \
+{ \
+	mem_write_u8(core_reg.HL, core_reg.r1); \
+}
+
+MACRO_OP_LD_HL_r1(B);		// LD (HL), B
+MACRO_OP_LD_HL_r1(C);		// LD (HL), C
+MACRO_OP_LD_HL_r1(D);		// LD (HL), D
+MACRO_OP_LD_HL_r1(E);		// LD (HL), E
+MACRO_OP_LD_HL_r1(H);		// LD (HL), H
+MACRO_OP_LD_HL_r1(L);		// LD (HL), L
+MACRO_OP_LD_HL_r1(A);		// LD (HL), A
+
+
 static void op_NOP(uint8_t opcode)
 {
 	// Do nothing for one cycle
@@ -428,4 +526,71 @@ struct opcode_t opcodeList[256] =
 	{op_LD_d8, 		2,	8,	true},		// 0x3E
 
 	{NULL,			0,	0,	true},		// 0x3F TODO CCF
+
+	{op_LD_B_B,		1,	4,	true},		// 0x40
+	{op_LD_B_C,		1,	4,	true},		// 0x41
+	{op_LD_B_D,		1,	4,	true},		// 0x42
+	{op_LD_B_E,		1,	4,	true},		// 0x43
+	{op_LD_B_H,		1,	4,	true},		// 0x44
+	{op_LD_B_L,		1,	4,	true},		// 0x45
+	{op_LD_B_HL,	1,	8,	true},		// 0x46
+	{op_LD_B_A,		1,	4,	true},		// 0x47
+	{op_LD_C_B,		1,	4,	true},		// 0x48
+	{op_LD_C_C,		1,	4,	true},		// 0x49
+	{op_LD_C_D,		1,	4,	true},		// 0x4A
+	{op_LD_C_E,		1,	4,	true},		// 0x4B
+	{op_LD_C_H,		1,	4,	true},		// 0x4C
+	{op_LD_C_L,		1,	4,	true},		// 0x4D
+	{op_LD_C_HL,	1,	8,	true},		// 0x4E
+	{op_LD_C_A,		1,	4,	true},		// 0x4F
+	{op_LD_D_B,		1,	4,	true},		// 0x50
+	{op_LD_D_C,		1,	4,	true},		// 0x51
+	{op_LD_D_D,		1,	4,	true},		// 0x52
+	{op_LD_D_E,		1,	4,	true},		// 0x53
+	{op_LD_D_H,		1,	4,	true},		// 0x54
+	{op_LD_D_L,		1,	4,	true},		// 0x55
+	{op_LD_D_HL,	1,	8,	true},		// 0x56
+	{op_LD_D_A,		1,	4,	true},		// 0x57
+	{op_LD_E_B,		1,	4,	true},		// 0x58
+	{op_LD_E_C,		1,	4,	true},		// 0x59
+	{op_LD_E_D,		1,	4,	true},		// 0x5A
+	{op_LD_E_E,		1,	4,	true},		// 0x5B
+	{op_LD_E_H,		1,	4,	true},		// 0x5C
+	{op_LD_E_L,		1,	4,	true},		// 0x5D
+	{op_LD_E_HL,	1,	8,	true},		// 0x5E
+	{op_LD_E_A,		1,	4,	true},		// 0x5F
+	{op_LD_H_B,		1,	4,	true},		// 0x60
+	{op_LD_H_C,		1,	4,	true},		// 0x61
+	{op_LD_H_D,		1,	4,	true},		// 0x62
+	{op_LD_H_E,		1,	4,	true},		// 0x63
+	{op_LD_H_H,		1,	4,	true},		// 0x64
+	{op_LD_H_L,		1,	4,	true},		// 0x65
+	{op_LD_H_HL,	1,	8,	true},		// 0x66
+	{op_LD_H_A,		1,	4,	true},		// 0x67
+	{op_LD_L_B,		1,	4,	true},		// 0x68
+	{op_LD_L_C,		1,	4,	true},		// 0x69
+	{op_LD_L_D,		1,	4,	true},		// 0x6A
+	{op_LD_L_E,		1,	4,	true},		// 0x6B
+	{op_LD_L_H,		1,	4,	true},		// 0x6C
+	{op_LD_L_L,		1,	4,	true},		// 0x6D
+	{op_LD_L_HL,	1,	8,	true},		// 0x6E
+	{op_LD_L_A,		1,	4,	true},		// 0x6F
+	{op_LD_HL_B,	1,	8,	true},		// 0x70
+	{op_LD_HL_C,	1,	8,	true},		// 0x71
+	{op_LD_HL_D,	1,	8,	true},		// 0x72
+	{op_LD_HL_E,	1,	8,	true},		// 0x73
+	{op_LD_HL_H,	1,	8,	true},		// 0x74
+	{op_LD_HL_L,	1,	8,	true},		// 0x75
+
+	{NULL,			1,	4,	true},		// 0x76 // TODO HALT
+
+	{op_LD_HL_A,	1,	8,	true},		// 0x77
+	{op_LD_A_B,		1,	4,	true},		// 0x78
+	{op_LD_A_C,		1,	4,	true},		// 0x79
+	{op_LD_A_D,		1,	4,	true},		// 0x7A
+	{op_LD_A_E,		1,	4,	true},		// 0x7B
+	{op_LD_A_H,		1,	4,	true},		// 0x7C
+	{op_LD_A_L,		1,	4,	true},		// 0x7D
+	{op_LD_A_HL,	1,	8,	true},		// 0x7E
+	{op_LD_A_A,		1,	4,	true},		// 0x7F
 };
