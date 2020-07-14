@@ -841,6 +841,34 @@ static uint8_t ADD_SP_r8(void)
 //       Misc       //
 //////////////////////
 
+// Decimal adjust A register - DAA
+static uint8_t DAA(void)
+{
+    if (core_reg.Flags.N)
+    {
+        if (core_reg.Flags.C || core_reg.A > 0x99)
+        {
+            core_reg.A += 0x60;
+            core_reg.Flags.C = 1;
+        }
+
+        if (core_reg.Flags.H || (core_reg.A & 0x0F) > 0x09)
+            core_reg.A += 0x06;
+    }
+    else
+    {
+        if (core_reg.Flags.C)
+            core_reg.A -= 0x60;
+
+        if (core_reg.Flags.H)
+            core_reg.A -= 0x06;
+    }
+
+    core_reg.Flags.Z = (core_reg.A == 0);
+    core_reg.Flags.H = 0;
+    return 4;
+}
+
 // Complement A register - CPL
 static uint8_t CPL(void)
 {
@@ -903,7 +931,7 @@ static uint8_t EI(void)
 // PREFIX CB
 static uint8_t PREFIX_CB(void)
 {
-    uint8_t opcode = mem_read_u8(core_reg.PC + 1);
+    // TODO Prefix CB
     return 4;
 }
 
@@ -1176,9 +1204,7 @@ struct opcode_t opcodeList[256] =
     {INC_H,         1,      true},      // 0x24
     {DEC_H,         1,      true},      // 0x25
     {LD_H_d8,       2,      true},      // 0x26
-
-    {NULL,          1,      true},      // 0x27 TODO DAA
-
+    {DAA,           1,      true},      // 0x27
     {JR_Z_r8,       2,      false},     // 0x28
     {ADD_HL_HL,     1,      true},      // 0x29
     {LD_A_HLp,      1,      true},      // 0x2A
