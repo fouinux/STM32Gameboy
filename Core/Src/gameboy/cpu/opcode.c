@@ -6,6 +6,7 @@
  */
 
 #include <gameboy/cpu/opcode.h>
+#include <gameboy/cpu/opcode_cb.h>
 #include <gameboy/cpu/core.h>
 #include <gameboy/cpu/memory.h>
 
@@ -185,6 +186,45 @@ static void LD_A_HLm(void)
     core_reg.A = mem_read_u8(core_reg.HL--);
 }
 
+// LDH (a8), A
+static void LDH_a8_A(void)
+{
+    uint8_t a8 = mem_read_u8(core_reg.PC + 1);
+    mem_write_u8(0xFF00 + a8, core_reg.A);
+}
+
+// LDH A, (a8)
+static void LDH_A_a8(void)
+{
+    uint8_t a8 = mem_read_u8(core_reg.PC + 1);
+    core_reg.A = mem_read_u8(0xFF00 + a8);
+}
+
+// LD (C), A
+static void LD_pC_A(void)
+{
+    mem_write_u8(0xFF00 + core_reg.C, core_reg.A);
+}
+
+// LD A, (C)
+static void LD_A_pC(void)
+{
+    core_reg.A = mem_read_u8(0xFF00 + core_reg.C);
+}
+
+// LD (a16), A
+static void LD_a16_A(void)
+{
+    uint16_t a16 = mem_read_u16(core_reg.PC + 1);
+    mem_write_u8(a16, core_reg.A);
+}
+
+// LD A, (a16)
+static void LD_A_a16(void)
+{
+    uint16_t a16 = mem_read_u16(core_reg.PC + 1);
+    core_reg.A = mem_read_u8(a16);
+}
 
 //////////////////////
 //   16-bit Load    //
@@ -204,13 +244,60 @@ MACRO_LD_r1_d16(SP);        // LD SP, d16
 
 #undef MACRO_LD_r1_d16
 
-// Load (a16) with SP - LD (a16), SP
+// LD (a16), SP
 void LD_a16_SP(void)
 {
     uint16_t a16 = mem_read_u16(core_reg.PC + 1);
 
     mem_write_u16(a16, core_reg.SP);
 }
+
+// LD HL, SP+r8
+void LD_HL_SP_r8(void)
+{
+    int8_t r8 = mem_read_s8(core_reg.PC + 1);
+
+    core_reg.HL = core_reg.SP + r8;
+    core_reg.F = 0;
+    core_reg.Flags.H = ((core_reg.SP & 0x0F) + (r8 & 0x0F) > 0x0F);
+    core_reg.Flags.C = ((core_reg.SP & 0xFF) + ((uint16_t) r8 & 0xFF) > 0xFF);
+}
+
+// LD SP, HL
+void LD_SP_HL(void)
+{
+    core_reg.SP = core_reg.HL;
+}
+
+// Macro: PUSH r1
+#define MACRO_PUSH_r1(r1) \
+static void PUSH_##r1(void) \
+{ \
+    mem_write_u16(core_reg.SP - 2, core_reg.r1); \
+    core_reg.SP -= 2; \
+}
+
+MACRO_PUSH_r1(BC);     // PUSH BC
+MACRO_PUSH_r1(DE);     // PUSH DE
+MACRO_PUSH_r1(HL);     // PUSH HL
+MACRO_PUSH_r1(AF);     // PUSH AF
+
+#undef MACRO_PUSH_r1
+
+// Macro: POP r1
+#define MACRO_POP_r1(r1) \
+static void POP_##r1(void) \
+{ \
+    core_reg.r1 = mem_read_u16(core_reg.SP); \
+    core_reg.SP += 2; \
+}
+
+MACRO_POP_r1(BC);     // POP BC
+MACRO_POP_r1(DE);     // POP DE
+MACRO_POP_r1(HL);     // POP HL
+MACRO_POP_r1(AF);     // POP AF
+
+#undef MACRO_POP_r1
 
 //////////////////////
 // Arithmetic 8-bit //
@@ -676,6 +763,19 @@ MACRO_ADD_HL_r1(SP);    // ADD HL, SP
 
 #undef MACRO_ADD_HL_r1
 
+static void ADD_SP_r8(void)
+{
+    int8_t r8 = mem_read_s8(core_reg.PC + 1);
+
+    core_reg.F = 0;
+    if ((core_reg.SP & 0x0F) + (r8 & 0x0F) > 0x0F)
+        core_reg.Flags.H = 1;
+
+    if ((core_reg.SP & 0xFF) + ((uint16_t) r8 & 0xFF) > 0xFF)
+        core_reg.Flags.C = 1;
+
+    core_reg.SP += r8;
+}
 
 //////////////////////
 //       Misc       //
@@ -702,11 +802,42 @@ static void SCF(void)
     core_reg.Flags.C = 1;
 }
 
-
 // NOP
 static void NOP(void)
 {
     // Do nothing for one cycle
+}
+
+// HALT
+static void HALT(void)
+{
+    // TODO Halt
+}
+
+// STOP
+static void STOP(void)
+{
+    // TODO Stop
+}
+
+// DI
+static void DI(void)
+{
+    // TODO Disable interrupts
+}
+
+// EI
+static void EI(void)
+{
+    // TODO Enable interrupts
+}
+
+// PREFIX CB
+static void PREFIX_CB(void)
+{
+    uint8_t opcode = mem_read_u8(core_reg.PC + 1);
+
+    opcodeCbList[opcode].func();
 }
 
 //////////////////////
@@ -752,59 +883,162 @@ static void RRA(void)
 //     Jumps        //
 //////////////////////
 
-// Jump relative - JR r8
-static void JR_n(void)
+// JP a16
+static void JP_a16(void)
+{
+    core_reg.PC = mem_read_u16(core_reg.PC + 1);
+}
+
+// JP (HL)
+static void JP_HL(void)
+{
+    core_reg.PC = mem_read_u16(core_reg.HL);
+}
+
+// JR r8
+static void JR_r8(void)
 {
     int8_t r8 = mem_read_s8(core_reg.PC + 1);
     core_reg.PC += r8;
 }
 
-// JR NZ, r8
-static void JR_NZ_r8(void)
-{
-    // TODO Add 4 cycles in case of jump?
-    int8_t r8 = mem_read_s8(core_reg.PC + 1);
-
-    if(core_reg.Flags.Z == 0)
-        core_reg.PC += r8; // Relative jump
-    else
-        core_reg.PC += 2; // Next opcode
+// Macro: JP COND a16
+// TODO Add 4 cycles in case of jump?
+#define MACRO_JP_COND_a16(name, bit, state) \
+static void JP_##name##_a16(void) \
+{ \
+    uint16_t a16 = mem_read_u16(core_reg.PC + 1); \
+    if (core_reg.Flags.bit == state) \
+        core_reg.PC = a16; /* Jump */ \
+    else \
+        core_reg.PC += 3; /* Next opcode */ \
 }
 
-// JR Z, r8
-static void JR_Z_r8(void)
-{
-    // TODO Add 4 cycles in case of jump?
-    int8_t r8 = mem_read_s8(core_reg.PC + 1);
+MACRO_JP_COND_a16(NZ, Z, 0);    // JP NZ, r8
+MACRO_JP_COND_a16(Z, Z, 1);     // JP Z, r8
+MACRO_JP_COND_a16(NC, C, 0);    // JP NC, r8
+MACRO_JP_COND_a16(C, C, 1);     // JP C, r8
 
-    if(core_reg.Flags.Z == 1)
-        core_reg.PC += r8; // Relative jump
-    else
-        core_reg.PC += 2; // Next opcode
+#undef MACRO_JP_COND_a16
+
+// Macro: JR COND r8
+// TODO Add 4 cycles in case of jump?
+#define MACRO_JR_COND_r8(name, bit, state) \
+static void JR_##name##_r8(void) \
+{ \
+    int8_t r8 = mem_read_s8(core_reg.PC + 1); \
+    if (core_reg.Flags.bit == state) \
+        core_reg.PC += r8; /* Relative jump */ \
+    else \
+        core_reg.PC += 2; /* Next opcode */ \
 }
 
-// JR NC, r8
-static void JR_NC_r8(void)
-{
-    // TODO Add 4 cycles in case of jump?
-    int8_t r8 = mem_read_s8(core_reg.PC + 1);
+MACRO_JR_COND_r8(NZ, Z, 0);     // JR NZ, r8
+MACRO_JR_COND_r8(Z, Z, 1);      // JR Z, r8
+MACRO_JR_COND_r8(NC, C, 0);     // JR NC, r8
+MACRO_JR_COND_r8(C, C, 1);      // JR C, r8
 
-    if(core_reg.Flags.C == 0)
-        core_reg.PC += r8; // Relative jump
-    else
-        core_reg.PC += 2; // Next opcode
+#undef MACRO_JR_COND_r8
+
+//////////////////////
+//      Calls       //
+//////////////////////
+
+// Macro: CALL COND, a16
+// TODO Add 12 cycles in case of jump?
+#define MACRO_CALL_COND_a16(name, bit, state) \
+static void CALL_##name##_a16(void) \
+{ \
+    uint16_t a16 = mem_read_u16(core_reg.PC + 1); \
+    if (core_reg.Flags.bit == state) \
+    { \
+        mem_write_u16(core_reg.SP - 2, core_reg.PC); /* Save PC */ \
+        core_reg.PC = a16; /* Jump */ \
+        core_reg.SP -= 2; \
+    } \
+    else \
+        core_reg.PC += 3; /* Next opcode */ \
 }
 
-// JR C, r8
-static void JR_C_r8(void)
-{
-    // TODO Add 4 cycles in case of jump?
-    int8_t r8 = mem_read_s8(core_reg.PC + 1);
+MACRO_CALL_COND_a16(NZ, Z, 0);     // CALL NZ, a16
+MACRO_CALL_COND_a16(Z, Z, 1);      // CALL Z, a16
+MACRO_CALL_COND_a16(NC, C, 0);     // CALL NC, a16
+MACRO_CALL_COND_a16(C, C, 1);      // CALL C, a16
 
-    if(core_reg.Flags.C == 1)
-        core_reg.PC += r8; // Relative jump
-    else
-        core_reg.PC += 2; // Next opcode
+#undef MACRO_CALL_COND_a16
+
+// CALL a16
+static void CALL_a16(void) \
+{
+    uint16_t a16 = mem_read_u16(core_reg.PC + 1);
+    mem_write_u16(core_reg.SP - 2, core_reg.PC + 3);
+    core_reg.SP -= 2;
+    core_reg.PC = a16;
+}
+
+//////////////////////
+//     Restart      //
+//////////////////////
+
+// Macro: RST nnH
+#define MACRO_RST_nnH(nn) \
+static void RST_##nn##H(void) \
+{ \
+    mem_write_u16(core_reg.SP - 2, core_reg.PC); \
+    core_reg.SP -= 2; \
+    core_reg.PC = 0x##nn; \
+}
+
+MACRO_RST_nnH(00);    // RST 00H
+MACRO_RST_nnH(08);    // RST 08H
+MACRO_RST_nnH(10);    // RST 10H
+MACRO_RST_nnH(18);    // RST 18H
+MACRO_RST_nnH(20);    // RST 20H
+MACRO_RST_nnH(28);    // RST 28H
+MACRO_RST_nnH(30);    // RST 30H
+MACRO_RST_nnH(38);    // RST 38H
+
+#undef MACRO_RST_nnH
+
+
+//////////////////////
+//      Return      //
+//////////////////////
+
+// RET
+static void RET(void)
+{
+    core_reg.PC = mem_read_u16(core_reg.SP); /* Jump to SP */
+    core_reg.SP += 2;
+}
+
+// Macro: RET COND
+// TODO Add 12 cycles in case of jump?
+#define MACRO_RET_COND(name, bit, state) \
+static void RET_##name(void) \
+{ \
+    if (core_reg.Flags.bit == state) \
+    { \
+        core_reg.PC = mem_read_u16(core_reg.SP); /* Jump to SP */ \
+        core_reg.SP += 2; \
+    } \
+    else \
+        core_reg.PC += 2; /* Next opcode */ \
+}
+
+MACRO_RET_COND(NZ, Z, 0);     // RET NZ
+MACRO_RET_COND(Z, Z, 1);      // RET Z
+MACRO_RET_COND(NC, C, 0);     // RET NC
+MACRO_RET_COND(C, C, 1);      // RET C
+
+#undef MACRO_JR_COND_r8
+
+// RETI
+static void RETI(void)
+{
+    // TODO Enable interrupts
+    core_reg.PC = mem_read_u16(core_reg.SP);
+    core_reg.SP += 2;
 }
 
 struct opcode_t opcodeList[256] =
@@ -825,6 +1059,7 @@ struct opcode_t opcodeList[256] =
     {DEC_C,         1,    4,    true},      // 0x0D
     {LD_C_d8,       2,    8,    true},      // 0x0E
     {RRCA,			1,    4,    true},      // 0x0F
+    {STOP,			2,    4,    true},      // 0x10
     {LD_DE_d16,     3,    12,   true},    	// 0x11
     {LD_DE_A,       1,    8,    true},      // 0x12
     {INC_DE,        1,    8,    true},      // 0x13
@@ -832,7 +1067,7 @@ struct opcode_t opcodeList[256] =
     {DEC_D,         1,    4,    true},      // 0x15
     {LD_D_d8,       2,    8,    true},      // 0x16
     {RLA,           1,    4,    true},      // 0x17
-    {JR_n,          2,    12,   false},     // 0x18
+    {JR_r8,         2,    12,   false},     // 0x18
     {ADD_HL_DE,     1,    8,    true},      // 0x19
     {LD_A_DE,       1,    8,    true},      // 0x1A
     {DEC_DE,        1,    8,    true},      // 0x1B
@@ -928,9 +1163,7 @@ struct opcode_t opcodeList[256] =
     {LD_HL_E,       1,    8,    true},      // 0x73
     {LD_HL_H,       1,    8,    true},      // 0x74
     {LD_HL_L,       1,    8,    true},      // 0x75
-
-    {NULL,          1,    4,    true},      // 0x76 // TODO HALT
-
+    {HALT,          1,    4,    true},      // 0x76
     {LD_HL_A,       1,    8,    true},      // 0x77
     {LD_A_B,        1,    4,    true},      // 0x78
     {LD_A_C,        1,    4,    true},      // 0x79
@@ -1004,4 +1237,68 @@ struct opcode_t opcodeList[256] =
     {CP_A_L,        1,    4,    true},      // 0xBD
     {CP_A_HL,       1,    8,    true},      // 0xBE
     {CP_A_A,        1,    4,    true},      // 0xBF
+    {RET_NZ,        1,    8,    false},     // 0xC0
+    {POP_BC,        1,    12,   true},      // 0xC1
+    {JP_NZ_a16,     3,    12,   false},     // 0xC2
+    {JP_a16,        3,    16,   true},      // 0xC3
+    {CALL_NZ_a16,   3,    12,   false},     // 0xC4
+    {PUSH_BC,       1,    16,   true},      // 0xC5
+    {ADD_A_d8,      2,    8,    true},      // 0xC6
+    {RST_00H,       1,    16,   false},     // 0xC7
+    {RET_Z,         1,    8,    false},     // 0xC8
+    {RET,           1,    16,   false},     // 0xC9
+    {JP_Z_a16,      3,    12,   false},     // 0xCA
+    {PREFIX_CB,     1,    4,    true},      // 0xCB
+    {CALL_Z_a16,    3,    12,   false},     // 0xCC
+    {CALL_a16,      3,    24,   false},     // 0xCD
+    {ADC_A_d8,      2,    8,    true},      // 0xCE
+    {RST_08H,       1,    16,   false},     // 0xCF
+    {RET_NC,        1,    8,    false},     // 0xD0
+    {POP_DE,        1,    12,   true},      // 0xD1
+    {JP_NC_a16,     3,    12,   false},     // 0xD2
+    {NULL,          0,    0,    false},     // 0xD3
+    {CALL_NC_a16,   3,    12,   false},     // 0xD4
+    {PUSH_DE,       1,    16,   true},      // 0xD5
+    {SUB_A_d8,      2,    8,    true},      // 0xD6
+    {RST_10H,       1,    16,   false},     // 0xD7
+    {RET_C,         1,    8,    false},     // 0xD8
+    {RETI,          1,    16,   false},     // 0xD9
+    {JP_C_a16,      3,    12,   false},     // 0xDA
+    {NULL,          0,    0,    false},     // 0xDB
+    {CALL_C_a16,    3,    12,   false},     // 0xDC
+    {NULL,          0,    0,    false},     // 0xDD
+    {SBC_A_d8,      2,    8,    true},      // 0xDE
+    {RST_18H,       1,    16,   false},     // 0xDF
+    {LDH_a8_A,      2,    12,   true},      // 0xE0
+    {POP_HL,        1,    12,   true},      // 0xE1
+    {LD_pC_A,       2,    8,    true},      // 0xE2
+    {NULL,          0,    0,    false},     // 0xE3
+    {NULL,          0,    0,    false},     // 0xE4
+    {PUSH_HL,       1,    16,   true},      // 0xE5
+    {AND_A_d8,      2,    8,    true},      // 0xE6
+    {RST_20H,       1,    16,   false},     // 0xE7
+    {ADD_SP_r8,     2,    16,   true},      // 0xE8
+    {JP_HL,         1,    4,    false},     // 0xE9
+    {LD_a16_A,      3,    16,   true},      // 0xEA
+    {NULL,          0,    0,    false},     // 0xEB
+    {NULL,          0,    0,    false},     // 0xEC
+    {NULL,          0,    0,    false},     // 0xED
+    {XOR_A_d8,      2,    8,    true},      // 0xEE
+    {RST_28H,       1,    16,   false},     // 0xEF
+    {LDH_A_a8,      2,    12,   true},      // 0xF0
+    {POP_AF,        1,    12,   true},      // 0xF1
+    {LD_A_pC,       2,    8,    true},      // 0xF2
+    {DI,            1,    4,    true},      // 0xF3
+    {NULL,          0,    0,    false},     // 0xF4
+    {PUSH_AF,       1,    16,   true},      // 0xF5
+    {OR_A_d8,       2,    8,    true},      // 0xF6
+    {RST_30H,       1,    16,   false},     // 0xF7
+    {LD_HL_SP_r8,   2,    12,   true},      // 0xF8
+    {LD_SP_HL,      1,    8,    false},     // 0xF9
+    {LD_A_a16,      3,    16,   true},      // 0xFA
+    {EI,            1,    4,    true},      // 0xFB
+    {NULL,          0,    0,    false},     // 0xFC
+    {NULL,          0,    0,    false},     // 0xFD
+    {CP_A_d8,       2,    8,    true},      // 0xFE
+    {RST_38H,       1,    16,   false},     // 0xFF
 };
