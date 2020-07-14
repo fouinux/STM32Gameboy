@@ -14,13 +14,21 @@ struct core_reg_t core_reg;
 
 void core_execute(void)
 {
-	// Read opcode
-	uint8_t opcode = mem_read_u8(core_reg.PC);
+    static uint8_t cycleCounter = 1;
 
-    // Execute opcode
-	opcodeList[opcode].func();
+    cycleCounter--;
 
-	// Update PC
-	if (true == opcodeList[opcode].updatePC)
-		core_reg.PC += opcodeList[opcode].length;
+    if (0 == cycleCounter)
+    {
+        // Read opcode
+        uint8_t opcode = mem_read_u8(core_reg.PC);
+
+        // Execute opcode
+        cycleCounter = opcodeList[opcode].func();
+        cycleCounter >>= 2;
+
+        // Update PC
+        if (true == opcodeList[opcode].updatePC)
+            core_reg.PC += opcodeList[opcode].length;
+    }
 }

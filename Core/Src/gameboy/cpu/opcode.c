@@ -18,9 +18,10 @@
 
 // Macro: LD r1, r2
 #define MACRO_LD_r1_r2(r1, r2) \
-static void LD_##r1##_##r2(void) \
+static uint8_t LD_##r1##_##r2(void) \
 { \
     core_reg.r1 = core_reg.r2; \
+    return 4; \
 }
 
 MACRO_LD_r1_r2(B, B);    // LD B, B
@@ -83,9 +84,10 @@ MACRO_LD_r1_r2(A, A);    // LD A, A
 
 // Macro: LD r1, (HL)
 #define MACRO_LD_r1_HL(r1) \
-static void LD_##r1##_HL(void) \
+static uint8_t LD_##r1##_HL(void) \
 { \
     core_reg.r1 = mem_read_u8(core_reg.HL); \
+    return 8; \
 }
 
 MACRO_LD_r1_HL(B);        // LD B, (HL)
@@ -100,9 +102,10 @@ MACRO_LD_r1_HL(A);        // LD A, (HL)
 
 // Macro: LD (HL), r1
 #define MACRO_LD_HL_r1(r1) \
-static void LD_HL_##r1(void) \
+static uint8_t LD_HL_##r1(void) \
 { \
     mem_write_u8(core_reg.HL, core_reg.r1); \
+    return 8; \
 }
 
 MACRO_LD_HL_r1(B);        // LD (HL), B
@@ -117,9 +120,10 @@ MACRO_LD_HL_r1(A);        // LD (HL), A
 
 // Macro: LD (HL), r1
 #define MACRO_LD_r1_d8(r1) \
-static void LD_##r1##_d8(void) \
+static uint8_t LD_##r1##_d8(void) \
 { \
     core_reg.r1 = mem_read_u8(core_reg.PC + 1); \
+    return 8; \
 }
 
 MACRO_LD_r1_d8(B);        // LD B, d8
@@ -133,16 +137,18 @@ MACRO_LD_r1_d8(A);        // LD A, d8
 #undef MACRO_LD_r1_d8
 
 // LD (HL), d8
-static void LD_HL_d8(void)
+static uint8_t LD_HL_d8(void)
 {
     mem_write_u8(core_reg.HL, mem_read_u8(core_reg.PC + 1));
+    return 12;
 }
 
 // Macro: LD (r1), A
 #define MACRO_LD_r1_A(r1) \
-static void LD_##r1##_A(void) \
+static uint8_t LD_##r1##_A(void) \
 { \
     mem_write_u8(core_reg.r1, core_reg.A); \
+    return 8; \
 }
 
 MACRO_LD_r1_A(BC);        // LD (BC), A
@@ -151,22 +157,25 @@ MACRO_LD_r1_A(DE);        // LD (DE), A
 #undef MACRO_LD_r1_A
 
 // LD (HL+), A
-static void LD_HLp_A(void)
+static uint8_t LD_HLp_A(void)
 {
     mem_write_u8(core_reg.HL++, core_reg.A);
+    return 8;
 }
 
 // LD (HL-), A
-static void LD_HLm_A(void)
+static uint8_t LD_HLm_A(void)
 {
     mem_write_u8(core_reg.HL--, core_reg.A);
+    return 8;
 }
 
 // Macro: LD (r1), A
 #define MACRO_LD_A_r1(r1) \
-static void LD_A_##r1(void) \
+static uint8_t LD_A_##r1(void) \
 { \
     core_reg.A = mem_read_u8(core_reg.r1); \
+    return 8; \
 }
 
 MACRO_LD_A_r1(BC);        // LD A, (BC)
@@ -175,55 +184,63 @@ MACRO_LD_A_r1(DE);        // LD A, (DE)
 #undef MACRO_LD_A_r1
 
 // LD A, (HL+)
-static void LD_A_HLp(void)
+static uint8_t LD_A_HLp(void)
 {
     core_reg.A = mem_read_u8(core_reg.HL++);
+    return 8;
 }
 
 // LD A, (HL-)
-static void LD_A_HLm(void)
+static uint8_t LD_A_HLm(void)
 {
     core_reg.A = mem_read_u8(core_reg.HL--);
+    return 8;
 }
 
 // LDH (a8), A
-static void LDH_a8_A(void)
+static uint8_t LDH_a8_A(void)
 {
     uint8_t a8 = mem_read_u8(core_reg.PC + 1);
     mem_write_u8(0xFF00 + a8, core_reg.A);
+    return 12; \
 }
 
 // LDH A, (a8)
-static void LDH_A_a8(void)
+static uint8_t LDH_A_a8(void)
 {
     uint8_t a8 = mem_read_u8(core_reg.PC + 1);
     core_reg.A = mem_read_u8(0xFF00 + a8);
+    return 12;
 }
 
 // LD (C), A
-static void LD_pC_A(void)
+static uint8_t LD_pC_A(void)
 {
     mem_write_u8(0xFF00 + core_reg.C, core_reg.A);
+    return 8;
 }
 
 // LD A, (C)
-static void LD_A_pC(void)
+static uint8_t LD_A_pC(void)
 {
     core_reg.A = mem_read_u8(0xFF00 + core_reg.C);
+    return 8;
 }
 
 // LD (a16), A
-static void LD_a16_A(void)
+static uint8_t LD_a16_A(void)
 {
     uint16_t a16 = mem_read_u16(core_reg.PC + 1);
     mem_write_u8(a16, core_reg.A);
+    return 16;
 }
 
 // LD A, (a16)
-static void LD_A_a16(void)
+static uint8_t LD_A_a16(void)
 {
     uint16_t a16 = mem_read_u16(core_reg.PC + 1);
     core_reg.A = mem_read_u8(a16);
+    return 16;
 }
 
 //////////////////////
@@ -232,9 +249,10 @@ static void LD_A_a16(void)
 
 // Macro: LD r1, d16
 #define MACRO_LD_r1_d16(r1) \
-static void LD_##r1##_d16(void) \
+static uint8_t LD_##r1##_d16(void) \
 { \
     core_reg.r1 = mem_read_u16(core_reg.PC + 1); \
+    return 12; \
 }
 
 MACRO_LD_r1_d16(BC);        // LD BC, d16
@@ -245,36 +263,44 @@ MACRO_LD_r1_d16(SP);        // LD SP, d16
 #undef MACRO_LD_r1_d16
 
 // LD (a16), SP
-void LD_a16_SP(void)
+static uint8_t LD_a16_SP(void)
 {
     uint16_t a16 = mem_read_u16(core_reg.PC + 1);
 
     mem_write_u16(a16, core_reg.SP);
+    return 20;
 }
 
 // LD HL, SP+r8
-void LD_HL_SP_r8(void)
+static uint8_t LD_HL_SP_r8(void)
 {
     int8_t r8 = mem_read_s8(core_reg.PC + 1);
 
     core_reg.HL = core_reg.SP + r8;
     core_reg.F = 0;
-    core_reg.Flags.H = ((core_reg.SP & 0x0F) + (r8 & 0x0F) > 0x0F);
-    core_reg.Flags.C = ((core_reg.SP & 0xFF) + ((uint16_t) r8 & 0xFF) > 0xFF);
+    if ((core_reg.SP & 0x0F) + (r8 & 0x0F) > 0x0F)
+        core_reg.Flags.H = 1;
+
+    if ((core_reg.SP & 0xFF) + ((uint16_t) r8 & 0xFF) > 0xFF)
+        core_reg.Flags.C = 1;
+
+    return 12;
 }
 
 // LD SP, HL
-void LD_SP_HL(void)
+static uint8_t LD_SP_HL(void)
 {
     core_reg.SP = core_reg.HL;
+    return 8;
 }
 
 // Macro: PUSH r1
 #define MACRO_PUSH_r1(r1) \
-static void PUSH_##r1(void) \
+static uint8_t PUSH_##r1(void) \
 { \
     mem_write_u16(core_reg.SP - 2, core_reg.r1); \
     core_reg.SP -= 2; \
+    return 16; \
 }
 
 MACRO_PUSH_r1(BC);     // PUSH BC
@@ -286,10 +312,11 @@ MACRO_PUSH_r1(AF);     // PUSH AF
 
 // Macro: POP r1
 #define MACRO_POP_r1(r1) \
-static void POP_##r1(void) \
+static uint8_t POP_##r1(void) \
 { \
     core_reg.r1 = mem_read_u16(core_reg.SP); \
     core_reg.SP += 2; \
+    return 12; \
 }
 
 MACRO_POP_r1(BC);     // POP BC
@@ -305,7 +332,7 @@ MACRO_POP_r1(AF);     // POP AF
 
 // Macro: ADD A, r1
 #define MACRO_ADD_A_r1(r1) \
-static void ADD_A_##r1(void) \
+static uint8_t ADD_A_##r1(void) \
 { \
     uint16_t t = core_reg.A + core_reg.r1; \
     core_reg.F = 0; \
@@ -313,6 +340,7 @@ static void ADD_A_##r1(void) \
     core_reg.Flags.H = ((core_reg.A & 0xF) + (core_reg.r1 & 0xF) > 0xF); \
     core_reg.Flags.C = (t > 0xFF); \
     core_reg.A = t & 0xFF; \
+    return 4; \
 }
 
 MACRO_ADD_A_r1(B);    // ADD A, B
@@ -326,7 +354,7 @@ MACRO_ADD_A_r1(A);    // ADD A, A
 #undef MACRO_ADD_A_r1
 
 // ADD A, (HL)
-static void ADD_A_HL(void)
+static uint8_t ADD_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     uint16_t t = core_reg.A + reg;
@@ -335,10 +363,11 @@ static void ADD_A_HL(void)
     core_reg.Flags.H = ((core_reg.A & 0xF) + (reg & 0xF) > 0xF);
     core_reg.Flags.C = (t > 0xFF);
     core_reg.A = t & 0xFF;
+    return 8;
 }
 
 // ADD A, d8
-static void ADD_A_d8(void)
+static uint8_t ADD_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.PC + 1);
     uint16_t t = core_reg.A + d8;
@@ -347,11 +376,12 @@ static void ADD_A_d8(void)
     core_reg.Flags.H = ((core_reg.A & 0xF) + (d8 & 0xF) > 0xF);
     core_reg.Flags.C = (t > 0xFF);
     core_reg.A = t & 0xFF;
+    return 8;
 }
 
 // Macro: ADC A, r1
 #define MACRO_ADC_A_r1(r1) \
-static void ADC_A_##r1(void) \
+static uint8_t ADC_A_##r1(void) \
 { \
     uint16_t t = core_reg.A + core_reg.r1 + core_reg.Flags.C; \
     core_reg.F = 0; \
@@ -359,6 +389,7 @@ static void ADC_A_##r1(void) \
     core_reg.Flags.H = ((core_reg.A & 0xF) + (core_reg.r1 & 0xF) > 0xF); \
     core_reg.Flags.C = (t > 0xFF); \
     core_reg.A = t & 0xFF; \
+    return 4; \
 }
 
 MACRO_ADC_A_r1(B);    // ADC A, B
@@ -372,7 +403,7 @@ MACRO_ADC_A_r1(A);    // ADC A, A
 #undef MACRO_ADC_A_r1
 
 // ADC A, (HL)
-static void ADC_A_HL(void)
+static uint8_t ADC_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     uint16_t t = core_reg.A + reg +  core_reg.Flags.C;
@@ -381,10 +412,11 @@ static void ADC_A_HL(void)
     core_reg.Flags.H = ((core_reg.A & 0xF) + (reg & 0xF) > 0xF);
     core_reg.Flags.C = (t > 0xFF);
     core_reg.A = t & 0xFF;
+    return 8;
 }
 
 // ADC A, d8
-static void ADC_A_d8(void)
+static uint8_t ADC_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.PC + 1);
     uint16_t t = core_reg.A + d8 +  core_reg.Flags.C;
@@ -393,11 +425,12 @@ static void ADC_A_d8(void)
     core_reg.Flags.H = ((core_reg.A & 0xF) + (d8 & 0xF) > 0xF);
     core_reg.Flags.C = (t > 0xFF);
     core_reg.A = t & 0xFF;
+    return 8;
 }
 
 // Macro: SUB A, r1
 #define MACRO_SUB_A_r1(r1) \
-static void SUB_A_##r1(void) \
+static uint8_t SUB_A_##r1(void) \
 { \
     int16_t t = core_reg.A - core_reg.r1; \
     core_reg.F = 0x40; \
@@ -405,6 +438,7 @@ static void SUB_A_##r1(void) \
     core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) core_reg.r1 & 0xF) < 0); \
     core_reg.Flags.C = (t < 0); \
     core_reg.A = t & 0xFF; \
+    return 4; \
 }
 
 MACRO_SUB_A_r1(B);    // SUB A, B
@@ -418,7 +452,7 @@ MACRO_SUB_A_r1(A);    // SUB A, A
 #undef MACRO_SUB_A_r1
 
 // SUB A, (HL)
-static void SUB_A_HL(void)
+static uint8_t SUB_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     int16_t t = core_reg.A - reg;
@@ -427,10 +461,11 @@ static void SUB_A_HL(void)
     core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) reg & 0xF) < 0);
     core_reg.Flags.C = (t < 0);
     core_reg.A = t & 0xFF;
+    return 8;
 }
 
 // SUB A, d8
-static void SUB_A_d8(void)
+static uint8_t SUB_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.PC + 1);
     int16_t t = core_reg.A - d8;
@@ -439,12 +474,13 @@ static void SUB_A_d8(void)
     core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) d8 & 0xF) < 0);
     core_reg.Flags.C = (t < 0);
     core_reg.A = t & 0xFF;
+    return 8;
 }
 
 
 // Macro: SBC A, r1
 #define MACRO_SBC_A_r1(r1) \
-static void SBC_A_##r1(void) \
+static uint8_t SBC_A_##r1(void) \
 { \
     int16_t t = core_reg.A - core_reg.r1 - core_reg.Flags.C; \
     core_reg.F = 0x40; \
@@ -452,6 +488,7 @@ static void SBC_A_##r1(void) \
     core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) core_reg.r1 & 0xF) < 0); \
     core_reg.Flags.C = (t < 0); \
     core_reg.A = t & 0xFF; \
+    return 4; \
 }
 
 MACRO_SBC_A_r1(B);    // SBC A, B
@@ -465,7 +502,7 @@ MACRO_SBC_A_r1(A);    // SBC A, A
 #undef MACRO_SBC_A_r1
 
 // SBC A, (HL)
-static void SBC_A_HL(void)
+static uint8_t SBC_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     int16_t t = core_reg.A - reg - core_reg.Flags.C;
@@ -474,10 +511,11 @@ static void SBC_A_HL(void)
     core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) reg & 0xF) < 0);
     core_reg.Flags.C = (t < 0);
     core_reg.A = t & 0xFF;
+    return 8;
 }
 
 // SBC A, d8
-static void SBC_A_d8(void)
+static uint8_t SBC_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.PC + 1);
     int16_t t = core_reg.A - d8 - core_reg.Flags.C;
@@ -486,15 +524,17 @@ static void SBC_A_d8(void)
     core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) d8 & 0xF) < 0);
     core_reg.Flags.C = (t < 0);
     core_reg.A = t & 0xFF;
+    return 8;
 }
 
 // Macro: AND A, r1
 #define MACRO_AND_A_r1(r1) \
-static void AND_A_##r1(void) \
+static uint8_t AND_A_##r1(void) \
 { \
     core_reg.A &= core_reg.r1; \
     core_reg.F = 0x20; /* N = 0, H = 1, C = 0 */ \
     core_reg.Flags.Z = (core_reg.A == 0);\
+    return 4; \
 }
 
 MACRO_AND_A_r1(B);    // AND A, B
@@ -508,31 +548,34 @@ MACRO_AND_A_r1(A);    // AND A, A
 #undef MACRO_AND_A_r1
 
 // AND A, (HL)
-static void AND_A_HL(void)
+static uint8_t AND_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     core_reg.A &= reg;
     core_reg.F = 0x20; /* N = 0, H = 1, C = 0 */
     core_reg.Flags.Z = (core_reg.A == 0);
+    return 8;
 }
 
 // AND A, d8
-static void AND_A_d8(void)
+static uint8_t AND_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.PC + 1);
     core_reg.A &= d8;
     core_reg.F = 0x20; /* N = 0, H = 1, C = 0 */
     core_reg.Flags.Z = (core_reg.A == 0);
+    return 8;
 }
 
 
 // Macro: XOR A, r1
 #define MACRO_XOR_A_r1(r1) \
-static void XOR_A_##r1(void) \
+static uint8_t XOR_A_##r1(void) \
 { \
     core_reg.A ^= core_reg.r1; \
     core_reg.F = 0x00; /* N = 0, H = 0, C = 0 */ \
     core_reg.Flags.Z = (core_reg.A == 0);\
+    return 4; \
 }
 
 MACRO_XOR_A_r1(B);    // XOR A, B
@@ -546,30 +589,33 @@ MACRO_XOR_A_r1(A);    // XOR A, A
 #undef MACRO_XOR_A_r1
 
 // XOR A, (HL)
-static void XOR_A_HL(void)
+static uint8_t XOR_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     core_reg.A ^= reg;
     core_reg.F = 0x00; /* N = 0, H = 0, C = 0 */
     core_reg.Flags.Z = (core_reg.A == 0);
+    return 8;
 }
 
 // XOR A, d8
-static void XOR_A_d8(void)
+static uint8_t XOR_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.PC + 1);
     core_reg.A ^= d8;
     core_reg.F = 0x00; /* N = 0, H = 0, C = 0 */
     core_reg.Flags.Z = (core_reg.A == 0);
+    return 8;
 }
 
 // Macro: OR A, r1
 #define MACRO_OR_A_r1(r1) \
-static void OR_A_##r1(void) \
+static uint8_t OR_A_##r1(void) \
 { \
     core_reg.A |= core_reg.r1; \
     core_reg.F = 0x00; /* N = 0, H = 0, C = 0 */ \
-    core_reg.Flags.Z = (core_reg.A == 0);\
+    core_reg.Flags.Z = (core_reg.A == 0); \
+    return 4; \
 }
 
 MACRO_OR_A_r1(B);    // OR A, B
@@ -583,32 +629,35 @@ MACRO_OR_A_r1(A);    // OR A, A
 #undef MACRO_OR_A_r1
 
 // OR A, (HL)
-static void OR_A_HL(void)
+static uint8_t OR_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     core_reg.A |= reg;
     core_reg.F = 0x00; /* N = 0, H = 0, C = 0 */
     core_reg.Flags.Z = (core_reg.A == 0);
+    return 8;
 }
 
 // OR A, d8
-static void OR_A_d8(void)
+static uint8_t OR_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.PC + 1);
     core_reg.A |= d8;
     core_reg.F = 0x00; /* N = 0, H = 0, C = 0 */
     core_reg.Flags.Z = (core_reg.A == 0);
+    return 8;
 }
 
 // Macro: CP A, r1
 #define MACRO_CP_A_r1(r1) \
-static void CP_A_##r1(void) \
+static uint8_t CP_A_##r1(void) \
 { \
     int16_t t = core_reg.A - core_reg.r1; \
     core_reg.F = 0x40; /* N = 1 */ \
-    core_reg.Flags.Z = ((t & 0xFF) == 0);\
+    core_reg.Flags.Z = ((t & 0xFF) == 0); \
     core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) core_reg.r1 & 0xF) < 0); \
     core_reg.Flags.C = (t < 0); \
+    return 4; \
 }
 
 MACRO_CP_A_r1(B);    // CP A, B
@@ -622,7 +671,7 @@ MACRO_CP_A_r1(A);    // CP A, A
 #undef MACRO_CP_A_r1
 
 // CP A, (HL)
-static void CP_A_HL(void)
+static uint8_t CP_A_HL(void)
 {
     uint8_t reg = mem_read_u8(core_reg.HL);
     int16_t t = core_reg.A - reg;
@@ -630,10 +679,11 @@ static void CP_A_HL(void)
     core_reg.Flags.Z = ((t & 0xFF) == 0);
     core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) reg & 0xF) < 0);
     core_reg.Flags.C = (t < 0);
+    return 8;
 }
 
 // CP A, d8
-static void CP_A_d8(void)
+static uint8_t CP_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(core_reg.HL);
     int16_t t = core_reg.A - d8;
@@ -641,16 +691,18 @@ static void CP_A_d8(void)
     core_reg.Flags.Z = ((t & 0xFF) == 0);
     core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) d8 & 0xF) < 0);
     core_reg.Flags.C = (t < 0);
+    return 8;
 }
 
 // Macro: INC r1
 #define MACRO_INC_r1(r1) \
-static void INC_##r1(void) \
+static uint8_t INC_##r1(void) \
 { \
     core_reg.r1++; \
     core_reg.Flags.Z = (core_reg.r1 == 0x00); \
     core_reg.Flags.N = 0; \
     core_reg.Flags.H = ((core_reg.r1 & 0x0F) == 0x00); \
+    return 4; \
 }
 
 MACRO_INC_r1(B);    // INC B
@@ -664,7 +716,7 @@ MACRO_INC_r1(A);    // INC A
 #undef MACRO_INC_r1
 
 // INC (HL)
-static void INC_pHL(void)
+static uint8_t INC_pHL(void)
 {
     uint8_t t = mem_read_u8(core_reg.HL);
 
@@ -674,16 +726,18 @@ static void INC_pHL(void)
     core_reg.Flags.H = ((t & 0x0F) == 0x00);
 
     mem_write_u8(core_reg.HL, t);
+    return 12;
 }
 
 // Macro: DEC r1
 #define MACRO_DEC_r1(r1) \
-static void DEC_##r1(void) \
+static uint8_t DEC_##r1(void) \
 { \
     core_reg.r1--; \
     core_reg.Flags.Z = (core_reg.r1 == 0x00); \
     core_reg.Flags.N = 1; \
     core_reg.Flags.H = ((core_reg.r1 & 0x0F) == 0x0F); \
+    return 4; \
 }
 
 MACRO_DEC_r1(B);    // DEC B
@@ -697,7 +751,7 @@ MACRO_DEC_r1(A);    // DEC A
 #undef MACRO_DEC_r1
 
 // DEC (HL)
-static void DEC_pHL(void)
+static uint8_t DEC_pHL(void)
 {
     uint8_t t = mem_read_u8(core_reg.HL);
 
@@ -707,6 +761,7 @@ static void DEC_pHL(void)
     core_reg.Flags.H = ((t & 0x0F) == 0x0F);
 
     mem_write_u8(core_reg.HL, t);
+    return 12;
 }
 
 //////////////////////
@@ -715,9 +770,10 @@ static void DEC_pHL(void)
 
 // Macro: INC r1
 #define MACRO_INC_r1(r1) \
-static void INC_##r1(void) \
+static uint8_t INC_##r1(void) \
 { \
     core_reg.r1++; \
+    return 8; \
 }
 
 MACRO_INC_r1(BC);    // INC BC
@@ -729,9 +785,10 @@ MACRO_INC_r1(SP);    // INC SP
 
 // Macro: DEC r1
 #define MACRO_DEC_r1(r1) \
-static void DEC_##r1(void) \
+static uint8_t DEC_##r1(void) \
 { \
     core_reg.r1--; \
+    return 8; \
 }
 
 MACRO_DEC_r1(BC);    // DEC BC
@@ -743,7 +800,7 @@ MACRO_DEC_r1(SP);    // DEC SP
 
 // Macro: ADD HL r1
 #define MACRO_ADD_HL_r1(r1) \
-static void ADD_HL_##r1(void) \
+static uint8_t ADD_HL_##r1(void) \
 { \
     uint32_t result = (uint32_t) core_reg.HL + (uint32_t) core_reg.r1; \
  \
@@ -754,6 +811,7 @@ static void ADD_HL_##r1(void) \
         core_reg.Flags.H = 1; \
  \
     core_reg.HL = result & 0xFFFF; \
+    return 8; \
 }
 
 MACRO_ADD_HL_r1(BC);    // ADD HL, BC
@@ -763,7 +821,8 @@ MACRO_ADD_HL_r1(SP);    // ADD HL, SP
 
 #undef MACRO_ADD_HL_r1
 
-static void ADD_SP_r8(void)
+// ADD SP, r8
+static uint8_t ADD_SP_r8(void)
 {
     int8_t r8 = mem_read_s8(core_reg.PC + 1);
 
@@ -775,6 +834,7 @@ static void ADD_SP_r8(void)
         core_reg.Flags.C = 1;
 
     core_reg.SP += r8;
+    return 16;
 }
 
 //////////////////////
@@ -782,62 +842,69 @@ static void ADD_SP_r8(void)
 //////////////////////
 
 // Complement A register - CPL
-static void CPL(void)
+static uint8_t CPL(void)
 {
     core_reg.F |= 0x90; // Set N & H
     core_reg.A ^= 0xFF;
+    return 4;
 }
 
 // Complement Carry Flag - CCF
-static void CCF(void)
+static uint8_t CCF(void)
 {
     core_reg.F &= 0x90; // Reset N & H
     core_reg.Flags.C = !core_reg.Flags.C;
+    return 4;
 }
 
 // Set Carry Flag - SCF
-static void SCF(void)
+static uint8_t SCF(void)
 {
     core_reg.F &= 0x90; // Reset N & H
     core_reg.Flags.C = 1;
+    return 4;
 }
 
 // NOP
-static void NOP(void)
+static uint8_t NOP(void)
 {
     // Do nothing for one cycle
+    return 4;
 }
 
 // HALT
-static void HALT(void)
+static uint8_t HALT(void)
 {
     // TODO Halt
+    return 4;
 }
 
 // STOP
-static void STOP(void)
+static uint8_t STOP(void)
 {
     // TODO Stop
+    return 4;
 }
 
 // DI
-static void DI(void)
+static uint8_t DI(void)
 {
     // TODO Disable interrupts
+    return 4;
 }
 
 // EI
-static void EI(void)
+static uint8_t EI(void)
 {
     // TODO Enable interrupts
+    return 4;
 }
 
 // PREFIX CB
-static void PREFIX_CB(void)
+static uint8_t PREFIX_CB(void)
 {
     uint8_t opcode = mem_read_u8(core_reg.PC + 1);
-
-    opcodeCbList[opcode].func();
+    return 4;
 }
 
 //////////////////////
@@ -845,38 +912,42 @@ static void PREFIX_CB(void)
 //////////////////////
 
 // Rotate A Left
-static void RLCA(void)
+static uint8_t RLCA(void)
 {
     core_reg.A = (core_reg.A << 1) | (core_reg.A >> 7);
     core_reg.F = 0x00;
     core_reg.Flags.C = core_reg.A & 0x01;
+    return 4;
 }
 
 // Rotate A Left through Carry flag
-static void RLA(void)
+static uint8_t RLA(void)
 {
     uint16_t t = (core_reg.A << 1) | core_reg.Flags.C;
     core_reg.A = t & 0xFF;
     core_reg.F = 0x00;
     core_reg.Flags.C = (t > 0xFF);
+    return 4;
 }
 
 // Rotate A Right
-static void RRCA(void)
+static uint8_t RRCA(void)
 {
-    core_reg.F = 0x00; \
-    core_reg.Flags.C = core_reg.A & 0x01; \
-    core_reg.Flags.Z = (core_reg.A == 0); \
-    core_reg.A = (core_reg.A >> 1) | (core_reg.A << 7); \
+    core_reg.F = 0x00;
+    core_reg.Flags.C = core_reg.A & 0x01;
+    core_reg.Flags.Z = (core_reg.A == 0);
+    core_reg.A = (core_reg.A >> 1) | (core_reg.A << 7);
+    return 4;
 }
 
 // Rotate A Right through Carry flag
-static void RRA(void)
+static uint8_t RRA(void)
 {
     uint8_t t = (core_reg.A >> 1) | (core_reg.Flags.C << 7);
     core_reg.F = 0x00;
     core_reg.Flags.C = core_reg.A & 0x01;
     core_reg.A = t;
+    return 4;
 }
 
 //////////////////////
@@ -884,53 +955,66 @@ static void RRA(void)
 //////////////////////
 
 // JP a16
-static void JP_a16(void)
+static uint8_t JP_a16(void)
 {
     core_reg.PC = mem_read_u16(core_reg.PC + 1);
+    return 16;
 }
 
 // JP (HL)
-static void JP_HL(void)
+static uint8_t JP_HL(void)
 {
     core_reg.PC = mem_read_u16(core_reg.HL);
+    return 4; // TODO Wrong value ?
 }
 
 // JR r8
-static void JR_r8(void)
+static uint8_t JR_r8(void)
 {
     int8_t r8 = mem_read_s8(core_reg.PC + 1);
     core_reg.PC += r8;
+    return 12;
 }
 
-// Macro: JP COND a16
-// TODO Add 4 cycles in case of jump?
+// Macro: JP COND, a16
 #define MACRO_JP_COND_a16(name, bit, state) \
-static void JP_##name##_a16(void) \
+static uint8_t JP_##name##_a16(void) \
 { \
     uint16_t a16 = mem_read_u16(core_reg.PC + 1); \
     if (core_reg.Flags.bit == state) \
+    { \
         core_reg.PC = a16; /* Jump */ \
+        return 16; \
+    } \
     else \
+    { \
         core_reg.PC += 3; /* Next opcode */ \
+        return 12; \
+    } \
 }
 
-MACRO_JP_COND_a16(NZ, Z, 0);    // JP NZ, r8
-MACRO_JP_COND_a16(Z, Z, 1);     // JP Z, r8
-MACRO_JP_COND_a16(NC, C, 0);    // JP NC, r8
-MACRO_JP_COND_a16(C, C, 1);     // JP C, r8
+MACRO_JP_COND_a16(NZ, Z, 0);    // JP NZ, a16
+MACRO_JP_COND_a16(Z, Z, 1);     // JP Z, a16
+MACRO_JP_COND_a16(NC, C, 0);    // JP NC, a16
+MACRO_JP_COND_a16(C, C, 1);     // JP C, a16
 
 #undef MACRO_JP_COND_a16
 
 // Macro: JR COND r8
-// TODO Add 4 cycles in case of jump?
 #define MACRO_JR_COND_r8(name, bit, state) \
-static void JR_##name##_r8(void) \
+static uint8_t JR_##name##_r8(void) \
 { \
     int8_t r8 = mem_read_s8(core_reg.PC + 1); \
     if (core_reg.Flags.bit == state) \
+    { \
         core_reg.PC += r8; /* Relative jump */ \
+        return 12; \
+    } \
     else \
+    { \
         core_reg.PC += 2; /* Next opcode */ \
+        return 8; \
+    } \
 }
 
 MACRO_JR_COND_r8(NZ, Z, 0);     // JR NZ, r8
@@ -945,9 +1029,8 @@ MACRO_JR_COND_r8(C, C, 1);      // JR C, r8
 //////////////////////
 
 // Macro: CALL COND, a16
-// TODO Add 12 cycles in case of jump?
 #define MACRO_CALL_COND_a16(name, bit, state) \
-static void CALL_##name##_a16(void) \
+static uint8_t CALL_##name##_a16(void) \
 { \
     uint16_t a16 = mem_read_u16(core_reg.PC + 1); \
     if (core_reg.Flags.bit == state) \
@@ -955,9 +1038,13 @@ static void CALL_##name##_a16(void) \
         mem_write_u16(core_reg.SP - 2, core_reg.PC); /* Save PC */ \
         core_reg.PC = a16; /* Jump */ \
         core_reg.SP -= 2; \
+        return 24; \
     } \
     else \
+    { \
         core_reg.PC += 3; /* Next opcode */ \
+        return 12; \
+    } \
 }
 
 MACRO_CALL_COND_a16(NZ, Z, 0);     // CALL NZ, a16
@@ -968,12 +1055,13 @@ MACRO_CALL_COND_a16(C, C, 1);      // CALL C, a16
 #undef MACRO_CALL_COND_a16
 
 // CALL a16
-static void CALL_a16(void) \
+static uint8_t CALL_a16(void) \
 {
     uint16_t a16 = mem_read_u16(core_reg.PC + 1);
     mem_write_u16(core_reg.SP - 2, core_reg.PC + 3);
     core_reg.SP -= 2;
     core_reg.PC = a16;
+    return 24;
 }
 
 //////////////////////
@@ -982,11 +1070,12 @@ static void CALL_a16(void) \
 
 // Macro: RST nnH
 #define MACRO_RST_nnH(nn) \
-static void RST_##nn##H(void) \
+static uint8_t RST_##nn##H(void) \
 { \
     mem_write_u16(core_reg.SP - 2, core_reg.PC); \
     core_reg.SP -= 2; \
     core_reg.PC = 0x##nn; \
+    return 16; \
 }
 
 MACRO_RST_nnH(00);    // RST 00H
@@ -1006,24 +1095,28 @@ MACRO_RST_nnH(38);    // RST 38H
 //////////////////////
 
 // RET
-static void RET(void)
+static uint8_t RET(void)
 {
     core_reg.PC = mem_read_u16(core_reg.SP); /* Jump to SP */
     core_reg.SP += 2;
+    return 16;
 }
 
 // Macro: RET COND
-// TODO Add 12 cycles in case of jump?
 #define MACRO_RET_COND(name, bit, state) \
-static void RET_##name(void) \
+static uint8_t RET_##name(void) \
 { \
     if (core_reg.Flags.bit == state) \
     { \
         core_reg.PC = mem_read_u16(core_reg.SP); /* Jump to SP */ \
         core_reg.SP += 2; \
+        return 20; \
     } \
     else \
+    { \
         core_reg.PC += 2; /* Next opcode */ \
+        return 8; \
+    } \
 }
 
 MACRO_RET_COND(NZ, Z, 0);     // RET NZ
@@ -1034,271 +1127,272 @@ MACRO_RET_COND(C, C, 1);      // RET C
 #undef MACRO_JR_COND_r8
 
 // RETI
-static void RETI(void)
+static uint8_t RETI(void)
 {
     // TODO Enable interrupts
     core_reg.PC = mem_read_u16(core_reg.SP);
     core_reg.SP += 2;
+    return 16;
 }
 
 struct opcode_t opcodeList[256] =
 {
-    {NOP,           1,    4,    true},      // 0x00
-    {LD_BC_d16,     3,    12,   true},      // 0x01
-    {LD_BC_A,       1,    8,    true},      // 0x02
-    {INC_BC,        1,    8,    true},      // 0x03
-    {INC_B,         1,    4,    true},      // 0x04
-    {DEC_B,         1,    4,    true},      // 0x05
-    {LD_B_d8,       2,    8,    true},      // 0x06
-    {RLCA,          1,    4,    true},      // 0x07
-    {LD_a16_SP,     3,    20,   true},      // 0x08
-    {ADD_HL_BC,     1,    8,    true},      // 0x09
-    {LD_A_BC,       1,    8,    true},      // 0x0A
-    {DEC_BC,        1,    8,    true},      // 0x0B
-    {INC_C,         1,    4,    true},      // 0x0C
-    {DEC_C,         1,    4,    true},      // 0x0D
-    {LD_C_d8,       2,    8,    true},      // 0x0E
-    {RRCA,          1,    4,    true},      // 0x0F
-    {STOP,          2,    4,    true},      // 0x10
-    {LD_DE_d16,     3,    12,   true},      // 0x11
-    {LD_DE_A,       1,    8,    true},      // 0x12
-    {INC_DE,        1,    8,    true},      // 0x13
-    {INC_D,         1,    4,    true},      // 0x14
-    {DEC_D,         1,    4,    true},      // 0x15
-    {LD_D_d8,       2,    8,    true},      // 0x16
-    {RLA,           1,    4,    true},      // 0x17
-    {JR_r8,         2,    12,   false},     // 0x18
-    {ADD_HL_DE,     1,    8,    true},      // 0x19
-    {LD_A_DE,       1,    8,    true},      // 0x1A
-    {DEC_DE,        1,    8,    true},      // 0x1B
-    {INC_E,         1,    4,    true},      // 0x1C
-    {DEC_E,         1,    4,    true},      // 0x1D
-    {LD_E_d8,       2,    8,    true},      // 0x1E
-    {RRA,           1,    4,    true},      // 0x1F
-    {JR_NZ_r8,      2,    8,    false},     // 0x20
-    {LD_HL_d16,     3,    12,   true},      // 0x21
-    {LD_HLp_A,      1,    8,    true},      // 0x22
-    {INC_HL,        1,    8,    true},      // 0x23
-    {INC_H,         1,    4,    true},      // 0x24
-    {DEC_H,         1,    4,    true},      // 0x25
-    {LD_H_d8,       2,    8,    true},      // 0x26
+    {NOP,           1,      true},      // 0x00
+    {LD_BC_d16,     3,      true},      // 0x01
+    {LD_BC_A,       1,      true},      // 0x02
+    {INC_BC,        1,      true},      // 0x03
+    {INC_B,         1,      true},      // 0x04
+    {DEC_B,         1,      true},      // 0x05
+    {LD_B_d8,       2,      true},      // 0x06
+    {RLCA,          1,      true},      // 0x07
+    {LD_a16_SP,     3,      true},      // 0x08
+    {ADD_HL_BC,     1,      true},      // 0x09
+    {LD_A_BC,       1,      true},      // 0x0A
+    {DEC_BC,        1,      true},      // 0x0B
+    {INC_C,         1,      true},      // 0x0C
+    {DEC_C,         1,      true},      // 0x0D
+    {LD_C_d8,       2,      true},      // 0x0E
+    {RRCA,          1,      true},      // 0x0F
+    {STOP,          2,      true},      // 0x10
+    {LD_DE_d16,     3,      true},      // 0x11
+    {LD_DE_A,       1,      true},      // 0x12
+    {INC_DE,        1,      true},      // 0x13
+    {INC_D,         1,      true},      // 0x14
+    {DEC_D,         1,      true},      // 0x15
+    {LD_D_d8,       2,      true},      // 0x16
+    {RLA,           1,      true},      // 0x17
+    {JR_r8,         2,      false},     // 0x18
+    {ADD_HL_DE,     1,      true},      // 0x19
+    {LD_A_DE,       1,      true},      // 0x1A
+    {DEC_DE,        1,      true},      // 0x1B
+    {INC_E,         1,      true},      // 0x1C
+    {DEC_E,         1,      true},      // 0x1D
+    {LD_E_d8,       2,      true},      // 0x1E
+    {RRA,           1,      true},      // 0x1F
+    {JR_NZ_r8,      2,      false},     // 0x20
+    {LD_HL_d16,     3,      true},      // 0x21
+    {LD_HLp_A,      1,      true},      // 0x22
+    {INC_HL,        1,      true},      // 0x23
+    {INC_H,         1,      true},      // 0x24
+    {DEC_H,         1,      true},      // 0x25
+    {LD_H_d8,       2,      true},      // 0x26
 
-    {NULL,          1,    4,    true},      // 0x27 TODO DAA
+    {NULL,          1,      true},      // 0x27 TODO DAA
 
-    {JR_Z_r8,       2,    8,    false},     // 0x28
-    {ADD_HL_HL,     1,    8,    true},      // 0x29
-    {LD_A_HLp,      1,    8,    true},      // 0x2A
-    {DEC_HL,        1,    8,    true},      // 0x2B
-    {INC_L,         1,    4,    true},      // 0x2C
-    {DEC_L,         1,    4,    true},      // 0x2D
-    {LD_L_d8,       2,    8,    true},      // 0x2E
-    {CPL,           1,    4,    true},      // 0x2F
-    {JR_NC_r8,      2,    8,    false},     // 0x30
-    {LD_SP_d16,     3,    12,   true},      // 0x31
-    {LD_HLm_A,      1,    8,    true},      // 0x32
-    {INC_SP,        1,    8,    true},      // 0x33
-    {INC_pHL,       1,    12,   true},      // 0x34
-    {DEC_pHL,       1,    12,   true},      // 0x35
-    {LD_HL_d8,      1,    8,    true},      // 0x36
-    {SCF,           1,    4,    true},      // 0x37
-    {JR_C_r8,       2,    8,    false},     // 0x38
-    {ADD_HL_SP,     1,    8,    true},      // 0x39
-    {LD_A_HLm,      1,    8,    true},      // 0x3A
-    {DEC_SP,        1,    8,    true},      // 0x3B
-    {INC_A,         1,    4,    true},      // 0x3C
-    {DEC_A,         1,    4,    true},      // 0x3D
-    {LD_A_d8,       2,    8,    true},      // 0x3E
-    {CCF,           1,    4,    true},      // 0x3F
-    {LD_B_B,        1,    4,    true},      // 0x40
-    {LD_B_C,        1,    4,    true},      // 0x41
-    {LD_B_D,        1,    4,    true},      // 0x42
-    {LD_B_E,        1,    4,    true},      // 0x43
-    {LD_B_H,        1,    4,    true},      // 0x44
-    {LD_B_L,        1,    4,    true},      // 0x45
-    {LD_B_HL,       1,    8,    true},      // 0x46
-    {LD_B_A,        1,    4,    true},      // 0x47
-    {LD_C_B,        1,    4,    true},      // 0x48
-    {LD_C_C,        1,    4,    true},      // 0x49
-    {LD_C_D,        1,    4,    true},      // 0x4A
-    {LD_C_E,        1,    4,    true},      // 0x4B
-    {LD_C_H,        1,    4,    true},      // 0x4C
-    {LD_C_L,        1,    4,    true},      // 0x4D
-    {LD_C_HL,       1,    8,    true},      // 0x4E
-    {LD_C_A,        1,    4,    true},      // 0x4F
-    {LD_D_B,        1,    4,    true},      // 0x50
-    {LD_D_C,        1,    4,    true},      // 0x51
-    {LD_D_D,        1,    4,    true},      // 0x52
-    {LD_D_E,        1,    4,    true},      // 0x53
-    {LD_D_H,        1,    4,    true},      // 0x54
-    {LD_D_L,        1,    4,    true},      // 0x55
-    {LD_D_HL,       1,    8,    true},      // 0x56
-    {LD_D_A,        1,    4,    true},      // 0x57
-    {LD_E_B,        1,    4,    true},      // 0x58
-    {LD_E_C,        1,    4,    true},      // 0x59
-    {LD_E_D,        1,    4,    true},      // 0x5A
-    {LD_E_E,        1,    4,    true},      // 0x5B
-    {LD_E_H,        1,    4,    true},      // 0x5C
-    {LD_E_L,        1,    4,    true},      // 0x5D
-    {LD_E_HL,       1,    8,    true},      // 0x5E
-    {LD_E_A,        1,    4,    true},      // 0x5F
-    {LD_H_B,        1,    4,    true},      // 0x60
-    {LD_H_C,        1,    4,    true},      // 0x61
-    {LD_H_D,        1,    4,    true},      // 0x62
-    {LD_H_E,        1,    4,    true},      // 0x63
-    {LD_H_H,        1,    4,    true},      // 0x64
-    {LD_H_L,        1,    4,    true},      // 0x65
-    {LD_H_HL,       1,    8,    true},      // 0x66
-    {LD_H_A,        1,    4,    true},      // 0x67
-    {LD_L_B,        1,    4,    true},      // 0x68
-    {LD_L_C,        1,    4,    true},      // 0x69
-    {LD_L_D,        1,    4,    true},      // 0x6A
-    {LD_L_E,        1,    4,    true},      // 0x6B
-    {LD_L_H,        1,    4,    true},      // 0x6C
-    {LD_L_L,        1,    4,    true},      // 0x6D
-    {LD_L_HL,       1,    8,    true},      // 0x6E
-    {LD_L_A,        1,    4,    true},      // 0x6F
-    {LD_HL_B,       1,    8,    true},      // 0x70
-    {LD_HL_C,       1,    8,    true},      // 0x71
-    {LD_HL_D,       1,    8,    true},      // 0x72
-    {LD_HL_E,       1,    8,    true},      // 0x73
-    {LD_HL_H,       1,    8,    true},      // 0x74
-    {LD_HL_L,       1,    8,    true},      // 0x75
-    {HALT,          1,    4,    true},      // 0x76
-    {LD_HL_A,       1,    8,    true},      // 0x77
-    {LD_A_B,        1,    4,    true},      // 0x78
-    {LD_A_C,        1,    4,    true},      // 0x79
-    {LD_A_D,        1,    4,    true},      // 0x7A
-    {LD_A_E,        1,    4,    true},      // 0x7B
-    {LD_A_H,        1,    4,    true},      // 0x7C
-    {LD_A_L,        1,    4,    true},      // 0x7D
-    {LD_A_HL,       1,    8,    true},      // 0x7E
-    {LD_A_A,        1,    4,    true},      // 0x7F
-    {ADD_A_B,       1,    4,    true},      // 0x80
-    {ADD_A_C,       1,    4,    true},      // 0x81
-    {ADD_A_D,       1,    4,    true},      // 0x82
-    {ADD_A_E,       1,    4,    true},      // 0x83
-    {ADD_A_H,       1,    4,    true},      // 0x84
-    {ADD_A_L,       1,    4,    true},      // 0x85
-    {ADD_A_HL,      1,    8,    true},      // 0x86
-    {ADD_A_A,       1,    4,    true},      // 0x87
-    {ADC_A_B,       1,    4,    true},      // 0x88
-    {ADC_A_C,       1,    4,    true},      // 0x89
-    {ADC_A_D,       1,    4,    true},      // 0x8A
-    {ADC_A_E,       1,    4,    true},      // 0x8B
-    {ADC_A_H,       1,    4,    true},      // 0x8C
-    {ADC_A_L,       1,    4,    true},      // 0x8D
-    {ADC_A_HL,      1,    8,    true},      // 0x8E
-    {ADC_A_A,       1,    4,    true},      // 0x8F
-    {SUB_A_B,       1,    4,    true},      // 0x90
-    {SUB_A_C,       1,    4,    true},      // 0x91
-    {SUB_A_D,       1,    4,    true},      // 0x92
-    {SUB_A_E,       1,    4,    true},      // 0x93
-    {SUB_A_H,       1,    4,    true},      // 0x94
-    {SUB_A_L,       1,    4,    true},      // 0x95
-    {SUB_A_HL,      1,    8,    true},      // 0x96
-    {SUB_A_A,       1,    4,    true},      // 0x97
-    {SBC_A_B,       1,    4,    true},      // 0x98
-    {SBC_A_C,       1,    4,    true},      // 0x99
-    {SBC_A_D,       1,    4,    true},      // 0x9A
-    {SBC_A_E,       1,    4,    true},      // 0x9B
-    {SBC_A_H,       1,    4,    true},      // 0x9C
-    {SBC_A_L,       1,    4,    true},      // 0x9D
-    {SBC_A_HL,      1,    8,    true},      // 0x9E
-    {SBC_A_A,       1,    4,    true},      // 0x9F
-    {AND_A_B,       1,    4,    true},      // 0xA0
-    {AND_A_C,       1,    4,    true},      // 0xA1
-    {AND_A_D,       1,    4,    true},      // 0xA2
-    {AND_A_E,       1,    4,    true},      // 0xA3
-    {AND_A_H,       1,    4,    true},      // 0xA4
-    {AND_A_L,       1,    4,    true},      // 0xA5
-    {AND_A_HL,      1,    8,    true},      // 0xA6
-    {AND_A_A,       1,    4,    true},      // 0xA7
-    {XOR_A_B,       1,    4,    true},      // 0xA8
-    {XOR_A_C,       1,    4,    true},      // 0xA9
-    {XOR_A_D,       1,    4,    true},      // 0xAA
-    {XOR_A_E,       1,    4,    true},      // 0xAB
-    {XOR_A_H,       1,    4,    true},      // 0xAC
-    {XOR_A_L,       1,    4,    true},      // 0xAD
-    {XOR_A_HL,      1,    8,    true},      // 0xAE
-    {XOR_A_A,       1,    4,    true},      // 0xAF
-    {OR_A_B,        1,    4,    true},      // 0xB0
-    {OR_A_C,        1,    4,    true},      // 0xB1
-    {OR_A_D,        1,    4,    true},      // 0xB2
-    {OR_A_E,        1,    4,    true},      // 0xB3
-    {OR_A_H,        1,    4,    true},      // 0xB4
-    {OR_A_L,        1,    4,    true},      // 0xB5
-    {OR_A_HL,       1,    8,    true},      // 0xB6
-    {OR_A_A,        1,    4,    true},      // 0xB7
-    {CP_A_B,        1,    4,    true},      // 0xB8
-    {CP_A_C,        1,    4,    true},      // 0xB9
-    {CP_A_D,        1,    4,    true},      // 0xBA
-    {CP_A_E,        1,    4,    true},      // 0xBB
-    {CP_A_H,        1,    4,    true},      // 0xBC
-    {CP_A_L,        1,    4,    true},      // 0xBD
-    {CP_A_HL,       1,    8,    true},      // 0xBE
-    {CP_A_A,        1,    4,    true},      // 0xBF
-    {RET_NZ,        1,    8,    false},     // 0xC0
-    {POP_BC,        1,    12,   true},      // 0xC1
-    {JP_NZ_a16,     3,    12,   false},     // 0xC2
-    {JP_a16,        3,    16,   true},      // 0xC3
-    {CALL_NZ_a16,   3,    12,   false},     // 0xC4
-    {PUSH_BC,       1,    16,   true},      // 0xC5
-    {ADD_A_d8,      2,    8,    true},      // 0xC6
-    {RST_00H,       1,    16,   false},     // 0xC7
-    {RET_Z,         1,    8,    false},     // 0xC8
-    {RET,           1,    16,   false},     // 0xC9
-    {JP_Z_a16,      3,    12,   false},     // 0xCA
-    {PREFIX_CB,     1,    4,    true},      // 0xCB
-    {CALL_Z_a16,    3,    12,   false},     // 0xCC
-    {CALL_a16,      3,    24,   false},     // 0xCD
-    {ADC_A_d8,      2,    8,    true},      // 0xCE
-    {RST_08H,       1,    16,   false},     // 0xCF
-    {RET_NC,        1,    8,    false},     // 0xD0
-    {POP_DE,        1,    12,   true},      // 0xD1
-    {JP_NC_a16,     3,    12,   false},     // 0xD2
-    {NULL,          0,    0,    false},     // 0xD3
-    {CALL_NC_a16,   3,    12,   false},     // 0xD4
-    {PUSH_DE,       1,    16,   true},      // 0xD5
-    {SUB_A_d8,      2,    8,    true},      // 0xD6
-    {RST_10H,       1,    16,   false},     // 0xD7
-    {RET_C,         1,    8,    false},     // 0xD8
-    {RETI,          1,    16,   false},     // 0xD9
-    {JP_C_a16,      3,    12,   false},     // 0xDA
-    {NULL,          0,    0,    false},     // 0xDB
-    {CALL_C_a16,    3,    12,   false},     // 0xDC
-    {NULL,          0,    0,    false},     // 0xDD
-    {SBC_A_d8,      2,    8,    true},      // 0xDE
-    {RST_18H,       1,    16,   false},     // 0xDF
-    {LDH_a8_A,      2,    12,   true},      // 0xE0
-    {POP_HL,        1,    12,   true},      // 0xE1
-    {LD_pC_A,       2,    8,    true},      // 0xE2
-    {NULL,          0,    0,    false},     // 0xE3
-    {NULL,          0,    0,    false},     // 0xE4
-    {PUSH_HL,       1,    16,   true},      // 0xE5
-    {AND_A_d8,      2,    8,    true},      // 0xE6
-    {RST_20H,       1,    16,   false},     // 0xE7
-    {ADD_SP_r8,     2,    16,   true},      // 0xE8
-    {JP_HL,         1,    4,    false},     // 0xE9
-    {LD_a16_A,      3,    16,   true},      // 0xEA
-    {NULL,          0,    0,    false},     // 0xEB
-    {NULL,          0,    0,    false},     // 0xEC
-    {NULL,          0,    0,    false},     // 0xED
-    {XOR_A_d8,      2,    8,    true},      // 0xEE
-    {RST_28H,       1,    16,   false},     // 0xEF
-    {LDH_A_a8,      2,    12,   true},      // 0xF0
-    {POP_AF,        1,    12,   true},      // 0xF1
-    {LD_A_pC,       2,    8,    true},      // 0xF2
-    {DI,            1,    4,    true},      // 0xF3
-    {NULL,          0,    0,    false},     // 0xF4
-    {PUSH_AF,       1,    16,   true},      // 0xF5
-    {OR_A_d8,       2,    8,    true},      // 0xF6
-    {RST_30H,       1,    16,   false},     // 0xF7
-    {LD_HL_SP_r8,   2,    12,   true},      // 0xF8
-    {LD_SP_HL,      1,    8,    false},     // 0xF9
-    {LD_A_a16,      3,    16,   true},      // 0xFA
-    {EI,            1,    4,    true},      // 0xFB
-    {NULL,          0,    0,    false},     // 0xFC
-    {NULL,          0,    0,    false},     // 0xFD
-    {CP_A_d8,       2,    8,    true},      // 0xFE
-    {RST_38H,       1,    16,   false},     // 0xFF
+    {JR_Z_r8,       2,      false},     // 0x28
+    {ADD_HL_HL,     1,      true},      // 0x29
+    {LD_A_HLp,      1,      true},      // 0x2A
+    {DEC_HL,        1,      true},      // 0x2B
+    {INC_L,         1,      true},      // 0x2C
+    {DEC_L,         1,      true},      // 0x2D
+    {LD_L_d8,       2,      true},      // 0x2E
+    {CPL,           1,      true},      // 0x2F
+    {JR_NC_r8,      2,      false},     // 0x30
+    {LD_SP_d16,     3,      true},      // 0x31
+    {LD_HLm_A,      1,      true},      // 0x32
+    {INC_SP,        1,      true},      // 0x33
+    {INC_pHL,       1,      true},      // 0x34
+    {DEC_pHL,       1,      true},      // 0x35
+    {LD_HL_d8,      1,      true},      // 0x36
+    {SCF,           1,      true},      // 0x37
+    {JR_C_r8,       2,      false},     // 0x38
+    {ADD_HL_SP,     1,      true},      // 0x39
+    {LD_A_HLm,      1,      true},      // 0x3A
+    {DEC_SP,        1,      true},      // 0x3B
+    {INC_A,         1,      true},      // 0x3C
+    {DEC_A,         1,      true},      // 0x3D
+    {LD_A_d8,       2,      true},      // 0x3E
+    {CCF,           1,      true},      // 0x3F
+    {LD_B_B,        1,      true},      // 0x40
+    {LD_B_C,        1,      true},      // 0x41
+    {LD_B_D,        1,      true},      // 0x42
+    {LD_B_E,        1,      true},      // 0x43
+    {LD_B_H,        1,      true},      // 0x44
+    {LD_B_L,        1,      true},      // 0x45
+    {LD_B_HL,       1,      true},      // 0x46
+    {LD_B_A,        1,      true},      // 0x47
+    {LD_C_B,        1,      true},      // 0x48
+    {LD_C_C,        1,      true},      // 0x49
+    {LD_C_D,        1,      true},      // 0x4A
+    {LD_C_E,        1,      true},      // 0x4B
+    {LD_C_H,        1,      true},      // 0x4C
+    {LD_C_L,        1,      true},      // 0x4D
+    {LD_C_HL,       1,      true},      // 0x4E
+    {LD_C_A,        1,      true},      // 0x4F
+    {LD_D_B,        1,      true},      // 0x50
+    {LD_D_C,        1,      true},      // 0x51
+    {LD_D_D,        1,      true},      // 0x52
+    {LD_D_E,        1,      true},      // 0x53
+    {LD_D_H,        1,      true},      // 0x54
+    {LD_D_L,        1,      true},      // 0x55
+    {LD_D_HL,       1,      true},      // 0x56
+    {LD_D_A,        1,      true},      // 0x57
+    {LD_E_B,        1,      true},      // 0x58
+    {LD_E_C,        1,      true},      // 0x59
+    {LD_E_D,        1,      true},      // 0x5A
+    {LD_E_E,        1,      true},      // 0x5B
+    {LD_E_H,        1,      true},      // 0x5C
+    {LD_E_L,        1,      true},      // 0x5D
+    {LD_E_HL,       1,      true},      // 0x5E
+    {LD_E_A,        1,      true},      // 0x5F
+    {LD_H_B,        1,      true},      // 0x60
+    {LD_H_C,        1,      true},      // 0x61
+    {LD_H_D,        1,      true},      // 0x62
+    {LD_H_E,        1,      true},      // 0x63
+    {LD_H_H,        1,      true},      // 0x64
+    {LD_H_L,        1,      true},      // 0x65
+    {LD_H_HL,       1,      true},      // 0x66
+    {LD_H_A,        1,      true},      // 0x67
+    {LD_L_B,        1,      true},      // 0x68
+    {LD_L_C,        1,      true},      // 0x69
+    {LD_L_D,        1,      true},      // 0x6A
+    {LD_L_E,        1,      true},      // 0x6B
+    {LD_L_H,        1,      true},      // 0x6C
+    {LD_L_L,        1,      true},      // 0x6D
+    {LD_L_HL,       1,      true},      // 0x6E
+    {LD_L_A,        1,      true},      // 0x6F
+    {LD_HL_B,       1,      true},      // 0x70
+    {LD_HL_C,       1,      true},      // 0x71
+    {LD_HL_D,       1,      true},      // 0x72
+    {LD_HL_E,       1,      true},      // 0x73
+    {LD_HL_H,       1,      true},      // 0x74
+    {LD_HL_L,       1,      true},      // 0x75
+    {HALT,          1,      true},      // 0x76
+    {LD_HL_A,       1,      true},      // 0x77
+    {LD_A_B,        1,      true},      // 0x78
+    {LD_A_C,        1,      true},      // 0x79
+    {LD_A_D,        1,      true},      // 0x7A
+    {LD_A_E,        1,      true},      // 0x7B
+    {LD_A_H,        1,      true},      // 0x7C
+    {LD_A_L,        1,      true},      // 0x7D
+    {LD_A_HL,       1,      true},      // 0x7E
+    {LD_A_A,        1,      true},      // 0x7F
+    {ADD_A_B,       1,      true},      // 0x80
+    {ADD_A_C,       1,      true},      // 0x81
+    {ADD_A_D,       1,      true},      // 0x82
+    {ADD_A_E,       1,      true},      // 0x83
+    {ADD_A_H,       1,      true},      // 0x84
+    {ADD_A_L,       1,      true},      // 0x85
+    {ADD_A_HL,      1,      true},      // 0x86
+    {ADD_A_A,       1,      true},      // 0x87
+    {ADC_A_B,       1,      true},      // 0x88
+    {ADC_A_C,       1,      true},      // 0x89
+    {ADC_A_D,       1,      true},      // 0x8A
+    {ADC_A_E,       1,      true},      // 0x8B
+    {ADC_A_H,       1,      true},      // 0x8C
+    {ADC_A_L,       1,      true},      // 0x8D
+    {ADC_A_HL,      1,      true},      // 0x8E
+    {ADC_A_A,       1,      true},      // 0x8F
+    {SUB_A_B,       1,      true},      // 0x90
+    {SUB_A_C,       1,      true},      // 0x91
+    {SUB_A_D,       1,      true},      // 0x92
+    {SUB_A_E,       1,      true},      // 0x93
+    {SUB_A_H,       1,      true},      // 0x94
+    {SUB_A_L,       1,      true},      // 0x95
+    {SUB_A_HL,      1,      true},      // 0x96
+    {SUB_A_A,       1,      true},      // 0x97
+    {SBC_A_B,       1,      true},      // 0x98
+    {SBC_A_C,       1,      true},      // 0x99
+    {SBC_A_D,       1,      true},      // 0x9A
+    {SBC_A_E,       1,      true},      // 0x9B
+    {SBC_A_H,       1,      true},      // 0x9C
+    {SBC_A_L,       1,      true},      // 0x9D
+    {SBC_A_HL,      1,      true},      // 0x9E
+    {SBC_A_A,       1,      true},      // 0x9F
+    {AND_A_B,       1,      true},      // 0xA0
+    {AND_A_C,       1,      true},      // 0xA1
+    {AND_A_D,       1,      true},      // 0xA2
+    {AND_A_E,       1,      true},      // 0xA3
+    {AND_A_H,       1,      true},      // 0xA4
+    {AND_A_L,       1,      true},      // 0xA5
+    {AND_A_HL,      1,      true},      // 0xA6
+    {AND_A_A,       1,      true},      // 0xA7
+    {XOR_A_B,       1,      true},      // 0xA8
+    {XOR_A_C,       1,      true},      // 0xA9
+    {XOR_A_D,       1,      true},      // 0xAA
+    {XOR_A_E,       1,      true},      // 0xAB
+    {XOR_A_H,       1,      true},      // 0xAC
+    {XOR_A_L,       1,      true},      // 0xAD
+    {XOR_A_HL,      1,      true},      // 0xAE
+    {XOR_A_A,       1,      true},      // 0xAF
+    {OR_A_B,        1,      true},      // 0xB0
+    {OR_A_C,        1,      true},      // 0xB1
+    {OR_A_D,        1,      true},      // 0xB2
+    {OR_A_E,        1,      true},      // 0xB3
+    {OR_A_H,        1,      true},      // 0xB4
+    {OR_A_L,        1,      true},      // 0xB5
+    {OR_A_HL,       1,      true},      // 0xB6
+    {OR_A_A,        1,      true},      // 0xB7
+    {CP_A_B,        1,      true},      // 0xB8
+    {CP_A_C,        1,      true},      // 0xB9
+    {CP_A_D,        1,      true},      // 0xBA
+    {CP_A_E,        1,      true},      // 0xBB
+    {CP_A_H,        1,      true},      // 0xBC
+    {CP_A_L,        1,      true},      // 0xBD
+    {CP_A_HL,       1,      true},      // 0xBE
+    {CP_A_A,        1,      true},      // 0xBF
+    {RET_NZ,        1,      false},     // 0xC0
+    {POP_BC,        1,      true},      // 0xC1
+    {JP_NZ_a16,     3,      false},     // 0xC2
+    {JP_a16,        3,      true},      // 0xC3
+    {CALL_NZ_a16,   3,      false},     // 0xC4
+    {PUSH_BC,       1,      true},      // 0xC5
+    {ADD_A_d8,      2,      true},      // 0xC6
+    {RST_00H,       1,      false},     // 0xC7
+    {RET_Z,         1,      false},     // 0xC8
+    {RET,           1,      false},     // 0xC9
+    {JP_Z_a16,      3,      false},     // 0xCA
+    {PREFIX_CB,     1,      true},      // 0xCB
+    {CALL_Z_a16,    3,      false},     // 0xCC
+    {CALL_a16,      3,      false},     // 0xCD
+    {ADC_A_d8,      2,      true},      // 0xCE
+    {RST_08H,       1,      false},     // 0xCF
+    {RET_NC,        1,      false},     // 0xD0
+    {POP_DE,        1,      true},      // 0xD1
+    {JP_NC_a16,     3,      false},     // 0xD2
+    {NULL,          0,      false},     // 0xD3
+    {CALL_NC_a16,   3,      false},     // 0xD4
+    {PUSH_DE,       1,      true},      // 0xD5
+    {SUB_A_d8,      2,      true},      // 0xD6
+    {RST_10H,       1,      false},     // 0xD7
+    {RET_C,         1,      false},     // 0xD8
+    {RETI,          1,      false},     // 0xD9
+    {JP_C_a16,      3,      false},     // 0xDA
+    {NULL,          0,      false},     // 0xDB
+    {CALL_C_a16,    3,      false},     // 0xDC
+    {NULL,          0,      false},     // 0xDD
+    {SBC_A_d8,      2,      true},      // 0xDE
+    {RST_18H,       1,      false},     // 0xDF
+    {LDH_a8_A,      2,      true},      // 0xE0
+    {POP_HL,        1,      true},      // 0xE1
+    {LD_pC_A,       2,      true},      // 0xE2
+    {NULL,          0,      false},     // 0xE3
+    {NULL,          0,      false},     // 0xE4
+    {PUSH_HL,       1,      true},      // 0xE5
+    {AND_A_d8,      2,      true},      // 0xE6
+    {RST_20H,       1,      false},     // 0xE7
+    {ADD_SP_r8,     2,      true},      // 0xE8
+    {JP_HL,         1,      false},     // 0xE9
+    {LD_a16_A,      3,      true},      // 0xEA
+    {NULL,          0,      false},     // 0xEB
+    {NULL,          0,      false},     // 0xEC
+    {NULL,          0,      false},     // 0xED
+    {XOR_A_d8,      2,      true},      // 0xEE
+    {RST_28H,       1,      false},     // 0xEF
+    {LDH_A_a8,      2,      true},      // 0xF0
+    {POP_AF,        1,      true},      // 0xF1
+    {LD_A_pC,       2,      true},      // 0xF2
+    {DI,            1,      true},      // 0xF3
+    {NULL,          0,      false},     // 0xF4
+    {PUSH_AF,       1,      true},      // 0xF5
+    {OR_A_d8,       2,      true},      // 0xF6
+    {RST_30H,       1,      false},     // 0xF7
+    {LD_HL_SP_r8,   2,      true},      // 0xF8
+    {LD_SP_HL,      1,      false},     // 0xF9
+    {LD_A_a16,      3,      true},      // 0xFA
+    {EI,            1,      true},      // 0xFB
+    {NULL,          0,      false},     // 0xFC
+    {NULL,          0,      false},     // 0xFD
+    {CP_A_d8,       2,      true},      // 0xFE
+    {RST_38H,       1,      false},     // 0xFF
 };

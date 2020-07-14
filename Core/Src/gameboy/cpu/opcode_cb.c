@@ -14,12 +14,13 @@
 
 // Macro: RLC r1
 #define MACRO_RLC_r1(r1) \
-static void RLC_##r1(void) \
+static uint8_t RLC_##r1(void) \
 { \
     core_reg.r1 = (core_reg.r1 << 1) | (core_reg.r1 >> 7); \
     core_reg.F = 0x00; \
     core_reg.Flags.Z = (core_reg.r1 == 0); \
     core_reg.Flags.C = core_reg.r1 & 0x01; \
+    return 8; \
 }
 
 MACRO_RLC_r1(B);    // RLC B
@@ -33,7 +34,7 @@ MACRO_RLC_r1(A);    // RLC A
 #undef MACRO_RLC_r1
 
 // RLC (HL)
-static void RLC_HL(void)
+static uint8_t RLC_HL(void)
 {
     uint8_t t = mem_read_u8(core_reg.HL);
 
@@ -43,17 +44,19 @@ static void RLC_HL(void)
     core_reg.Flags.C = t & 0x01;
 
     mem_write_u8(core_reg.HL, t);
+    return 16;
 }
 
 // Macro: RL r1
 #define MACRO_RL_r1(r1) \
-static void RL_##r1(void) \
+static uint8_t RL_##r1(void) \
 { \
     uint16_t t = (core_reg.r1 << 1) | core_reg.Flags.C; \
     core_reg.r1 = t & 0xFF; \
     core_reg.F = 0x00; \
     core_reg.Flags.Z = (core_reg.r1 == 0); \
     core_reg.Flags.C = (t > 0xFF); \
+    return 8; \
 }
 
 MACRO_RL_r1(B);    // RL B
@@ -67,7 +70,7 @@ MACRO_RL_r1(A);    // RL A
 #undef MACRO_RL_r1
 
 // RL (HL)
-static void RL_HL(void)
+static uint8_t RL_HL(void)
 {
     uint16_t t = (uint16_t) mem_read_u8(core_reg.HL);
 
@@ -77,16 +80,18 @@ static void RL_HL(void)
     core_reg.Flags.C = (t > 0xFF);
 
     mem_write_u8(core_reg.HL, t & 0xFF);
+    return 16;
 }
 
 // Macro: RRC r1
 #define MACRO_RRC_r1(r1) \
-static void RRC_##r1(void) \
+static uint8_t RRC_##r1(void) \
 { \
     core_reg.F = 0x00; \
     core_reg.Flags.C = core_reg.r1 & 0x01; \
     core_reg.Flags.Z = (core_reg.r1 == 0); \
     core_reg.r1 = (core_reg.r1 >> 1) | (core_reg.r1 << 7); \
+    return 8; \
 }
 
 MACRO_RRC_r1(B);    // RRC B
@@ -100,7 +105,7 @@ MACRO_RRC_r1(A);    // RRC A
 #undef MACRO_RRC_r1
 
 // RRC (HL)
-static void RRC_HL(void)
+static uint8_t RRC_HL(void)
 {
     uint8_t t = mem_read_u8(core_reg.HL);
 
@@ -110,17 +115,19 @@ static void RRC_HL(void)
     t = (t >> 1) | (t << 7);
 
     mem_write_u8(core_reg.HL, t);
+    return 16;
 }
 
 // Macro: RR r1
 #define MACRO_RR_r1(r1) \
-static void RR_##r1(void) \
+static uint8_t RR_##r1(void) \
 { \
     uint8_t t = (core_reg.r1 >> 1) | (core_reg.Flags.C << 7); \
     core_reg.F = 0x00; \
     core_reg.Flags.C = core_reg.r1 & 0x01; \
     core_reg.Flags.Z = (t == 0); \
     core_reg.r1 = t; \
+    return 8; \
 }
 
 MACRO_RR_r1(B);    // RR B
@@ -134,7 +141,7 @@ MACRO_RR_r1(A);    // RR A
 #undef MACRO_RR_r1
 
 // RR (HL)
-static void RR_HL(void)
+static uint8_t RR_HL(void)
 {
     uint8_t u8 = mem_read_u8(core_reg.HL);
 
@@ -144,16 +151,18 @@ static void RR_HL(void)
     core_reg.Flags.Z = (t == 0);
 
     mem_write_u8(core_reg.HL, t);
+    return 16;
 }
 
 // Macro: SLA r1
 #define MACRO_SLA_r1(r1) \
-static void SLA_##r1(void) \
+static uint8_t SLA_##r1(void) \
 { \
     core_reg.F = 0x00; \
     core_reg.Flags.C = core_reg.r1 >> 7; \
     core_reg.r1 <<= 1; \
     core_reg.Flags.Z = (core_reg.r1 == 0); \
+    return 8; \
 }
 
 MACRO_SLA_r1(B);    // SLA B
@@ -167,7 +176,7 @@ MACRO_SLA_r1(A);    // SLA A
 #undef MACRO_SLA_r1
 
 // SLA (HL)
-static void SLA_HL(void)
+static uint8_t SLA_HL(void)
 {
     uint8_t t = mem_read_u8(core_reg.HL);
 
@@ -177,16 +186,18 @@ static void SLA_HL(void)
     core_reg.Flags.Z = (t == 0);
 
     mem_write_u8(core_reg.HL, t);
+    return 16;
 }
 
 // Macro: SRA r1
 #define MACRO_SRA_r1(r1) \
-static void SRA_##r1(void) \
+static uint8_t SRA_##r1(void) \
 { \
     core_reg.F = 0x00; \
     core_reg.Flags.C = core_reg.r1 & 0x01; \
     core_reg.r1 = (core_reg.r1 & 0x80) | (core_reg.r1 >>  1); \
     core_reg.Flags.Z = (core_reg.r1 == 0); \
+    return 8; \
 }
 
 MACRO_SRA_r1(B);    // SRA B
@@ -200,7 +211,7 @@ MACRO_SRA_r1(A);    // SRA A
 #undef MACRO_SRA_r1
 
 // SRA (HL)
-static void SRA_HL(void)
+static uint8_t SRA_HL(void)
 {
     uint8_t t = mem_read_u8(core_reg.HL);
 
@@ -210,15 +221,17 @@ static void SRA_HL(void)
     core_reg.Flags.Z = (t == 0);
 
     mem_write_u8(core_reg.HL, t);
+    return 16;
 }
 
 // Macro: SWAP r1
 #define MACRO_SWAP_r1(r1) \
-static void SWAP_##r1(void) \
+static uint8_t SWAP_##r1(void) \
 { \
     core_reg.r1 = (core_reg.r1 >> 4) | (core_reg.r1 << 4);\
     core_reg.F = 0x00; \
     core_reg.Flags.Z = (core_reg.r1 == 0); \
+    return 8; \
 }
 
 MACRO_SWAP_r1(B);    // SWAP B
@@ -232,7 +245,7 @@ MACRO_SWAP_r1(A);    // SWAP A
 #undef MACRO_SWAP_r1
 
 // SWAP (HL)
-static void SWAP_HL(void)
+static uint8_t SWAP_HL(void)
 {
     uint8_t t = mem_read_u8(core_reg.HL);
 
@@ -241,16 +254,18 @@ static void SWAP_HL(void)
     core_reg.Flags.Z = (t == 0);
 
     mem_write_u8(core_reg.HL, t);
+    return 16;
 }
 
 // Macro: SRL r1
 #define MACRO_SRL_r1(r1) \
-static void SRL_##r1(void) \
+static uint8_t SRL_##r1(void) \
 { \
     core_reg.F = 0x00; \
     core_reg.Flags.C = (core_reg.r1 & 0x01); \
     core_reg.r1 >>= 1; \
     core_reg.Flags.Z = (core_reg.r1 == 0); \
+    return 8; \
 }
 
 MACRO_SRL_r1(B);    // SRL B
@@ -264,7 +279,7 @@ MACRO_SRL_r1(A);    // SRL A
 #undef MACRO_SRL_r1
 
 // SRL (HL)
-static void SRL_HL(void)
+static uint8_t SRL_HL(void)
 {
     uint8_t t = mem_read_u8(core_reg.HL);
 
@@ -274,15 +289,17 @@ static void SRL_HL(void)
     core_reg.Flags.Z = (t == 0);
 
     mem_write_u8(core_reg.HL, t);
+    return 16;
 }
 
 // Macro: BIT n, r1
 #define MACRO_BIT_n_r1(n, r1) \
-static void BIT_##n##_##r1(void) \
+static uint8_t BIT_##n##_##r1(void) \
 { \
     core_reg.Flags.Z = ((core_reg.r1 & (1 << n)) == 0); \
     core_reg.Flags.N = 0; \
     core_reg.Flags.H = 1; \
+    return 8; \
 }
 
 MACRO_BIT_n_r1(0, B);    // BIT 0, B
@@ -353,12 +370,13 @@ MACRO_BIT_n_r1(7, A);    // BIT 7, A
 
 // Macro: BIT n, (HL)
 #define MACRO_BIT_n_HL(n) \
-static void BIT_##n##_HL(void) \
+static uint8_t BIT_##n##_HL(void) \
 { \
     uint8_t t = mem_read_u8(core_reg.HL);\
     core_reg.Flags.Z = ((t & (1 << n)) == 0); \
     core_reg.Flags.N = 0; \
     core_reg.Flags.H = 1; \
+    return 16;\
 }
 
 MACRO_BIT_n_HL(0);      // BIT 0, (HL)
@@ -374,9 +392,10 @@ MACRO_BIT_n_HL(7);      // BIT 7, (HL)
 
 // Macro: RES n, r1
 #define MACRO_RES_n_r1(n, r1) \
-static void RES_##n##_##r1(void) \
+static uint8_t RES_##n##_##r1(void) \
 { \
     core_reg.r1 &= ~(1 << n);\
+    return 8; \
 }
 
 MACRO_RES_n_r1(0, B);    // RES 0, B
@@ -447,11 +466,12 @@ MACRO_RES_n_r1(7, A);    // RES 7, A
 
 // Macro: RES n, (HL)
 #define MACRO_RES_n_HL(n) \
-static void RES_##n##_HL(void) \
+static uint8_t RES_##n##_HL(void) \
 { \
     uint8_t t = mem_read_u8(core_reg.HL);\
     t &= ~(1 << n);\
     mem_write_u8(core_reg.HL, t);\
+    return 16; \
 }
 
 MACRO_RES_n_HL(0);      // RES 0, (HL)
@@ -467,9 +487,10 @@ MACRO_RES_n_HL(7);      // RES 7, (HL)
 
 // Macro: SET n, r1
 #define MACRO_SET_n_r1(n, r1) \
-static void SET_##n##_##r1(void) \
+static uint8_t SET_##n##_##r1(void) \
 { \
     core_reg.r1 |= (1 << n);\
+    return 8; \
 }
 
 MACRO_SET_n_r1(0, B);    // SET 0, B
@@ -540,11 +561,12 @@ MACRO_SET_n_r1(7, A);    // SET 7, A
 
 // Macro: SET n, (HL)
 #define MACRO_SET_n_HL(n) \
-static void SET_##n##_HL(void) \
+static uint8_t SET_##n##_HL(void) \
 { \
     uint8_t t = mem_read_u8(core_reg.HL);\
     t |= (1 << n);\
     mem_write_u8(core_reg.HL, t);\
+    return 16; \
 }
 
 MACRO_SET_n_HL(0);      // SET 0, (HL)
@@ -560,260 +582,260 @@ MACRO_SET_n_HL(7);      // SET 7, (HL)
 
 struct opcode_t opcodeCbList[256] =
 {
-    {RLC_B,			2,    8,    true},		// 0x00
-    {RLC_C,        	2,    8,    true},      // 0x01
-    {RLC_D,    	    2,    8,    true},      // 0x02
-    {RLC_E,    	    2,    8,    true},      // 0x03
-    {RLC_H,    	    2,    8,    true},      // 0x04
-    {RLC_L,    	    2,    8,    true},      // 0x05
-    {RLC_HL,        2,    16,   true},      // 0x06
-    {RLC_A,    	    2,    8,    true},      // 0x07
-    {RRC_B,        	2,    8,    true},      // 0x08
-    {RRC_C,        	2,    8,    true},      // 0x09
-    {RRC_D,        	2,    8,    true},      // 0x0A
-    {RRC_E,        	2,    8,    true},      // 0x0B
-    {RRC_H,        	2,    8,    true},      // 0x0C
-    {RRC_L,        	2,    8,    true},      // 0x0D
-    {RRC_HL,       	2,    16,   true},      // 0x0E
-    {RRC_A,        	2,    8,    true},      // 0x0F
-    {RL_B,	        2,    8,    true},      // 0x10
-    {RL_C,          2,    8,    true},      // 0x11
-    {RL_D,          2,    8,    true},      // 0x12
-    {RL_E,          2,    8,    true},      // 0x13
-    {RL_H,          2,    8,    true},      // 0x14
-    {RL_L,          2,    8,    true},      // 0x15
-    {RL_HL,         2,    16,   true},      // 0x16
-    {RL_A,          2,    8,    true},      // 0x17
-    {RR_B,          2,    8,    true},      // 0x18
-    {RR_C,          2,    8,    true},      // 0x19
-    {RR_D,          2,    8,    true},      // 0x1A
-    {RR_E,          2,    8,    true},      // 0x1B
-    {RR_H,          2,    8,    true},      // 0x1C
-    {RR_L,          2,    8,    true},      // 0x1D
-    {RR_HL,         2,    16,   true},      // 0x1E
-    {RR_A,          2,    8,    true},      // 0x1F
-    {SLA_B,	        2,    8,    true},      // 0x20
-    {SLA_C,         2,    8,    true},      // 0x21
-    {SLA_D,         2,    8,    true},      // 0x22
-    {SLA_E,         2,    8,    true},      // 0x23
-    {SLA_H,         2,    8,    true},      // 0x24
-    {SLA_L,         2,    8,    true},      // 0x25
-    {SLA_HL,        2,    16,   true},      // 0x26
-    {SLA_A,         2,    8,    true},      // 0x27
-    {SRA_B,         2,    8,    true},      // 0x28
-    {SRA_C,         2,    8,    true},      // 0x29
-    {SRA_D,         2,    8,    true},      // 0x2A
-    {SRA_E,         2,    8,    true},      // 0x2B
-    {SRA_H,         2,    8,    true},      // 0x2C
-    {SRA_L,         2,    8,    true},      // 0x2D
-    {SRA_HL,        2,    16,   true},      // 0x2E
-    {SRA_A,         2,    8,    true},      // 0x2F
-    {SWAP_B,	    2,    8,    true},      // 0x30
-    {SWAP_C,        2,    8,    true},      // 0x31
-    {SWAP_D,        2,    8,    true},      // 0x32
-    {SWAP_E,        2,    8,    true},      // 0x33
-    {SWAP_H,        2,    8,    true},      // 0x34
-    {SWAP_L,        2,    8,    true},      // 0x35
-    {SWAP_HL,       2,    16,   true},      // 0x36
-    {SWAP_A,        2,    8,    true},      // 0x37
-    {SRL_B,         2,    8,    true},      // 0x38
-    {SRL_C,         2,    8,    true},      // 0x39
-    {SRL_D,         2,    8,    true},      // 0x3A
-    {SRL_E,         2,    8,    true},      // 0x3B
-    {SRL_H,         2,    8,    true},      // 0x3C
-    {SRL_L,         2,    8,    true},      // 0x3D
-    {SRL_HL,        2,    16,   true},      // 0x3E
-    {SRL_A,         2,    8,    true},      // 0x3F
-    {BIT_0_B,	    2,    8,    true},      // 0x40
-    {BIT_0_C,       2,    8,    true},      // 0x41
-    {BIT_0_D,       2,    8,    true},      // 0x42
-    {BIT_0_E,       2,    8,    true},      // 0x43
-    {BIT_0_H,       2,    8,    true},      // 0x44
-    {BIT_0_L,       2,    8,    true},      // 0x45
-    {BIT_0_HL,      2,    16,   true},      // 0x46
-    {BIT_0_A,       2,    8,    true},      // 0x47
-    {BIT_1_B,       2,    8,    true},      // 0x48
-    {BIT_1_C,       2,    8,    true},      // 0x49
-    {BIT_1_D,       2,    8,    true},      // 0x4A
-    {BIT_1_E,       2,    8,    true},      // 0x4B
-    {BIT_1_H,       2,    8,    true},      // 0x4C
-    {BIT_1_L,       2,    8,    true},      // 0x4D
-    {BIT_1_HL,      2,    16,   true},      // 0x4E
-    {BIT_1_A,       2,    8,    true},      // 0x4F
-    {BIT_2_B,	    2,    8,    true},      // 0x50
-    {BIT_2_C,       2,    8,    true},      // 0x51
-    {BIT_2_D,       2,    8,    true},      // 0x52
-    {BIT_2_E,       2,    8,    true},      // 0x53
-    {BIT_2_H,       2,    8,    true},      // 0x54
-    {BIT_2_L,       2,    8,    true},      // 0x55
-    {BIT_2_HL,      2,    16,   true},      // 0x56
-    {BIT_2_A,       2,    8,    true},      // 0x57
-    {BIT_3_B,       2,    8,    true},      // 0x58
-    {BIT_3_C,       2,    8,    true},      // 0x59
-    {BIT_3_D,       2,    8,    true},      // 0x5A
-    {BIT_3_E,       2,    8,    true},      // 0x5B
-    {BIT_3_H,       2,    8,    true},      // 0x5C
-    {BIT_3_L,       2,    8,    true},      // 0x5D
-    {BIT_3_HL,      2,    16,   true},      // 0x5E
-    {BIT_3_A,       2,    8,    true},      // 0x5F
-    {BIT_4_B,	    2,    8,    true},      // 0x60
-    {BIT_4_C,       2,    8,    true},      // 0x61
-    {BIT_4_D,       2,    8,    true},      // 0x62
-    {BIT_4_E,       2,    8,    true},      // 0x63
-    {BIT_4_H,       2,    8,    true},      // 0x64
-    {BIT_4_L,       2,    8,    true},      // 0x65
-    {BIT_4_HL,      2,    16,   true},      // 0x66
-    {BIT_4_A,       2,    8,    true},      // 0x67
-    {BIT_5_B,       2,    8,    true},      // 0x68
-    {BIT_5_C,       2,    8,    true},      // 0x69
-    {BIT_5_D,       2,    8,    true},      // 0x6A
-    {BIT_5_E,       2,    8,    true},      // 0x6B
-    {BIT_5_H,       2,    8,    true},      // 0x6C
-    {BIT_5_L,       2,    8,    true},      // 0x6D
-    {BIT_5_HL,      2,    16,   true},      // 0x6E
-    {BIT_5_A,       2,    8,    true},      // 0x6F
-    {BIT_6_B,	    2,    8,    true},      // 0x70
-    {BIT_6_C,       2,    8,    true},      // 0x71
-    {BIT_6_D,       2,    8,    true},      // 0x72
-    {BIT_6_E,       2,    8,    true},      // 0x73
-    {BIT_6_H,       2,    8,    true},      // 0x74
-    {BIT_6_L,       2,    8,    true},      // 0x75
-    {BIT_6_HL,      2,    16,   true},      // 0x76
-    {BIT_6_A,       2,    8,    true},      // 0x77
-    {BIT_7_B,       2,    8,    true},      // 0x78
-    {BIT_7_C,       2,    8,    true},      // 0x79
-    {BIT_7_D,       2,    8,    true},      // 0x7A
-    {BIT_7_E,       2,    8,    true},      // 0x7B
-    {BIT_7_H,       2,    8,    true},      // 0x7C
-    {BIT_7_L,       2,    8,    true},      // 0x7D
-    {BIT_7_HL,      2,    16,   true},      // 0x7E
-    {BIT_7_A,       2,    8,    true},      // 0x7F
-    {RES_0_B,       2,    8,    true},      // 0x80
-    {RES_0_C,       2,    8,    true},      // 0x81
-    {RES_0_D,       2,    8,    true},      // 0x82
-    {RES_0_E,       2,    8,    true},      // 0x83
-    {RES_0_H,       2,    8,    true},      // 0x84
-    {RES_0_L,       2,    8,    true},      // 0x85
-    {RES_0_HL,      2,    16,   true},      // 0x86
-    {RES_0_A,       2,    8,    true},      // 0x87
-    {RES_1_B,       2,    8,    true},      // 0x88
-    {RES_1_C,       2,    8,    true},      // 0x89
-    {RES_1_D,       2,    8,    true},      // 0x8A
-    {RES_1_E,       2,    8,    true},      // 0x8B
-    {RES_1_H,       2,    8,    true},      // 0x8C
-    {RES_1_L,       2,    8,    true},      // 0x8D
-    {RES_1_HL,      2,    16,   true},      // 0x8E
-    {RES_1_A,       2,    8,    true},      // 0x8F
-    {RES_2_B,       2,    8,    true},      // 0x90
-    {RES_2_C,       2,    8,    true},      // 0x91
-    {RES_2_D,       2,    8,    true},      // 0x92
-    {RES_2_E,       2,    8,    true},      // 0x93
-    {RES_2_H,       2,    8,    true},      // 0x94
-    {RES_2_L,       2,    8,    true},      // 0x95
-    {RES_2_HL,      2,    16,   true},      // 0x96
-    {RES_2_A,       2,    8,    true},      // 0x97
-    {RES_3_B,       2,    8,    true},      // 0x98
-    {RES_3_C,       2,    8,    true},      // 0x99
-    {RES_3_D,       2,    8,    true},      // 0x9A
-    {RES_3_E,       2,    8,    true},      // 0x9B
-    {RES_3_H,       2,    8,    true},      // 0x9C
-    {RES_3_L,       2,    8,    true},      // 0x9D
-    {RES_3_HL,      2,    16,   true},      // 0x9E
-    {RES_3_A,       2,    8,    true},      // 0x9F
-    {RES_4_B,       2,    8,    true},      // 0xA0
-    {RES_4_C,       2,    8,    true},      // 0xA1
-    {RES_4_D,       2,    8,    true},      // 0xA2
-    {RES_4_E,       2,    8,    true},      // 0xA3
-    {RES_4_H,       2,    8,    true},      // 0xA4
-    {RES_4_L,       2,    8,    true},      // 0xA5
-    {RES_4_HL,      2,    16,   true},      // 0xA6
-    {RES_4_A,       2,    8,    true},      // 0xA7
-    {RES_5_B,       2,    8,    true},      // 0xA8
-    {RES_5_C,       2,    8,    true},      // 0xA9
-    {RES_5_D,       2,    8,    true},      // 0xAA
-    {RES_5_E,       2,    8,    true},      // 0xAB
-    {RES_5_H,       2,    8,    true},      // 0xAC
-    {RES_5_L,       2,    8,    true},      // 0xAD
-    {RES_5_HL,      2,    16,   true},      // 0xAE
-    {RES_5_A,       2,    8,    true},      // 0xAF
-    {RES_6_B,       2,    8,    true},      // 0xB0
-    {RES_6_C,       2,    8,    true},      // 0xB1
-    {RES_6_D,       2,    8,    true},      // 0xB2
-    {RES_6_E,       2,    8,    true},      // 0xB3
-    {RES_6_H,       2,    8,    true},      // 0xB4
-    {RES_6_L,       2,    8,    true},      // 0xB5
-    {RES_6_HL,      2,    16,   true},      // 0xB6
-    {RES_6_A,       2,    8,    true},      // 0xB7
-    {RES_7_B,       2,    8,    true},      // 0xB8
-    {RES_7_C,       2,    8,    true},      // 0xB9
-    {RES_7_D,       2,    8,    true},      // 0xBA
-    {RES_7_E,       2,    8,    true},      // 0xBB
-    {RES_7_H,       2,    8,    true},      // 0xBC
-    {RES_7_L,       2,    8,    true},      // 0xBD
-    {RES_7_HL,      2,    16,   true},      // 0xBE
-    {RES_7_A,       2,    8,    true},      // 0xBF
-    {SET_0_B,       2,    8,    true},      // 0xC0
-    {SET_0_C,       2,    8,    true},      // 0xC1
-    {SET_0_D,       2,    8,    true},      // 0xC2
-    {SET_0_E,       2,    8,    true},      // 0xC3
-    {SET_0_H,       2,    8,    true},      // 0xC4
-    {SET_0_L,       2,    8,    true},      // 0xC5
-    {SET_0_HL,      2,    16,   true},      // 0xC6
-    {SET_0_A,       2,    8,    true},      // 0xC7
-    {SET_1_B,       2,    8,    true},      // 0xC8
-    {SET_1_C,       2,    8,    true},      // 0xC9
-    {SET_1_D,       2,    8,    true},      // 0xCA
-    {SET_1_E,       2,    8,    true},      // 0xCB
-    {SET_1_H,       2,    8,    true},      // 0xCC
-    {SET_1_L,       2,    8,    true},      // 0xCD
-    {SET_1_HL,      2,    16,   true},      // 0xCE
-    {SET_1_A,       2,    8,    true},      // 0xCF
-    {SET_2_B,       2,    8,    true},      // 0xD0
-    {SET_2_C,       2,    8,    true},      // 0xD1
-    {SET_2_D,       2,    8,    true},      // 0xD2
-    {SET_2_E,       2,    8,    true},      // 0xD3
-    {SET_2_H,       2,    8,    true},      // 0xD4
-    {SET_2_L,       2,    8,    true},      // 0xD5
-    {SET_2_HL,      2,    16,   true},      // 0xD6
-    {SET_2_A,       2,    8,    true},      // 0xD7
-    {SET_3_B,       2,    8,    true},      // 0xD8
-    {SET_3_C,       2,    8,    true},      // 0xD9
-    {SET_3_D,       2,    8,    true},      // 0xDA
-    {SET_3_E,       2,    8,    true},      // 0xDB
-    {SET_3_H,       2,    8,    true},      // 0xDC
-    {SET_3_L,       2,    8,    true},      // 0xDD
-    {SET_3_HL,      2,    16,   true},      // 0xDE
-    {SET_3_A,       2,    8,    true},      // 0xDF
-    {SET_4_B,       2,    8,    true},      // 0xE0
-    {SET_4_C,       2,    8,    true},      // 0xE1
-    {SET_4_D,       2,    8,    true},      // 0xE2
-    {SET_4_E,       2,    8,    true},      // 0xE3
-    {SET_4_H,       2,    8,    true},      // 0xE4
-    {SET_4_L,       2,    8,    true},      // 0xE5
-    {SET_4_HL,      2,    16,   true},      // 0xE6
-    {SET_4_A,       2,    8,    true},      // 0xE7
-    {SET_5_B,       2,    8,    true},      // 0xE8
-    {SET_5_C,       2,    8,    true},      // 0xE9
-    {SET_5_D,       2,    8,    true},      // 0xEA
-    {SET_5_E,       2,    8,    true},      // 0xEB
-    {SET_5_H,       2,    8,    true},      // 0xEC
-    {SET_5_L,       2,    8,    true},      // 0xED
-    {SET_5_HL,      2,    16,   true},      // 0xEE
-    {SET_5_A,       2,    8,    true},      // 0xEF
-    {SET_6_B,       2,    8,    true},      // 0xF0
-    {SET_6_C,       2,    8,    true},      // 0xF1
-    {SET_6_D,       2,    8,    true},      // 0xF2
-    {SET_6_E,       2,    8,    true},      // 0xF3
-    {SET_6_H,       2,    8,    true},      // 0xF4
-    {SET_6_L,       2,    8,    true},      // 0xF5
-    {SET_6_HL,      2,    16,   true},      // 0xF6
-    {SET_6_A,       2,    8,    true},      // 0xF7
-    {SET_7_B,       2,    8,    true},      // 0xF8
-    {SET_7_C,       2,    8,    true},      // 0xF9
-    {SET_7_D,       2,    8,    true},      // 0xFA
-    {SET_7_E,       2,    8,    true},      // 0xFB
-    {SET_7_H,       2,    8,    true},      // 0xFC
-    {SET_7_L,       2,    8,    true},      // 0xFD
-    {SET_7_HL,      2,    16,   true},      // 0xFE
-    {SET_7_A,       2,    8,    true},      // 0xFF
+    {RLC_B,			2,      true},		// 0x00
+    {RLC_C,        	2,      true},      // 0x01
+    {RLC_D,    	    2,      true},      // 0x02
+    {RLC_E,    	    2,      true},      // 0x03
+    {RLC_H,    	    2,      true},      // 0x04
+    {RLC_L,    	    2,      true},      // 0x05
+    {RLC_HL,        2,      true},      // 0x06
+    {RLC_A,    	    2,      true},      // 0x07
+    {RRC_B,        	2,      true},      // 0x08
+    {RRC_C,        	2,      true},      // 0x09
+    {RRC_D,        	2,      true},      // 0x0A
+    {RRC_E,        	2,      true},      // 0x0B
+    {RRC_H,        	2,      true},      // 0x0C
+    {RRC_L,        	2,      true},      // 0x0D
+    {RRC_HL,       	2,      true},      // 0x0E
+    {RRC_A,        	2,      true},      // 0x0F
+    {RL_B,	        2,      true},      // 0x10
+    {RL_C,          2,      true},      // 0x11
+    {RL_D,          2,      true},      // 0x12
+    {RL_E,          2,      true},      // 0x13
+    {RL_H,          2,      true},      // 0x14
+    {RL_L,          2,      true},      // 0x15
+    {RL_HL,         2,      true},      // 0x16
+    {RL_A,          2,      true},      // 0x17
+    {RR_B,          2,      true},      // 0x18
+    {RR_C,          2,      true},      // 0x19
+    {RR_D,          2,      true},      // 0x1A
+    {RR_E,          2,      true},      // 0x1B
+    {RR_H,          2,      true},      // 0x1C
+    {RR_L,          2,      true},      // 0x1D
+    {RR_HL,         2,      true},      // 0x1E
+    {RR_A,          2,      true},      // 0x1F
+    {SLA_B,	        2,      true},      // 0x20
+    {SLA_C,         2,      true},      // 0x21
+    {SLA_D,         2,      true},      // 0x22
+    {SLA_E,         2,      true},      // 0x23
+    {SLA_H,         2,      true},      // 0x24
+    {SLA_L,         2,      true},      // 0x25
+    {SLA_HL,        2,      true},      // 0x26
+    {SLA_A,         2,      true},      // 0x27
+    {SRA_B,         2,      true},      // 0x28
+    {SRA_C,         2,      true},      // 0x29
+    {SRA_D,         2,      true},      // 0x2A
+    {SRA_E,         2,      true},      // 0x2B
+    {SRA_H,         2,      true},      // 0x2C
+    {SRA_L,         2,      true},      // 0x2D
+    {SRA_HL,        2,      true},      // 0x2E
+    {SRA_A,         2,      true},      // 0x2F
+    {SWAP_B,	    2,      true},      // 0x30
+    {SWAP_C,        2,      true},      // 0x31
+    {SWAP_D,        2,      true},      // 0x32
+    {SWAP_E,        2,      true},      // 0x33
+    {SWAP_H,        2,      true},      // 0x34
+    {SWAP_L,        2,      true},      // 0x35
+    {SWAP_HL,       2,      true},      // 0x36
+    {SWAP_A,        2,      true},      // 0x37
+    {SRL_B,         2,      true},      // 0x38
+    {SRL_C,         2,      true},      // 0x39
+    {SRL_D,         2,      true},      // 0x3A
+    {SRL_E,         2,      true},      // 0x3B
+    {SRL_H,         2,      true},      // 0x3C
+    {SRL_L,         2,      true},      // 0x3D
+    {SRL_HL,        2,      true},      // 0x3E
+    {SRL_A,         2,      true},      // 0x3F
+    {BIT_0_B,	    2,      true},      // 0x40
+    {BIT_0_C,       2,      true},      // 0x41
+    {BIT_0_D,       2,      true},      // 0x42
+    {BIT_0_E,       2,      true},      // 0x43
+    {BIT_0_H,       2,      true},      // 0x44
+    {BIT_0_L,       2,      true},      // 0x45
+    {BIT_0_HL,      2,      true},      // 0x46
+    {BIT_0_A,       2,      true},      // 0x47
+    {BIT_1_B,       2,      true},      // 0x48
+    {BIT_1_C,       2,      true},      // 0x49
+    {BIT_1_D,       2,      true},      // 0x4A
+    {BIT_1_E,       2,      true},      // 0x4B
+    {BIT_1_H,       2,      true},      // 0x4C
+    {BIT_1_L,       2,      true},      // 0x4D
+    {BIT_1_HL,      2,      true},      // 0x4E
+    {BIT_1_A,       2,      true},      // 0x4F
+    {BIT_2_B,	    2,      true},      // 0x50
+    {BIT_2_C,       2,      true},      // 0x51
+    {BIT_2_D,       2,      true},      // 0x52
+    {BIT_2_E,       2,      true},      // 0x53
+    {BIT_2_H,       2,      true},      // 0x54
+    {BIT_2_L,       2,      true},      // 0x55
+    {BIT_2_HL,      2,      true},      // 0x56
+    {BIT_2_A,       2,      true},      // 0x57
+    {BIT_3_B,       2,      true},      // 0x58
+    {BIT_3_C,       2,      true},      // 0x59
+    {BIT_3_D,       2,      true},      // 0x5A
+    {BIT_3_E,       2,      true},      // 0x5B
+    {BIT_3_H,       2,      true},      // 0x5C
+    {BIT_3_L,       2,      true},      // 0x5D
+    {BIT_3_HL,      2,      true},      // 0x5E
+    {BIT_3_A,       2,      true},      // 0x5F
+    {BIT_4_B,	    2,      true},      // 0x60
+    {BIT_4_C,       2,      true},      // 0x61
+    {BIT_4_D,       2,      true},      // 0x62
+    {BIT_4_E,       2,      true},      // 0x63
+    {BIT_4_H,       2,      true},      // 0x64
+    {BIT_4_L,       2,      true},      // 0x65
+    {BIT_4_HL,      2,      true},      // 0x66
+    {BIT_4_A,       2,      true},      // 0x67
+    {BIT_5_B,       2,      true},      // 0x68
+    {BIT_5_C,       2,      true},      // 0x69
+    {BIT_5_D,       2,      true},      // 0x6A
+    {BIT_5_E,       2,      true},      // 0x6B
+    {BIT_5_H,       2,      true},      // 0x6C
+    {BIT_5_L,       2,      true},      // 0x6D
+    {BIT_5_HL,      2,      true},      // 0x6E
+    {BIT_5_A,       2,      true},      // 0x6F
+    {BIT_6_B,	    2,      true},      // 0x70
+    {BIT_6_C,       2,      true},      // 0x71
+    {BIT_6_D,       2,      true},      // 0x72
+    {BIT_6_E,       2,      true},      // 0x73
+    {BIT_6_H,       2,      true},      // 0x74
+    {BIT_6_L,       2,      true},      // 0x75
+    {BIT_6_HL,      2,      true},      // 0x76
+    {BIT_6_A,       2,      true},      // 0x77
+    {BIT_7_B,       2,      true},      // 0x78
+    {BIT_7_C,       2,      true},      // 0x79
+    {BIT_7_D,       2,      true},      // 0x7A
+    {BIT_7_E,       2,      true},      // 0x7B
+    {BIT_7_H,       2,      true},      // 0x7C
+    {BIT_7_L,       2,      true},      // 0x7D
+    {BIT_7_HL,      2,      true},      // 0x7E
+    {BIT_7_A,       2,      true},      // 0x7F
+    {RES_0_B,       2,      true},      // 0x80
+    {RES_0_C,       2,      true},      // 0x81
+    {RES_0_D,       2,      true},      // 0x82
+    {RES_0_E,       2,      true},      // 0x83
+    {RES_0_H,       2,      true},      // 0x84
+    {RES_0_L,       2,      true},      // 0x85
+    {RES_0_HL,      2,      true},      // 0x86
+    {RES_0_A,       2,      true},      // 0x87
+    {RES_1_B,       2,      true},      // 0x88
+    {RES_1_C,       2,      true},      // 0x89
+    {RES_1_D,       2,      true},      // 0x8A
+    {RES_1_E,       2,      true},      // 0x8B
+    {RES_1_H,       2,      true},      // 0x8C
+    {RES_1_L,       2,      true},      // 0x8D
+    {RES_1_HL,      2,      true},      // 0x8E
+    {RES_1_A,       2,      true},      // 0x8F
+    {RES_2_B,       2,      true},      // 0x90
+    {RES_2_C,       2,      true},      // 0x91
+    {RES_2_D,       2,      true},      // 0x92
+    {RES_2_E,       2,      true},      // 0x93
+    {RES_2_H,       2,      true},      // 0x94
+    {RES_2_L,       2,      true},      // 0x95
+    {RES_2_HL,      2,      true},      // 0x96
+    {RES_2_A,       2,      true},      // 0x97
+    {RES_3_B,       2,      true},      // 0x98
+    {RES_3_C,       2,      true},      // 0x99
+    {RES_3_D,       2,      true},      // 0x9A
+    {RES_3_E,       2,      true},      // 0x9B
+    {RES_3_H,       2,      true},      // 0x9C
+    {RES_3_L,       2,      true},      // 0x9D
+    {RES_3_HL,      2,      true},      // 0x9E
+    {RES_3_A,       2,      true},      // 0x9F
+    {RES_4_B,       2,      true},      // 0xA0
+    {RES_4_C,       2,      true},      // 0xA1
+    {RES_4_D,       2,      true},      // 0xA2
+    {RES_4_E,       2,      true},      // 0xA3
+    {RES_4_H,       2,      true},      // 0xA4
+    {RES_4_L,       2,      true},      // 0xA5
+    {RES_4_HL,      2,      true},      // 0xA6
+    {RES_4_A,       2,      true},      // 0xA7
+    {RES_5_B,       2,      true},      // 0xA8
+    {RES_5_C,       2,      true},      // 0xA9
+    {RES_5_D,       2,      true},      // 0xAA
+    {RES_5_E,       2,      true},      // 0xAB
+    {RES_5_H,       2,      true},      // 0xAC
+    {RES_5_L,       2,      true},      // 0xAD
+    {RES_5_HL,      2,      true},      // 0xAE
+    {RES_5_A,       2,      true},      // 0xAF
+    {RES_6_B,       2,      true},      // 0xB0
+    {RES_6_C,       2,      true},      // 0xB1
+    {RES_6_D,       2,      true},      // 0xB2
+    {RES_6_E,       2,      true},      // 0xB3
+    {RES_6_H,       2,      true},      // 0xB4
+    {RES_6_L,       2,      true},      // 0xB5
+    {RES_6_HL,      2,      true},      // 0xB6
+    {RES_6_A,       2,      true},      // 0xB7
+    {RES_7_B,       2,      true},      // 0xB8
+    {RES_7_C,       2,      true},      // 0xB9
+    {RES_7_D,       2,      true},      // 0xBA
+    {RES_7_E,       2,      true},      // 0xBB
+    {RES_7_H,       2,      true},      // 0xBC
+    {RES_7_L,       2,      true},      // 0xBD
+    {RES_7_HL,      2,      true},      // 0xBE
+    {RES_7_A,       2,      true},      // 0xBF
+    {SET_0_B,       2,      true},      // 0xC0
+    {SET_0_C,       2,      true},      // 0xC1
+    {SET_0_D,       2,      true},      // 0xC2
+    {SET_0_E,       2,      true},      // 0xC3
+    {SET_0_H,       2,      true},      // 0xC4
+    {SET_0_L,       2,      true},      // 0xC5
+    {SET_0_HL,      2,      true},      // 0xC6
+    {SET_0_A,       2,      true},      // 0xC7
+    {SET_1_B,       2,      true},      // 0xC8
+    {SET_1_C,       2,      true},      // 0xC9
+    {SET_1_D,       2,      true},      // 0xCA
+    {SET_1_E,       2,      true},      // 0xCB
+    {SET_1_H,       2,      true},      // 0xCC
+    {SET_1_L,       2,      true},      // 0xCD
+    {SET_1_HL,      2,      true},      // 0xCE
+    {SET_1_A,       2,      true},      // 0xCF
+    {SET_2_B,       2,      true},      // 0xD0
+    {SET_2_C,       2,      true},      // 0xD1
+    {SET_2_D,       2,      true},      // 0xD2
+    {SET_2_E,       2,      true},      // 0xD3
+    {SET_2_H,       2,      true},      // 0xD4
+    {SET_2_L,       2,      true},      // 0xD5
+    {SET_2_HL,      2,      true},      // 0xD6
+    {SET_2_A,       2,      true},      // 0xD7
+    {SET_3_B,       2,      true},      // 0xD8
+    {SET_3_C,       2,      true},      // 0xD9
+    {SET_3_D,       2,      true},      // 0xDA
+    {SET_3_E,       2,      true},      // 0xDB
+    {SET_3_H,       2,      true},      // 0xDC
+    {SET_3_L,       2,      true},      // 0xDD
+    {SET_3_HL,      2,      true},      // 0xDE
+    {SET_3_A,       2,      true},      // 0xDF
+    {SET_4_B,       2,      true},      // 0xE0
+    {SET_4_C,       2,      true},      // 0xE1
+    {SET_4_D,       2,      true},      // 0xE2
+    {SET_4_E,       2,      true},      // 0xE3
+    {SET_4_H,       2,      true},      // 0xE4
+    {SET_4_L,       2,      true},      // 0xE5
+    {SET_4_HL,      2,      true},      // 0xE6
+    {SET_4_A,       2,      true},      // 0xE7
+    {SET_5_B,       2,      true},      // 0xE8
+    {SET_5_C,       2,      true},      // 0xE9
+    {SET_5_D,       2,      true},      // 0xEA
+    {SET_5_E,       2,      true},      // 0xEB
+    {SET_5_H,       2,      true},      // 0xEC
+    {SET_5_L,       2,      true},      // 0xED
+    {SET_5_HL,      2,      true},      // 0xEE
+    {SET_5_A,       2,      true},      // 0xEF
+    {SET_6_B,       2,      true},      // 0xF0
+    {SET_6_C,       2,      true},      // 0xF1
+    {SET_6_D,       2,      true},      // 0xF2
+    {SET_6_E,       2,      true},      // 0xF3
+    {SET_6_H,       2,      true},      // 0xF4
+    {SET_6_L,       2,      true},      // 0xF5
+    {SET_6_HL,      2,      true},      // 0xF6
+    {SET_6_A,       2,      true},      // 0xF7
+    {SET_7_B,       2,      true},      // 0xF8
+    {SET_7_C,       2,      true},      // 0xF9
+    {SET_7_D,       2,      true},      // 0xFA
+    {SET_7_E,       2,      true},      // 0xFB
+    {SET_7_H,       2,      true},      // 0xFC
+    {SET_7_L,       2,      true},      // 0xFD
+    {SET_7_HL,      2,      true},      // 0xFE
+    {SET_7_A,       2,      true},      // 0xFF
 };
