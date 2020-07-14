@@ -9,6 +9,7 @@
 #define INC_GAMEBOY_CPU_CORE_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 struct core_reg_t
 {
@@ -66,8 +67,18 @@ struct core_reg_t
 	uint16_t PC; // Program Counter
 };
 
-extern struct core_reg_t core_reg;
+struct core_t
+{
+    struct core_reg_t reg;
+    bool ime; // Interrupt Master Enable
+    bool halted;
+    uint8_t cycle_counter;
+    bool prefix_cb;
+};
 
+extern struct core_t core;
+
+void core_init(void);
 void core_execute(void);
 
 #endif /* INC_GAMEBOY_CPU_CORE_H_ */

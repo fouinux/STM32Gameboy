@@ -98,7 +98,7 @@ int main(void)
   MX_LTDC_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-
+  core_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */

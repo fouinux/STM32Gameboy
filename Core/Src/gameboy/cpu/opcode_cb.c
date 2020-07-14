@@ -16,11 +16,11 @@
 #define MACRO_RLC_r1(r1) \
 static uint8_t RLC_##r1(void) \
 { \
-    core_reg.r1 = (core_reg.r1 << 1) | (core_reg.r1 >> 7); \
-    core_reg.F = 0x00; \
-    core_reg.Flags.Z = (core_reg.r1 == 0); \
-    core_reg.Flags.C = core_reg.r1 & 0x01; \
-    return 8; \
+    core.reg.r1 = (core.reg.r1 << 1) | (core.reg.r1 >> 7); \
+    core.reg.F = 0x00; \
+    core.reg.Flags.Z = (core.reg.r1 == 0); \
+    core.reg.Flags.C = core.reg.r1 & 0x01; \
+    return 2; \
 }
 
 MACRO_RLC_r1(B);    // RLC B
@@ -36,27 +36,27 @@ MACRO_RLC_r1(A);    // RLC A
 // RLC (HL)
 static uint8_t RLC_HL(void)
 {
-    uint8_t t = mem_read_u8(core_reg.HL);
+    uint8_t t = mem_read_u8(core.reg.HL);
 
     t = (t << 1) | (t >> 7);
-    core_reg.F = 0x00;
-    core_reg.Flags.Z = (t == 0);
-    core_reg.Flags.C = t & 0x01;
+    core.reg.F = 0x00;
+    core.reg.Flags.Z = (t == 0);
+    core.reg.Flags.C = t & 0x01;
 
-    mem_write_u8(core_reg.HL, t);
-    return 16;
+    mem_write_u8(core.reg.HL, t);
+    return 4;
 }
 
 // Macro: RL r1
 #define MACRO_RL_r1(r1) \
 static uint8_t RL_##r1(void) \
 { \
-    uint16_t t = (core_reg.r1 << 1) | core_reg.Flags.C; \
-    core_reg.r1 = t & 0xFF; \
-    core_reg.F = 0x00; \
-    core_reg.Flags.Z = (core_reg.r1 == 0); \
-    core_reg.Flags.C = (t > 0xFF); \
-    return 8; \
+    uint16_t t = (core.reg.r1 << 1) | core.reg.Flags.C; \
+    core.reg.r1 = t & 0xFF; \
+    core.reg.F = 0x00; \
+    core.reg.Flags.Z = (core.reg.r1 == 0); \
+    core.reg.Flags.C = (t > 0xFF); \
+    return 2; \
 }
 
 MACRO_RL_r1(B);    // RL B
@@ -72,26 +72,26 @@ MACRO_RL_r1(A);    // RL A
 // RL (HL)
 static uint8_t RL_HL(void)
 {
-    uint16_t t = (uint16_t) mem_read_u8(core_reg.HL);
+    uint16_t t = (uint16_t) mem_read_u8(core.reg.HL);
 
-    t = (t << 1) | core_reg.Flags.C;
-    core_reg.F = 0x00;
-    core_reg.Flags.Z = ((t & 0xFF) == 0);
-    core_reg.Flags.C = (t > 0xFF);
+    t = (t << 1) | core.reg.Flags.C;
+    core.reg.F = 0x00;
+    core.reg.Flags.Z = ((t & 0xFF) == 0);
+    core.reg.Flags.C = (t > 0xFF);
 
-    mem_write_u8(core_reg.HL, t & 0xFF);
-    return 16;
+    mem_write_u8(core.reg.HL, t & 0xFF);
+    return 4;
 }
 
 // Macro: RRC r1
 #define MACRO_RRC_r1(r1) \
 static uint8_t RRC_##r1(void) \
 { \
-    core_reg.F = 0x00; \
-    core_reg.Flags.C = core_reg.r1 & 0x01; \
-    core_reg.Flags.Z = (core_reg.r1 == 0); \
-    core_reg.r1 = (core_reg.r1 >> 1) | (core_reg.r1 << 7); \
-    return 8; \
+    core.reg.F = 0x00; \
+    core.reg.Flags.C = core.reg.r1 & 0x01; \
+    core.reg.Flags.Z = (core.reg.r1 == 0); \
+    core.reg.r1 = (core.reg.r1 >> 1) | (core.reg.r1 << 7); \
+    return 2; \
 }
 
 MACRO_RRC_r1(B);    // RRC B
@@ -107,27 +107,27 @@ MACRO_RRC_r1(A);    // RRC A
 // RRC (HL)
 static uint8_t RRC_HL(void)
 {
-    uint8_t t = mem_read_u8(core_reg.HL);
+    uint8_t t = mem_read_u8(core.reg.HL);
 
-    core_reg.F = 0x00;
-    core_reg.Flags.C = t & 0x01;
-    core_reg.Flags.Z = (t == 0);
+    core.reg.F = 0x00;
+    core.reg.Flags.C = t & 0x01;
+    core.reg.Flags.Z = (t == 0);
     t = (t >> 1) | (t << 7);
 
-    mem_write_u8(core_reg.HL, t);
-    return 16;
+    mem_write_u8(core.reg.HL, t);
+    return 4;
 }
 
 // Macro: RR r1
 #define MACRO_RR_r1(r1) \
 static uint8_t RR_##r1(void) \
 { \
-    uint8_t t = (core_reg.r1 >> 1) | (core_reg.Flags.C << 7); \
-    core_reg.F = 0x00; \
-    core_reg.Flags.C = core_reg.r1 & 0x01; \
-    core_reg.Flags.Z = (t == 0); \
-    core_reg.r1 = t; \
-    return 8; \
+    uint8_t t = (core.reg.r1 >> 1) | (core.reg.Flags.C << 7); \
+    core.reg.F = 0x00; \
+    core.reg.Flags.C = core.reg.r1 & 0x01; \
+    core.reg.Flags.Z = (t == 0); \
+    core.reg.r1 = t; \
+    return 2; \
 }
 
 MACRO_RR_r1(B);    // RR B
@@ -143,26 +143,26 @@ MACRO_RR_r1(A);    // RR A
 // RR (HL)
 static uint8_t RR_HL(void)
 {
-    uint8_t u8 = mem_read_u8(core_reg.HL);
+    uint8_t u8 = mem_read_u8(core.reg.HL);
 
-    uint8_t t = (u8 >> 1) | (core_reg.Flags.C << 7);
-    core_reg.F = 0x00;
-    core_reg.Flags.C = u8 & 0x01;
-    core_reg.Flags.Z = (t == 0);
+    uint8_t t = (u8 >> 1) | (core.reg.Flags.C << 7);
+    core.reg.F = 0x00;
+    core.reg.Flags.C = u8 & 0x01;
+    core.reg.Flags.Z = (t == 0);
 
-    mem_write_u8(core_reg.HL, t);
-    return 16;
+    mem_write_u8(core.reg.HL, t);
+    return 4;
 }
 
 // Macro: SLA r1
 #define MACRO_SLA_r1(r1) \
 static uint8_t SLA_##r1(void) \
 { \
-    core_reg.F = 0x00; \
-    core_reg.Flags.C = core_reg.r1 >> 7; \
-    core_reg.r1 <<= 1; \
-    core_reg.Flags.Z = (core_reg.r1 == 0); \
-    return 8; \
+    core.reg.F = 0x00; \
+    core.reg.Flags.C = core.reg.r1 >> 7; \
+    core.reg.r1 <<= 1; \
+    core.reg.Flags.Z = (core.reg.r1 == 0); \
+    return 2; \
 }
 
 MACRO_SLA_r1(B);    // SLA B
@@ -178,26 +178,26 @@ MACRO_SLA_r1(A);    // SLA A
 // SLA (HL)
 static uint8_t SLA_HL(void)
 {
-    uint8_t t = mem_read_u8(core_reg.HL);
+    uint8_t t = mem_read_u8(core.reg.HL);
 
-    core_reg.F = 0x00;
-    core_reg.Flags.C = t >> 7;
+    core.reg.F = 0x00;
+    core.reg.Flags.C = t >> 7;
     t <<= 1;
-    core_reg.Flags.Z = (t == 0);
+    core.reg.Flags.Z = (t == 0);
 
-    mem_write_u8(core_reg.HL, t);
-    return 16;
+    mem_write_u8(core.reg.HL, t);
+    return 4;
 }
 
 // Macro: SRA r1
 #define MACRO_SRA_r1(r1) \
 static uint8_t SRA_##r1(void) \
 { \
-    core_reg.F = 0x00; \
-    core_reg.Flags.C = core_reg.r1 & 0x01; \
-    core_reg.r1 = (core_reg.r1 & 0x80) | (core_reg.r1 >>  1); \
-    core_reg.Flags.Z = (core_reg.r1 == 0); \
-    return 8; \
+    core.reg.F = 0x00; \
+    core.reg.Flags.C = core.reg.r1 & 0x01; \
+    core.reg.r1 = (core.reg.r1 & 0x80) | (core.reg.r1 >>  1); \
+    core.reg.Flags.Z = (core.reg.r1 == 0); \
+    return 2; \
 }
 
 MACRO_SRA_r1(B);    // SRA B
@@ -213,25 +213,25 @@ MACRO_SRA_r1(A);    // SRA A
 // SRA (HL)
 static uint8_t SRA_HL(void)
 {
-    uint8_t t = mem_read_u8(core_reg.HL);
+    uint8_t t = mem_read_u8(core.reg.HL);
 
-    core_reg.F = 0x00;
-    core_reg.Flags.C = t & 0x01;
+    core.reg.F = 0x00;
+    core.reg.Flags.C = t & 0x01;
     t = (t & 0x80) | (t >> 1);
-    core_reg.Flags.Z = (t == 0);
+    core.reg.Flags.Z = (t == 0);
 
-    mem_write_u8(core_reg.HL, t);
-    return 16;
+    mem_write_u8(core.reg.HL, t);
+    return 4;
 }
 
 // Macro: SWAP r1
 #define MACRO_SWAP_r1(r1) \
 static uint8_t SWAP_##r1(void) \
 { \
-    core_reg.r1 = (core_reg.r1 >> 4) | (core_reg.r1 << 4);\
-    core_reg.F = 0x00; \
-    core_reg.Flags.Z = (core_reg.r1 == 0); \
-    return 8; \
+    core.reg.r1 = (core.reg.r1 >> 4) | (core.reg.r1 << 4);\
+    core.reg.F = 0x00; \
+    core.reg.Flags.Z = (core.reg.r1 == 0); \
+    return 2; \
 }
 
 MACRO_SWAP_r1(B);    // SWAP B
@@ -247,25 +247,25 @@ MACRO_SWAP_r1(A);    // SWAP A
 // SWAP (HL)
 static uint8_t SWAP_HL(void)
 {
-    uint8_t t = mem_read_u8(core_reg.HL);
+    uint8_t t = mem_read_u8(core.reg.HL);
 
     t = (t >> 4) | (t << 4);
-    core_reg.F = 0x00;
-    core_reg.Flags.Z = (t == 0);
+    core.reg.F = 0x00;
+    core.reg.Flags.Z = (t == 0);
 
-    mem_write_u8(core_reg.HL, t);
-    return 16;
+    mem_write_u8(core.reg.HL, t);
+    return 4;
 }
 
 // Macro: SRL r1
 #define MACRO_SRL_r1(r1) \
 static uint8_t SRL_##r1(void) \
 { \
-    core_reg.F = 0x00; \
-    core_reg.Flags.C = (core_reg.r1 & 0x01); \
-    core_reg.r1 >>= 1; \
-    core_reg.Flags.Z = (core_reg.r1 == 0); \
-    return 8; \
+    core.reg.F = 0x00; \
+    core.reg.Flags.C = (core.reg.r1 & 0x01); \
+    core.reg.r1 >>= 1; \
+    core.reg.Flags.Z = (core.reg.r1 == 0); \
+    return 2; \
 }
 
 MACRO_SRL_r1(B);    // SRL B
@@ -281,25 +281,25 @@ MACRO_SRL_r1(A);    // SRL A
 // SRL (HL)
 static uint8_t SRL_HL(void)
 {
-    uint8_t t = mem_read_u8(core_reg.HL);
+    uint8_t t = mem_read_u8(core.reg.HL);
 
-    core_reg.F = 0x00;
-    core_reg.Flags.C = (t & 0x01);
+    core.reg.F = 0x00;
+    core.reg.Flags.C = (t & 0x01);
     t >>= 1;
-    core_reg.Flags.Z = (t == 0);
+    core.reg.Flags.Z = (t == 0);
 
-    mem_write_u8(core_reg.HL, t);
-    return 16;
+    mem_write_u8(core.reg.HL, t);
+    return 4;
 }
 
 // Macro: BIT n, r1
 #define MACRO_BIT_n_r1(n, r1) \
 static uint8_t BIT_##n##_##r1(void) \
 { \
-    core_reg.Flags.Z = ((core_reg.r1 & (1 << n)) == 0); \
-    core_reg.Flags.N = 0; \
-    core_reg.Flags.H = 1; \
-    return 8; \
+    core.reg.Flags.Z = ((core.reg.r1 & (1 << n)) == 0); \
+    core.reg.Flags.N = 0; \
+    core.reg.Flags.H = 1; \
+    return 2; \
 }
 
 MACRO_BIT_n_r1(0, B);    // BIT 0, B
@@ -372,11 +372,11 @@ MACRO_BIT_n_r1(7, A);    // BIT 7, A
 #define MACRO_BIT_n_HL(n) \
 static uint8_t BIT_##n##_HL(void) \
 { \
-    uint8_t t = mem_read_u8(core_reg.HL);\
-    core_reg.Flags.Z = ((t & (1 << n)) == 0); \
-    core_reg.Flags.N = 0; \
-    core_reg.Flags.H = 1; \
-    return 16;\
+    uint8_t t = mem_read_u8(core.reg.HL);\
+    core.reg.Flags.Z = ((t & (1 << n)) == 0); \
+    core.reg.Flags.N = 0; \
+    core.reg.Flags.H = 1; \
+    return 4;\
 }
 
 MACRO_BIT_n_HL(0);      // BIT 0, (HL)
@@ -394,8 +394,8 @@ MACRO_BIT_n_HL(7);      // BIT 7, (HL)
 #define MACRO_RES_n_r1(n, r1) \
 static uint8_t RES_##n##_##r1(void) \
 { \
-    core_reg.r1 &= ~(1 << n);\
-    return 8; \
+    core.reg.r1 &= ~(1 << n);\
+    return 2; \
 }
 
 MACRO_RES_n_r1(0, B);    // RES 0, B
@@ -468,10 +468,10 @@ MACRO_RES_n_r1(7, A);    // RES 7, A
 #define MACRO_RES_n_HL(n) \
 static uint8_t RES_##n##_HL(void) \
 { \
-    uint8_t t = mem_read_u8(core_reg.HL);\
+    uint8_t t = mem_read_u8(core.reg.HL);\
     t &= ~(1 << n);\
-    mem_write_u8(core_reg.HL, t);\
-    return 16; \
+    mem_write_u8(core.reg.HL, t);\
+    return 4; \
 }
 
 MACRO_RES_n_HL(0);      // RES 0, (HL)
@@ -489,8 +489,8 @@ MACRO_RES_n_HL(7);      // RES 7, (HL)
 #define MACRO_SET_n_r1(n, r1) \
 static uint8_t SET_##n##_##r1(void) \
 { \
-    core_reg.r1 |= (1 << n);\
-    return 8; \
+    core.reg.r1 |= (1 << n);\
+    return 2; \
 }
 
 MACRO_SET_n_r1(0, B);    // SET 0, B
@@ -563,10 +563,10 @@ MACRO_SET_n_r1(7, A);    // SET 7, A
 #define MACRO_SET_n_HL(n) \
 static uint8_t SET_##n##_HL(void) \
 { \
-    uint8_t t = mem_read_u8(core_reg.HL);\
+    uint8_t t = mem_read_u8(core.reg.HL);\
     t |= (1 << n);\
-    mem_write_u8(core_reg.HL, t);\
-    return 16; \
+    mem_write_u8(core.reg.HL, t);\
+    return 4; \
 }
 
 MACRO_SET_n_HL(0);      // SET 0, (HL)

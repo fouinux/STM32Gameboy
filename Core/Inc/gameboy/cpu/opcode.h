@@ -15,7 +15,7 @@ struct opcode_t
 {
 	uint8_t (*func)(void);
 	uint8_t length;
-	bool updatePC;
+	bool update_pc;
 };
 
 extern struct opcode_t opcodeList[256];

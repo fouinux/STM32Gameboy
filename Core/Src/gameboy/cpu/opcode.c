@@ -20,8 +20,8 @@
 #define MACRO_LD_r1_r2(r1, r2) \
 static uint8_t LD_##r1##_##r2(void) \
 { \
-    core_reg.r1 = core_reg.r2; \
-    return 4; \
+    core.reg.r1 = core.reg.r2; \
+    return 1; \
 }
 
 MACRO_LD_r1_r2(B, B);    // LD B, B
@@ -86,8 +86,8 @@ MACRO_LD_r1_r2(A, A);    // LD A, A
 #define MACRO_LD_r1_HL(r1) \
 static uint8_t LD_##r1##_HL(void) \
 { \
-    core_reg.r1 = mem_read_u8(core_reg.HL); \
-    return 8; \
+    core.reg.r1 = mem_read_u8(core.reg.HL); \
+    return 2; \
 }
 
 MACRO_LD_r1_HL(B);        // LD B, (HL)
@@ -104,8 +104,8 @@ MACRO_LD_r1_HL(A);        // LD A, (HL)
 #define MACRO_LD_HL_r1(r1) \
 static uint8_t LD_HL_##r1(void) \
 { \
-    mem_write_u8(core_reg.HL, core_reg.r1); \
-    return 8; \
+    mem_write_u8(core.reg.HL, core.reg.r1); \
+    return 2; \
 }
 
 MACRO_LD_HL_r1(B);        // LD (HL), B
@@ -122,8 +122,8 @@ MACRO_LD_HL_r1(A);        // LD (HL), A
 #define MACRO_LD_r1_d8(r1) \
 static uint8_t LD_##r1##_d8(void) \
 { \
-    core_reg.r1 = mem_read_u8(core_reg.PC + 1); \
-    return 8; \
+    core.reg.r1 = mem_read_u8(core.reg.PC + 1); \
+    return 2; \
 }
 
 MACRO_LD_r1_d8(B);        // LD B, d8
@@ -139,16 +139,16 @@ MACRO_LD_r1_d8(A);        // LD A, d8
 // LD (HL), d8
 static uint8_t LD_HL_d8(void)
 {
-    mem_write_u8(core_reg.HL, mem_read_u8(core_reg.PC + 1));
-    return 12;
+    mem_write_u8(core.reg.HL, mem_read_u8(core.reg.PC + 1));
+    return 3;
 }
 
 // Macro: LD (r1), A
 #define MACRO_LD_r1_A(r1) \
 static uint8_t LD_##r1##_A(void) \
 { \
-    mem_write_u8(core_reg.r1, core_reg.A); \
-    return 8; \
+    mem_write_u8(core.reg.r1, core.reg.A); \
+    return 2; \
 }
 
 MACRO_LD_r1_A(BC);        // LD (BC), A
@@ -159,23 +159,23 @@ MACRO_LD_r1_A(DE);        // LD (DE), A
 // LD (HL+), A
 static uint8_t LD_HLp_A(void)
 {
-    mem_write_u8(core_reg.HL++, core_reg.A);
-    return 8;
+    mem_write_u8(core.reg.HL++, core.reg.A);
+    return 2;
 }
 
 // LD (HL-), A
 static uint8_t LD_HLm_A(void)
 {
-    mem_write_u8(core_reg.HL--, core_reg.A);
-    return 8;
+    mem_write_u8(core.reg.HL--, core.reg.A);
+    return 2;
 }
 
 // Macro: LD (r1), A
 #define MACRO_LD_A_r1(r1) \
 static uint8_t LD_A_##r1(void) \
 { \
-    core_reg.A = mem_read_u8(core_reg.r1); \
-    return 8; \
+    core.reg.A = mem_read_u8(core.reg.r1); \
+    return 2; \
 }
 
 MACRO_LD_A_r1(BC);        // LD A, (BC)
@@ -186,61 +186,61 @@ MACRO_LD_A_r1(DE);        // LD A, (DE)
 // LD A, (HL+)
 static uint8_t LD_A_HLp(void)
 {
-    core_reg.A = mem_read_u8(core_reg.HL++);
-    return 8;
+    core.reg.A = mem_read_u8(core.reg.HL++);
+    return 2;
 }
 
 // LD A, (HL-)
 static uint8_t LD_A_HLm(void)
 {
-    core_reg.A = mem_read_u8(core_reg.HL--);
-    return 8;
+    core.reg.A = mem_read_u8(core.reg.HL--);
+    return 2;
 }
 
 // LDH (a8), A
 static uint8_t LDH_a8_A(void)
 {
-    uint8_t a8 = mem_read_u8(core_reg.PC + 1);
-    mem_write_u8(0xFF00 + a8, core_reg.A);
-    return 12; \
+    uint8_t a8 = mem_read_u8(core.reg.PC + 1);
+    mem_write_u8(0xFF00 + a8, core.reg.A);
+    return 3; \
 }
 
 // LDH A, (a8)
 static uint8_t LDH_A_a8(void)
 {
-    uint8_t a8 = mem_read_u8(core_reg.PC + 1);
-    core_reg.A = mem_read_u8(0xFF00 + a8);
-    return 12;
+    uint8_t a8 = mem_read_u8(core.reg.PC + 1);
+    core.reg.A = mem_read_u8(0xFF00 + a8);
+    return 3;
 }
 
 // LD (C), A
 static uint8_t LD_pC_A(void)
 {
-    mem_write_u8(0xFF00 + core_reg.C, core_reg.A);
-    return 8;
+    mem_write_u8(0xFF00 + core.reg.C, core.reg.A);
+    return 2;
 }
 
 // LD A, (C)
 static uint8_t LD_A_pC(void)
 {
-    core_reg.A = mem_read_u8(0xFF00 + core_reg.C);
-    return 8;
+    core.reg.A = mem_read_u8(0xFF00 + core.reg.C);
+    return 2;
 }
 
 // LD (a16), A
 static uint8_t LD_a16_A(void)
 {
-    uint16_t a16 = mem_read_u16(core_reg.PC + 1);
-    mem_write_u8(a16, core_reg.A);
-    return 16;
+    uint16_t a16 = mem_read_u16(core.reg.PC + 1);
+    mem_write_u8(a16, core.reg.A);
+    return 4;
 }
 
 // LD A, (a16)
 static uint8_t LD_A_a16(void)
 {
-    uint16_t a16 = mem_read_u16(core_reg.PC + 1);
-    core_reg.A = mem_read_u8(a16);
-    return 16;
+    uint16_t a16 = mem_read_u16(core.reg.PC + 1);
+    core.reg.A = mem_read_u8(a16);
+    return 4;
 }
 
 //////////////////////
@@ -251,8 +251,8 @@ static uint8_t LD_A_a16(void)
 #define MACRO_LD_r1_d16(r1) \
 static uint8_t LD_##r1##_d16(void) \
 { \
-    core_reg.r1 = mem_read_u16(core_reg.PC + 1); \
-    return 12; \
+    core.reg.r1 = mem_read_u16(core.reg.PC + 1); \
+    return 3; \
 }
 
 MACRO_LD_r1_d16(BC);        // LD BC, d16
@@ -265,42 +265,42 @@ MACRO_LD_r1_d16(SP);        // LD SP, d16
 // LD (a16), SP
 static uint8_t LD_a16_SP(void)
 {
-    uint16_t a16 = mem_read_u16(core_reg.PC + 1);
+    uint16_t a16 = mem_read_u16(core.reg.PC + 1);
 
-    mem_write_u16(a16, core_reg.SP);
-    return 20;
+    mem_write_u16(a16, core.reg.SP);
+    return 5;
 }
 
 // LD HL, SP+r8
 static uint8_t LD_HL_SP_r8(void)
 {
-    int8_t r8 = mem_read_s8(core_reg.PC + 1);
+    int8_t r8 = mem_read_s8(core.reg.PC + 1);
 
-    core_reg.HL = core_reg.SP + r8;
-    core_reg.F = 0;
-    if ((core_reg.SP & 0x0F) + (r8 & 0x0F) > 0x0F)
-        core_reg.Flags.H = 1;
+    core.reg.HL = core.reg.SP + r8;
+    core.reg.F = 0;
+    if ((core.reg.SP & 0x0F) + (r8 & 0x0F) > 0x0F)
+        core.reg.Flags.H = 1;
 
-    if ((core_reg.SP & 0xFF) + ((uint16_t) r8 & 0xFF) > 0xFF)
-        core_reg.Flags.C = 1;
+    if ((core.reg.SP & 0xFF) + ((uint16_t) r8 & 0xFF) > 0xFF)
+        core.reg.Flags.C = 1;
 
-    return 12;
+    return 3;
 }
 
 // LD SP, HL
 static uint8_t LD_SP_HL(void)
 {
-    core_reg.SP = core_reg.HL;
-    return 8;
+    core.reg.SP = core.reg.HL;
+    return 2;
 }
 
 // Macro: PUSH r1
 #define MACRO_PUSH_r1(r1) \
 static uint8_t PUSH_##r1(void) \
 { \
-    mem_write_u16(core_reg.SP - 2, core_reg.r1); \
-    core_reg.SP -= 2; \
-    return 16; \
+    mem_write_u16(core.reg.SP - 2, core.reg.r1); \
+    core.reg.SP -= 2; \
+    return 4; \
 }
 
 MACRO_PUSH_r1(BC);     // PUSH BC
@@ -314,9 +314,9 @@ MACRO_PUSH_r1(AF);     // PUSH AF
 #define MACRO_POP_r1(r1) \
 static uint8_t POP_##r1(void) \
 { \
-    core_reg.r1 = mem_read_u16(core_reg.SP); \
-    core_reg.SP += 2; \
-    return 12; \
+    core.reg.r1 = mem_read_u16(core.reg.SP); \
+    core.reg.SP += 2; \
+    return 3; \
 }
 
 MACRO_POP_r1(BC);     // POP BC
@@ -334,13 +334,13 @@ MACRO_POP_r1(AF);     // POP AF
 #define MACRO_ADD_A_r1(r1) \
 static uint8_t ADD_A_##r1(void) \
 { \
-    uint16_t t = core_reg.A + core_reg.r1; \
-    core_reg.F = 0; \
-    core_reg.Flags.Z = ((t & 0xFF) == 0);\
-    core_reg.Flags.H = ((core_reg.A & 0xF) + (core_reg.r1 & 0xF) > 0xF); \
-    core_reg.Flags.C = (t > 0xFF); \
-    core_reg.A = t & 0xFF; \
-    return 4; \
+    uint16_t t = core.reg.A + core.reg.r1; \
+    core.reg.F = 0; \
+    core.reg.Flags.Z = ((t & 0xFF) == 0);\
+    core.reg.Flags.H = ((core.reg.A & 0xF) + (core.reg.r1 & 0xF) > 0xF); \
+    core.reg.Flags.C = (t > 0xFF); \
+    core.reg.A = t & 0xFF; \
+    return 1; \
 }
 
 MACRO_ADD_A_r1(B);    // ADD A, B
@@ -356,40 +356,40 @@ MACRO_ADD_A_r1(A);    // ADD A, A
 // ADD A, (HL)
 static uint8_t ADD_A_HL(void)
 {
-    uint8_t reg = mem_read_u8(core_reg.HL);
-    uint16_t t = core_reg.A + reg;
-    core_reg.F = 0;
-    core_reg.Flags.Z = ((t & 0xFF) == 0);
-    core_reg.Flags.H = ((core_reg.A & 0xF) + (reg & 0xF) > 0xF);
-    core_reg.Flags.C = (t > 0xFF);
-    core_reg.A = t & 0xFF;
-    return 8;
+    uint8_t reg = mem_read_u8(core.reg.HL);
+    uint16_t t = core.reg.A + reg;
+    core.reg.F = 0;
+    core.reg.Flags.Z = ((t & 0xFF) == 0);
+    core.reg.Flags.H = ((core.reg.A & 0xF) + (reg & 0xF) > 0xF);
+    core.reg.Flags.C = (t > 0xFF);
+    core.reg.A = t & 0xFF;
+    return 2;
 }
 
 // ADD A, d8
 static uint8_t ADD_A_d8(void)
 {
-    uint8_t d8 = mem_read_u8(core_reg.PC + 1);
-    uint16_t t = core_reg.A + d8;
-    core_reg.F = 0;
-    core_reg.Flags.Z = ((t & 0xFF) == 0);
-    core_reg.Flags.H = ((core_reg.A & 0xF) + (d8 & 0xF) > 0xF);
-    core_reg.Flags.C = (t > 0xFF);
-    core_reg.A = t & 0xFF;
-    return 8;
+    uint8_t d8 = mem_read_u8(core.reg.PC + 1);
+    uint16_t t = core.reg.A + d8;
+    core.reg.F = 0;
+    core.reg.Flags.Z = ((t & 0xFF) == 0);
+    core.reg.Flags.H = ((core.reg.A & 0xF) + (d8 & 0xF) > 0xF);
+    core.reg.Flags.C = (t > 0xFF);
+    core.reg.A = t & 0xFF;
+    return 2;
 }
 
 // Macro: ADC A, r1
 #define MACRO_ADC_A_r1(r1) \
 static uint8_t ADC_A_##r1(void) \
 { \
-    uint16_t t = core_reg.A + core_reg.r1 + core_reg.Flags.C; \
-    core_reg.F = 0; \
-    core_reg.Flags.Z = ((t & 0xFF) == 0);\
-    core_reg.Flags.H = ((core_reg.A & 0xF) + (core_reg.r1 & 0xF) > 0xF); \
-    core_reg.Flags.C = (t > 0xFF); \
-    core_reg.A = t & 0xFF; \
-    return 4; \
+    uint16_t t = core.reg.A + core.reg.r1 + core.reg.Flags.C; \
+    core.reg.F = 0; \
+    core.reg.Flags.Z = ((t & 0xFF) == 0);\
+    core.reg.Flags.H = ((core.reg.A & 0xF) + (core.reg.r1 & 0xF) > 0xF); \
+    core.reg.Flags.C = (t > 0xFF); \
+    core.reg.A = t & 0xFF; \
+    return 1; \
 }
 
 MACRO_ADC_A_r1(B);    // ADC A, B
@@ -405,40 +405,40 @@ MACRO_ADC_A_r1(A);    // ADC A, A
 // ADC A, (HL)
 static uint8_t ADC_A_HL(void)
 {
-    uint8_t reg = mem_read_u8(core_reg.HL);
-    uint16_t t = core_reg.A + reg +  core_reg.Flags.C;
-    core_reg.F = 0;
-    core_reg.Flags.Z = ((t & 0xFF) == 0);
-    core_reg.Flags.H = ((core_reg.A & 0xF) + (reg & 0xF) > 0xF);
-    core_reg.Flags.C = (t > 0xFF);
-    core_reg.A = t & 0xFF;
-    return 8;
+    uint8_t reg = mem_read_u8(core.reg.HL);
+    uint16_t t = core.reg.A + reg +  core.reg.Flags.C;
+    core.reg.F = 0;
+    core.reg.Flags.Z = ((t & 0xFF) == 0);
+    core.reg.Flags.H = ((core.reg.A & 0xF) + (reg & 0xF) > 0xF);
+    core.reg.Flags.C = (t > 0xFF);
+    core.reg.A = t & 0xFF;
+    return 2;
 }
 
 // ADC A, d8
 static uint8_t ADC_A_d8(void)
 {
-    uint8_t d8 = mem_read_u8(core_reg.PC + 1);
-    uint16_t t = core_reg.A + d8 +  core_reg.Flags.C;
-    core_reg.F = 0;
-    core_reg.Flags.Z = ((t & 0xFF) == 0);
-    core_reg.Flags.H = ((core_reg.A & 0xF) + (d8 & 0xF) > 0xF);
-    core_reg.Flags.C = (t > 0xFF);
-    core_reg.A = t & 0xFF;
-    return 8;
+    uint8_t d8 = mem_read_u8(core.reg.PC + 1);
+    uint16_t t = core.reg.A + d8 +  core.reg.Flags.C;
+    core.reg.F = 0;
+    core.reg.Flags.Z = ((t & 0xFF) == 0);
+    core.reg.Flags.H = ((core.reg.A & 0xF) + (d8 & 0xF) > 0xF);
+    core.reg.Flags.C = (t > 0xFF);
+    core.reg.A = t & 0xFF;
+    return 2;
 }
 
 // Macro: SUB A, r1
 #define MACRO_SUB_A_r1(r1) \
 static uint8_t SUB_A_##r1(void) \
 { \
-    int16_t t = core_reg.A - core_reg.r1; \
-    core_reg.F = 0x40; \
-    core_reg.Flags.Z = ((t & 0xFF) == 0);\
-    core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) core_reg.r1 & 0xF) < 0); \
-    core_reg.Flags.C = (t < 0); \
-    core_reg.A = t & 0xFF; \
-    return 4; \
+    int16_t t = core.reg.A - core.reg.r1; \
+    core.reg.F = 0x40; \
+    core.reg.Flags.Z = ((t & 0xFF) == 0);\
+    core.reg.Flags.H = (((int8_t) core.reg.A & 0xF) - ((int8_t) core.reg.r1 & 0xF) < 0); \
+    core.reg.Flags.C = (t < 0); \
+    core.reg.A = t & 0xFF; \
+    return 1; \
 }
 
 MACRO_SUB_A_r1(B);    // SUB A, B
@@ -454,27 +454,27 @@ MACRO_SUB_A_r1(A);    // SUB A, A
 // SUB A, (HL)
 static uint8_t SUB_A_HL(void)
 {
-    uint8_t reg = mem_read_u8(core_reg.HL);
-    int16_t t = core_reg.A - reg;
-    core_reg.F = 0x40;
-    core_reg.Flags.Z = ((t & 0xFF) == 0);
-    core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) reg & 0xF) < 0);
-    core_reg.Flags.C = (t < 0);
-    core_reg.A = t & 0xFF;
-    return 8;
+    uint8_t reg = mem_read_u8(core.reg.HL);
+    int16_t t = core.reg.A - reg;
+    core.reg.F = 0x40;
+    core.reg.Flags.Z = ((t & 0xFF) == 0);
+    core.reg.Flags.H = (((int8_t) core.reg.A & 0xF) - ((int8_t) reg & 0xF) < 0);
+    core.reg.Flags.C = (t < 0);
+    core.reg.A = t & 0xFF;
+    return 2;
 }
 
 // SUB A, d8
 static uint8_t SUB_A_d8(void)
 {
-    uint8_t d8 = mem_read_u8(core_reg.PC + 1);
-    int16_t t = core_reg.A - d8;
-    core_reg.F = 0x40;
-    core_reg.Flags.Z = ((t & 0xFF) == 0);
-    core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) d8 & 0xF) < 0);
-    core_reg.Flags.C = (t < 0);
-    core_reg.A = t & 0xFF;
-    return 8;
+    uint8_t d8 = mem_read_u8(core.reg.PC + 1);
+    int16_t t = core.reg.A - d8;
+    core.reg.F = 0x40;
+    core.reg.Flags.Z = ((t & 0xFF) == 0);
+    core.reg.Flags.H = (((int8_t) core.reg.A & 0xF) - ((int8_t) d8 & 0xF) < 0);
+    core.reg.Flags.C = (t < 0);
+    core.reg.A = t & 0xFF;
+    return 2;
 }
 
 
@@ -482,13 +482,13 @@ static uint8_t SUB_A_d8(void)
 #define MACRO_SBC_A_r1(r1) \
 static uint8_t SBC_A_##r1(void) \
 { \
-    int16_t t = core_reg.A - core_reg.r1 - core_reg.Flags.C; \
-    core_reg.F = 0x40; \
-    core_reg.Flags.Z = ((t & 0xFF) == 0);\
-    core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) core_reg.r1 & 0xF) < 0); \
-    core_reg.Flags.C = (t < 0); \
-    core_reg.A = t & 0xFF; \
-    return 4; \
+    int16_t t = core.reg.A - core.reg.r1 - core.reg.Flags.C; \
+    core.reg.F = 0x40; \
+    core.reg.Flags.Z = ((t & 0xFF) == 0);\
+    core.reg.Flags.H = (((int8_t) core.reg.A & 0xF) - ((int8_t) core.reg.r1 & 0xF) < 0); \
+    core.reg.Flags.C = (t < 0); \
+    core.reg.A = t & 0xFF; \
+    return 1; \
 }
 
 MACRO_SBC_A_r1(B);    // SBC A, B
@@ -504,37 +504,37 @@ MACRO_SBC_A_r1(A);    // SBC A, A
 // SBC A, (HL)
 static uint8_t SBC_A_HL(void)
 {
-    uint8_t reg = mem_read_u8(core_reg.HL);
-    int16_t t = core_reg.A - reg - core_reg.Flags.C;
-    core_reg.F = 0x40;
-    core_reg.Flags.Z = ((t & 0xFF) == 0);
-    core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) reg & 0xF) < 0);
-    core_reg.Flags.C = (t < 0);
-    core_reg.A = t & 0xFF;
-    return 8;
+    uint8_t reg = mem_read_u8(core.reg.HL);
+    int16_t t = core.reg.A - reg - core.reg.Flags.C;
+    core.reg.F = 0x40;
+    core.reg.Flags.Z = ((t & 0xFF) == 0);
+    core.reg.Flags.H = (((int8_t) core.reg.A & 0xF) - ((int8_t) reg & 0xF) < 0);
+    core.reg.Flags.C = (t < 0);
+    core.reg.A = t & 0xFF;
+    return 2;
 }
 
 // SBC A, d8
 static uint8_t SBC_A_d8(void)
 {
-    uint8_t d8 = mem_read_u8(core_reg.PC + 1);
-    int16_t t = core_reg.A - d8 - core_reg.Flags.C;
-    core_reg.F = 0x40;
-    core_reg.Flags.Z = ((t & 0xFF) == 0);
-    core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) d8 & 0xF) < 0);
-    core_reg.Flags.C = (t < 0);
-    core_reg.A = t & 0xFF;
-    return 8;
+    uint8_t d8 = mem_read_u8(core.reg.PC + 1);
+    int16_t t = core.reg.A - d8 - core.reg.Flags.C;
+    core.reg.F = 0x40;
+    core.reg.Flags.Z = ((t & 0xFF) == 0);
+    core.reg.Flags.H = (((int8_t) core.reg.A & 0xF) - ((int8_t) d8 & 0xF) < 0);
+    core.reg.Flags.C = (t < 0);
+    core.reg.A = t & 0xFF;
+    return 2;
 }
 
 // Macro: AND A, r1
 #define MACRO_AND_A_r1(r1) \
 static uint8_t AND_A_##r1(void) \
 { \
-    core_reg.A &= core_reg.r1; \
-    core_reg.F = 0x20; /* N = 0, H = 1, C = 0 */ \
-    core_reg.Flags.Z = (core_reg.A == 0);\
-    return 4; \
+    core.reg.A &= core.reg.r1; \
+    core.reg.F = 0x20; /* N = 0, H = 1, C = 0 */ \
+    core.reg.Flags.Z = (core.reg.A == 0);\
+    return 1; \
 }
 
 MACRO_AND_A_r1(B);    // AND A, B
@@ -550,21 +550,21 @@ MACRO_AND_A_r1(A);    // AND A, A
 // AND A, (HL)
 static uint8_t AND_A_HL(void)
 {
-    uint8_t reg = mem_read_u8(core_reg.HL);
-    core_reg.A &= reg;
-    core_reg.F = 0x20; /* N = 0, H = 1, C = 0 */
-    core_reg.Flags.Z = (core_reg.A == 0);
-    return 8;
+    uint8_t reg = mem_read_u8(core.reg.HL);
+    core.reg.A &= reg;
+    core.reg.F = 0x20; /* N = 0, H = 1, C = 0 */
+    core.reg.Flags.Z = (core.reg.A == 0);
+    return 2;
 }
 
 // AND A, d8
 static uint8_t AND_A_d8(void)
 {
-    uint8_t d8 = mem_read_u8(core_reg.PC + 1);
-    core_reg.A &= d8;
-    core_reg.F = 0x20; /* N = 0, H = 1, C = 0 */
-    core_reg.Flags.Z = (core_reg.A == 0);
-    return 8;
+    uint8_t d8 = mem_read_u8(core.reg.PC + 1);
+    core.reg.A &= d8;
+    core.reg.F = 0x20; /* N = 0, H = 1, C = 0 */
+    core.reg.Flags.Z = (core.reg.A == 0);
+    return 2;
 }
 
 
@@ -572,10 +572,10 @@ static uint8_t AND_A_d8(void)
 #define MACRO_XOR_A_r1(r1) \
 static uint8_t XOR_A_##r1(void) \
 { \
-    core_reg.A ^= core_reg.r1; \
-    core_reg.F = 0x00; /* N = 0, H = 0, C = 0 */ \
-    core_reg.Flags.Z = (core_reg.A == 0);\
-    return 4; \
+    core.reg.A ^= core.reg.r1; \
+    core.reg.F = 0x00; /* N = 0, H = 0, C = 0 */ \
+    core.reg.Flags.Z = (core.reg.A == 0);\
+    return 1; \
 }
 
 MACRO_XOR_A_r1(B);    // XOR A, B
@@ -591,31 +591,31 @@ MACRO_XOR_A_r1(A);    // XOR A, A
 // XOR A, (HL)
 static uint8_t XOR_A_HL(void)
 {
-    uint8_t reg = mem_read_u8(core_reg.HL);
-    core_reg.A ^= reg;
-    core_reg.F = 0x00; /* N = 0, H = 0, C = 0 */
-    core_reg.Flags.Z = (core_reg.A == 0);
-    return 8;
+    uint8_t reg = mem_read_u8(core.reg.HL);
+    core.reg.A ^= reg;
+    core.reg.F = 0x00; /* N = 0, H = 0, C = 0 */
+    core.reg.Flags.Z = (core.reg.A == 0);
+    return 2;
 }
 
 // XOR A, d8
 static uint8_t XOR_A_d8(void)
 {
-    uint8_t d8 = mem_read_u8(core_reg.PC + 1);
-    core_reg.A ^= d8;
-    core_reg.F = 0x00; /* N = 0, H = 0, C = 0 */
-    core_reg.Flags.Z = (core_reg.A == 0);
-    return 8;
+    uint8_t d8 = mem_read_u8(core.reg.PC + 1);
+    core.reg.A ^= d8;
+    core.reg.F = 0x00; /* N = 0, H = 0, C = 0 */
+    core.reg.Flags.Z = (core.reg.A == 0);
+    return 2;
 }
 
 // Macro: OR A, r1
 #define MACRO_OR_A_r1(r1) \
 static uint8_t OR_A_##r1(void) \
 { \
-    core_reg.A |= core_reg.r1; \
-    core_reg.F = 0x00; /* N = 0, H = 0, C = 0 */ \
-    core_reg.Flags.Z = (core_reg.A == 0); \
-    return 4; \
+    core.reg.A |= core.reg.r1; \
+    core.reg.F = 0x00; /* N = 0, H = 0, C = 0 */ \
+    core.reg.Flags.Z = (core.reg.A == 0); \
+    return 1; \
 }
 
 MACRO_OR_A_r1(B);    // OR A, B
@@ -631,33 +631,33 @@ MACRO_OR_A_r1(A);    // OR A, A
 // OR A, (HL)
 static uint8_t OR_A_HL(void)
 {
-    uint8_t reg = mem_read_u8(core_reg.HL);
-    core_reg.A |= reg;
-    core_reg.F = 0x00; /* N = 0, H = 0, C = 0 */
-    core_reg.Flags.Z = (core_reg.A == 0);
-    return 8;
+    uint8_t reg = mem_read_u8(core.reg.HL);
+    core.reg.A |= reg;
+    core.reg.F = 0x00; /* N = 0, H = 0, C = 0 */
+    core.reg.Flags.Z = (core.reg.A == 0);
+    return 2;
 }
 
 // OR A, d8
 static uint8_t OR_A_d8(void)
 {
-    uint8_t d8 = mem_read_u8(core_reg.PC + 1);
-    core_reg.A |= d8;
-    core_reg.F = 0x00; /* N = 0, H = 0, C = 0 */
-    core_reg.Flags.Z = (core_reg.A == 0);
-    return 8;
+    uint8_t d8 = mem_read_u8(core.reg.PC + 1);
+    core.reg.A |= d8;
+    core.reg.F = 0x00; /* N = 0, H = 0, C = 0 */
+    core.reg.Flags.Z = (core.reg.A == 0);
+    return 2;
 }
 
 // Macro: CP A, r1
 #define MACRO_CP_A_r1(r1) \
 static uint8_t CP_A_##r1(void) \
 { \
-    int16_t t = core_reg.A - core_reg.r1; \
-    core_reg.F = 0x40; /* N = 1 */ \
-    core_reg.Flags.Z = ((t & 0xFF) == 0); \
-    core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) core_reg.r1 & 0xF) < 0); \
-    core_reg.Flags.C = (t < 0); \
-    return 4; \
+    int16_t t = core.reg.A - core.reg.r1; \
+    core.reg.F = 0x40; /* N = 1 */ \
+    core.reg.Flags.Z = ((t & 0xFF) == 0); \
+    core.reg.Flags.H = (((int8_t) core.reg.A & 0xF) - ((int8_t) core.reg.r1 & 0xF) < 0); \
+    core.reg.Flags.C = (t < 0); \
+    return 1; \
 }
 
 MACRO_CP_A_r1(B);    // CP A, B
@@ -673,36 +673,36 @@ MACRO_CP_A_r1(A);    // CP A, A
 // CP A, (HL)
 static uint8_t CP_A_HL(void)
 {
-    uint8_t reg = mem_read_u8(core_reg.HL);
-    int16_t t = core_reg.A - reg;
-    core_reg.F = 0x40; /* N = 1 */
-    core_reg.Flags.Z = ((t & 0xFF) == 0);
-    core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) reg & 0xF) < 0);
-    core_reg.Flags.C = (t < 0);
-    return 8;
+    uint8_t reg = mem_read_u8(core.reg.HL);
+    int16_t t = core.reg.A - reg;
+    core.reg.F = 0x40; /* N = 1 */
+    core.reg.Flags.Z = ((t & 0xFF) == 0);
+    core.reg.Flags.H = (((int8_t) core.reg.A & 0xF) - ((int8_t) reg & 0xF) < 0);
+    core.reg.Flags.C = (t < 0);
+    return 2;
 }
 
 // CP A, d8
 static uint8_t CP_A_d8(void)
 {
-    uint8_t d8 = mem_read_u8(core_reg.HL);
-    int16_t t = core_reg.A - d8;
-    core_reg.F = 0x40; /* N = 1 */
-    core_reg.Flags.Z = ((t & 0xFF) == 0);
-    core_reg.Flags.H = (((int8_t) core_reg.A & 0xF) - ((int8_t) d8 & 0xF) < 0);
-    core_reg.Flags.C = (t < 0);
-    return 8;
+    uint8_t d8 = mem_read_u8(core.reg.HL);
+    int16_t t = core.reg.A - d8;
+    core.reg.F = 0x40; /* N = 1 */
+    core.reg.Flags.Z = ((t & 0xFF) == 0);
+    core.reg.Flags.H = (((int8_t) core.reg.A & 0xF) - ((int8_t) d8 & 0xF) < 0);
+    core.reg.Flags.C = (t < 0);
+    return 2;
 }
 
 // Macro: INC r1
 #define MACRO_INC_r1(r1) \
 static uint8_t INC_##r1(void) \
 { \
-    core_reg.r1++; \
-    core_reg.Flags.Z = (core_reg.r1 == 0x00); \
-    core_reg.Flags.N = 0; \
-    core_reg.Flags.H = ((core_reg.r1 & 0x0F) == 0x00); \
-    return 4; \
+    core.reg.r1++; \
+    core.reg.Flags.Z = (core.reg.r1 == 0x00); \
+    core.reg.Flags.N = 0; \
+    core.reg.Flags.H = ((core.reg.r1 & 0x0F) == 0x00); \
+    return 1; \
 }
 
 MACRO_INC_r1(B);    // INC B
@@ -718,26 +718,26 @@ MACRO_INC_r1(A);    // INC A
 // INC (HL)
 static uint8_t INC_pHL(void)
 {
-    uint8_t t = mem_read_u8(core_reg.HL);
+    uint8_t t = mem_read_u8(core.reg.HL);
 
     t++;
-    core_reg.Flags.Z = (t == 0x00);
-    core_reg.Flags.N = 0;
-    core_reg.Flags.H = ((t & 0x0F) == 0x00);
+    core.reg.Flags.Z = (t == 0x00);
+    core.reg.Flags.N = 0;
+    core.reg.Flags.H = ((t & 0x0F) == 0x00);
 
-    mem_write_u8(core_reg.HL, t);
-    return 12;
+    mem_write_u8(core.reg.HL, t);
+    return 3;
 }
 
 // Macro: DEC r1
 #define MACRO_DEC_r1(r1) \
 static uint8_t DEC_##r1(void) \
 { \
-    core_reg.r1--; \
-    core_reg.Flags.Z = (core_reg.r1 == 0x00); \
-    core_reg.Flags.N = 1; \
-    core_reg.Flags.H = ((core_reg.r1 & 0x0F) == 0x0F); \
-    return 4; \
+    core.reg.r1--; \
+    core.reg.Flags.Z = (core.reg.r1 == 0x00); \
+    core.reg.Flags.N = 1; \
+    core.reg.Flags.H = ((core.reg.r1 & 0x0F) == 0x0F); \
+    return 1; \
 }
 
 MACRO_DEC_r1(B);    // DEC B
@@ -753,15 +753,15 @@ MACRO_DEC_r1(A);    // DEC A
 // DEC (HL)
 static uint8_t DEC_pHL(void)
 {
-    uint8_t t = mem_read_u8(core_reg.HL);
+    uint8_t t = mem_read_u8(core.reg.HL);
 
     t--;
-    core_reg.Flags.Z = (t == 0x00);
-    core_reg.Flags.N = 1;
-    core_reg.Flags.H = ((t & 0x0F) == 0x0F);
+    core.reg.Flags.Z = (t == 0x00);
+    core.reg.Flags.N = 1;
+    core.reg.Flags.H = ((t & 0x0F) == 0x0F);
 
-    mem_write_u8(core_reg.HL, t);
-    return 12;
+    mem_write_u8(core.reg.HL, t);
+    return 3;
 }
 
 //////////////////////
@@ -772,8 +772,8 @@ static uint8_t DEC_pHL(void)
 #define MACRO_INC_r1(r1) \
 static uint8_t INC_##r1(void) \
 { \
-    core_reg.r1++; \
-    return 8; \
+    core.reg.r1++; \
+    return 2; \
 }
 
 MACRO_INC_r1(BC);    // INC BC
@@ -787,8 +787,8 @@ MACRO_INC_r1(SP);    // INC SP
 #define MACRO_DEC_r1(r1) \
 static uint8_t DEC_##r1(void) \
 { \
-    core_reg.r1--; \
-    return 8; \
+    core.reg.r1--; \
+    return 2; \
 }
 
 MACRO_DEC_r1(BC);    // DEC BC
@@ -802,16 +802,16 @@ MACRO_DEC_r1(SP);    // DEC SP
 #define MACRO_ADD_HL_r1(r1) \
 static uint8_t ADD_HL_##r1(void) \
 { \
-    uint32_t result = (uint32_t) core_reg.HL + (uint32_t) core_reg.r1; \
+    uint32_t result = (uint32_t) core.reg.HL + (uint32_t) core.reg.r1; \
  \
-    core_reg.Flags.N = 0; \
-    core_reg.Flags.C = (result > 0xFFFF); \
+    core.reg.Flags.N = 0; \
+    core.reg.Flags.C = (result > 0xFFFF); \
  \
-    if ((core_reg.HL & 0xFFF) + (core_reg.r1 & 0xFFF) > 0xFFF) \
-        core_reg.Flags.H = 1; \
+    if ((core.reg.HL & 0xFFF) + (core.reg.r1 & 0xFFF) > 0xFFF) \
+        core.reg.Flags.H = 1; \
  \
-    core_reg.HL = result & 0xFFFF; \
-    return 8; \
+    core.reg.HL = result & 0xFFFF; \
+    return 2; \
 }
 
 MACRO_ADD_HL_r1(BC);    // ADD HL, BC
@@ -824,17 +824,17 @@ MACRO_ADD_HL_r1(SP);    // ADD HL, SP
 // ADD SP, r8
 static uint8_t ADD_SP_r8(void)
 {
-    int8_t r8 = mem_read_s8(core_reg.PC + 1);
+    int8_t r8 = mem_read_s8(core.reg.PC + 1);
 
-    core_reg.F = 0;
-    if ((core_reg.SP & 0x0F) + (r8 & 0x0F) > 0x0F)
-        core_reg.Flags.H = 1;
+    core.reg.F = 0;
+    if ((core.reg.SP & 0x0F) + (r8 & 0x0F) > 0x0F)
+        core.reg.Flags.H = 1;
 
-    if ((core_reg.SP & 0xFF) + ((uint16_t) r8 & 0xFF) > 0xFF)
-        core_reg.Flags.C = 1;
+    if ((core.reg.SP & 0xFF) + ((uint16_t) r8 & 0xFF) > 0xFF)
+        core.reg.Flags.C = 1;
 
-    core_reg.SP += r8;
-    return 16;
+    core.reg.SP += r8;
+    return 4;
 }
 
 //////////////////////
@@ -844,95 +844,95 @@ static uint8_t ADD_SP_r8(void)
 // Decimal adjust A register - DAA
 static uint8_t DAA(void)
 {
-    if (core_reg.Flags.N)
+    if (core.reg.Flags.N)
     {
-        if (core_reg.Flags.C || core_reg.A > 0x99)
+        if (core.reg.Flags.C || core.reg.A > 0x99)
         {
-            core_reg.A += 0x60;
-            core_reg.Flags.C = 1;
+            core.reg.A += 0x60;
+            core.reg.Flags.C = 1;
         }
 
-        if (core_reg.Flags.H || (core_reg.A & 0x0F) > 0x09)
-            core_reg.A += 0x06;
+        if (core.reg.Flags.H || (core.reg.A & 0x0F) > 0x09)
+            core.reg.A += 0x06;
     }
     else
     {
-        if (core_reg.Flags.C)
-            core_reg.A -= 0x60;
+        if (core.reg.Flags.C)
+            core.reg.A -= 0x60;
 
-        if (core_reg.Flags.H)
-            core_reg.A -= 0x06;
+        if (core.reg.Flags.H)
+            core.reg.A -= 0x06;
     }
 
-    core_reg.Flags.Z = (core_reg.A == 0);
-    core_reg.Flags.H = 0;
-    return 4;
+    core.reg.Flags.Z = (core.reg.A == 0);
+    core.reg.Flags.H = 0;
+    return 1;
 }
 
 // Complement A register - CPL
 static uint8_t CPL(void)
 {
-    core_reg.F |= 0x90; // Set N & H
-    core_reg.A ^= 0xFF;
-    return 4;
+    core.reg.F |= 0x90; // Set N & H
+    core.reg.A ^= 0xFF;
+    return 1;
 }
 
 // Complement Carry Flag - CCF
 static uint8_t CCF(void)
 {
-    core_reg.F &= 0x90; // Reset N & H
-    core_reg.Flags.C = !core_reg.Flags.C;
-    return 4;
+    core.reg.F &= 0x90; // Reset N & H
+    core.reg.Flags.C = !core.reg.Flags.C;
+    return 1;
 }
 
 // Set Carry Flag - SCF
 static uint8_t SCF(void)
 {
-    core_reg.F &= 0x90; // Reset N & H
-    core_reg.Flags.C = 1;
-    return 4;
+    core.reg.F &= 0x90; // Reset N & H
+    core.reg.Flags.C = 1;
+    return 1;
 }
 
 // NOP
 static uint8_t NOP(void)
 {
     // Do nothing for one cycle
-    return 4;
+    return 1;
 }
 
 // HALT
 static uint8_t HALT(void)
 {
     // TODO Halt
-    return 4;
+    return 1;
 }
 
 // STOP
 static uint8_t STOP(void)
 {
     // TODO Stop
-    return 4;
+    return 1;
 }
 
 // DI
 static uint8_t DI(void)
 {
-    // TODO Disable interrupts
-    return 4;
+    core.ime = false;
+    return 1;
 }
 
 // EI
 static uint8_t EI(void)
 {
-    // TODO Enable interrupts
-    return 4;
+    core.ime = true;
+    return 1;
 }
 
 // PREFIX CB
 static uint8_t PREFIX_CB(void)
 {
-    // TODO Prefix CB
-    return 4;
+    core.prefix_cb = true;
+    return 1;
 }
 
 //////////////////////
@@ -942,40 +942,40 @@ static uint8_t PREFIX_CB(void)
 // Rotate A Left
 static uint8_t RLCA(void)
 {
-    core_reg.A = (core_reg.A << 1) | (core_reg.A >> 7);
-    core_reg.F = 0x00;
-    core_reg.Flags.C = core_reg.A & 0x01;
-    return 4;
+    core.reg.A = (core.reg.A << 1) | (core.reg.A >> 7);
+    core.reg.F = 0x00;
+    core.reg.Flags.C = core.reg.A & 0x01;
+    return 1;
 }
 
 // Rotate A Left through Carry flag
 static uint8_t RLA(void)
 {
-    uint16_t t = (core_reg.A << 1) | core_reg.Flags.C;
-    core_reg.A = t & 0xFF;
-    core_reg.F = 0x00;
-    core_reg.Flags.C = (t > 0xFF);
-    return 4;
+    uint16_t t = (core.reg.A << 1) | core.reg.Flags.C;
+    core.reg.A = t & 0xFF;
+    core.reg.F = 0x00;
+    core.reg.Flags.C = (t > 0xFF);
+    return 1;
 }
 
 // Rotate A Right
 static uint8_t RRCA(void)
 {
-    core_reg.F = 0x00;
-    core_reg.Flags.C = core_reg.A & 0x01;
-    core_reg.Flags.Z = (core_reg.A == 0);
-    core_reg.A = (core_reg.A >> 1) | (core_reg.A << 7);
-    return 4;
+    core.reg.F = 0x00;
+    core.reg.Flags.C = core.reg.A & 0x01;
+    core.reg.Flags.Z = (core.reg.A == 0);
+    core.reg.A = (core.reg.A >> 1) | (core.reg.A << 7);
+    return 1;
 }
 
 // Rotate A Right through Carry flag
 static uint8_t RRA(void)
 {
-    uint8_t t = (core_reg.A >> 1) | (core_reg.Flags.C << 7);
-    core_reg.F = 0x00;
-    core_reg.Flags.C = core_reg.A & 0x01;
-    core_reg.A = t;
-    return 4;
+    uint8_t t = (core.reg.A >> 1) | (core.reg.Flags.C << 7);
+    core.reg.F = 0x00;
+    core.reg.Flags.C = core.reg.A & 0x01;
+    core.reg.A = t;
+    return 1;
 }
 
 //////////////////////
@@ -985,39 +985,39 @@ static uint8_t RRA(void)
 // JP a16
 static uint8_t JP_a16(void)
 {
-    core_reg.PC = mem_read_u16(core_reg.PC + 1);
-    return 16;
+    core.reg.PC = mem_read_u16(core.reg.PC + 1);
+    return 4;
 }
 
 // JP (HL)
 static uint8_t JP_HL(void)
 {
-    core_reg.PC = mem_read_u16(core_reg.HL);
-    return 4; // TODO Wrong value ?
+    core.reg.PC = mem_read_u16(core.reg.HL);
+    return 1;
 }
 
 // JR r8
 static uint8_t JR_r8(void)
 {
-    int8_t r8 = mem_read_s8(core_reg.PC + 1);
-    core_reg.PC += r8;
-    return 12;
+    int8_t r8 = mem_read_s8(core.reg.PC + 1);
+    core.reg.PC += r8;
+    return 3;
 }
 
 // Macro: JP COND, a16
 #define MACRO_JP_COND_a16(name, bit, state) \
 static uint8_t JP_##name##_a16(void) \
 { \
-    uint16_t a16 = mem_read_u16(core_reg.PC + 1); \
-    if (core_reg.Flags.bit == state) \
+    uint16_t a16 = mem_read_u16(core.reg.PC + 1); \
+    if (core.reg.Flags.bit == state) \
     { \
-        core_reg.PC = a16; /* Jump */ \
-        return 16; \
+        core.reg.PC = a16; /* Jump */ \
+        return 4; \
     } \
     else \
     { \
-        core_reg.PC += 3; /* Next opcode */ \
-        return 12; \
+        core.reg.PC += 3; /* Next opcode */ \
+        return 3; \
     } \
 }
 
@@ -1032,16 +1032,16 @@ MACRO_JP_COND_a16(C, C, 1);     // JP C, a16
 #define MACRO_JR_COND_r8(name, bit, state) \
 static uint8_t JR_##name##_r8(void) \
 { \
-    int8_t r8 = mem_read_s8(core_reg.PC + 1); \
-    if (core_reg.Flags.bit == state) \
+    int8_t r8 = mem_read_s8(core.reg.PC + 1); \
+    if (core.reg.Flags.bit == state) \
     { \
-        core_reg.PC += r8; /* Relative jump */ \
-        return 12; \
+        core.reg.PC += r8; /* Relative jump */ \
+        return 3; \
     } \
     else \
     { \
-        core_reg.PC += 2; /* Next opcode */ \
-        return 8; \
+        core.reg.PC += 2; /* Next opcode */ \
+        return 2; \
     } \
 }
 
@@ -1060,18 +1060,18 @@ MACRO_JR_COND_r8(C, C, 1);      // JR C, r8
 #define MACRO_CALL_COND_a16(name, bit, state) \
 static uint8_t CALL_##name##_a16(void) \
 { \
-    uint16_t a16 = mem_read_u16(core_reg.PC + 1); \
-    if (core_reg.Flags.bit == state) \
+    uint16_t a16 = mem_read_u16(core.reg.PC + 1); \
+    if (core.reg.Flags.bit == state) \
     { \
-        mem_write_u16(core_reg.SP - 2, core_reg.PC); /* Save PC */ \
-        core_reg.PC = a16; /* Jump */ \
-        core_reg.SP -= 2; \
-        return 24; \
+        mem_write_u16(core.reg.SP - 2, core.reg.PC); /* Save PC */ \
+        core.reg.PC = a16; /* Jump */ \
+        core.reg.SP -= 2; \
+        return 6; \
     } \
     else \
     { \
-        core_reg.PC += 3; /* Next opcode */ \
-        return 12; \
+        core.reg.PC += 3; /* Next opcode */ \
+        return 3; \
     } \
 }
 
@@ -1085,11 +1085,11 @@ MACRO_CALL_COND_a16(C, C, 1);      // CALL C, a16
 // CALL a16
 static uint8_t CALL_a16(void) \
 {
-    uint16_t a16 = mem_read_u16(core_reg.PC + 1);
-    mem_write_u16(core_reg.SP - 2, core_reg.PC + 3);
-    core_reg.SP -= 2;
-    core_reg.PC = a16;
-    return 24;
+    uint16_t a16 = mem_read_u16(core.reg.PC + 1);
+    mem_write_u16(core.reg.SP - 2, core.reg.PC + 3);
+    core.reg.SP -= 2;
+    core.reg.PC = a16;
+    return 6;
 }
 
 //////////////////////
@@ -1100,10 +1100,10 @@ static uint8_t CALL_a16(void) \
 #define MACRO_RST_nnH(nn) \
 static uint8_t RST_##nn##H(void) \
 { \
-    mem_write_u16(core_reg.SP - 2, core_reg.PC); \
-    core_reg.SP -= 2; \
-    core_reg.PC = 0x##nn; \
-    return 16; \
+    mem_write_u16(core.reg.SP - 2, core.reg.PC); \
+    core.reg.SP -= 2; \
+    core.reg.PC = 0x##nn; \
+    return 4; \
 }
 
 MACRO_RST_nnH(00);    // RST 00H
@@ -1125,25 +1125,25 @@ MACRO_RST_nnH(38);    // RST 38H
 // RET
 static uint8_t RET(void)
 {
-    core_reg.PC = mem_read_u16(core_reg.SP); /* Jump to SP */
-    core_reg.SP += 2;
-    return 16;
+    core.reg.PC = mem_read_u16(core.reg.SP); /* Jump to SP */
+    core.reg.SP += 2;
+    return 4;
 }
 
 // Macro: RET COND
 #define MACRO_RET_COND(name, bit, state) \
 static uint8_t RET_##name(void) \
 { \
-    if (core_reg.Flags.bit == state) \
+    if (core.reg.Flags.bit == state) \
     { \
-        core_reg.PC = mem_read_u16(core_reg.SP); /* Jump to SP */ \
-        core_reg.SP += 2; \
-        return 20; \
+        core.reg.PC = mem_read_u16(core.reg.SP); /* Jump to SP */ \
+        core.reg.SP += 2; \
+        return 5; \
     } \
     else \
     { \
-        core_reg.PC += 2; /* Next opcode */ \
-        return 8; \
+        core.reg.PC += 2; /* Next opcode */ \
+        return 2; \
     } \
 }
 
@@ -1157,10 +1157,10 @@ MACRO_RET_COND(C, C, 1);      // RET C
 // RETI
 static uint8_t RETI(void)
 {
-    // TODO Enable interrupts
-    core_reg.PC = mem_read_u16(core_reg.SP);
-    core_reg.SP += 2;
-    return 16;
+    core.ime = true;
+    core.reg.PC = mem_read_u16(core.reg.SP);
+    core.reg.SP += 2;
+    return 4;
 }
 
 struct opcode_t opcodeList[256] =
