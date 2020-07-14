@@ -1043,8 +1043,8 @@ static void RETI(void)
 
 struct opcode_t opcodeList[256] =
 {
-    {NOP,			1,    4,    true},		// 0x00
-    {LD_BC_d16,     3,    12,   true},    	// 0x01
+    {NOP,           1,    4,    true},      // 0x00
+    {LD_BC_d16,     3,    12,   true},      // 0x01
     {LD_BC_A,       1,    8,    true},      // 0x02
     {INC_BC,        1,    8,    true},      // 0x03
     {INC_B,         1,    4,    true},      // 0x04
@@ -1058,9 +1058,9 @@ struct opcode_t opcodeList[256] =
     {INC_C,         1,    4,    true},      // 0x0C
     {DEC_C,         1,    4,    true},      // 0x0D
     {LD_C_d8,       2,    8,    true},      // 0x0E
-    {RRCA,			1,    4,    true},      // 0x0F
-    {STOP,			2,    4,    true},      // 0x10
-    {LD_DE_d16,     3,    12,   true},    	// 0x11
+    {RRCA,          1,    4,    true},      // 0x0F
+    {STOP,          2,    4,    true},      // 0x10
+    {LD_DE_d16,     3,    12,   true},      // 0x11
     {LD_DE_A,       1,    8,    true},      // 0x12
     {INC_DE,        1,    8,    true},      // 0x13
     {INC_D,         1,    4,    true},      // 0x14
