@@ -8,26 +8,52 @@
 #include <gameboy/cpu/memory.h>
 
 #include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
+
+#define MEM_CARTRIDGE_ROM_BANK_MAX      128 // 128 * 16 kiB = 2MiB
+#define MEM_CARTRIDGE_RAM_BANK_MAX      16  // 16 * 8 kiB = 128kiB
+
+#define MEM_SRAM_SIZE                   8192 // 8 kiB
+#define MEM_VRAM_SIZE                   8192 // 8 kiB
 
 struct memory_map_t
 {
-	uint8_t SRAM[8192];
-	uint8_t VRAM[8192];
+    bool BootROM; // BootROM is mapped
+    uint8_t *pBootROM; // BootROM
+
+    // Array of pointers on cartridge ROM Banks
+    uint8_t *aCartridgeROMBank[MEM_CARTRIDGE_ROM_BANK_MAX];
+
+    // Mapped Banks
+    uint8_t *pMappedROMBank; // [0x4000 - 0x8000]
+    uint8_t *pMappedRAMBank; // [0xA000 - 0xC000]
+
+    // On board RAM
+	uint8_t SRAM[MEM_SRAM_SIZE];
+	uint8_t VRAM[MEM_VRAM_SIZE];
+
 } memory_map;
+
 
 static void* mem_translation(uint16_t Addr)
 {
-	if (Addr < 0x4000) // TODO ROM Bank #0
-		return NULL;
+    if (Addr < 0x100 && memory_map.BootROM)
+    {
+        return &memory_map.pBootROM[Addr];
+    }
 
-	if (Addr < 0x8000) // TODO Switchable ROM Bank
-		return NULL;
+	if (Addr < 0x4000) // ROM Bank #0
+		return &memory_map.aCartridgeROMBank[0][Addr];
+
+	if (Addr < 0x8000) // Mapped ROM Bank
+		return &memory_map.pMappedROMBank[Addr - 0x8000];
 
 	if (Addr < 0xA000) // VRAM
 		return &memory_map.VRAM[Addr - 0xA000];
 
-	if (Addr < 0xC000) // TODO Switchable RAM Bank
-		return NULL;
+	if (Addr < 0xC000) // TODO External RAM Bank
+		return &memory_map.pMappedRAMBank[Addr - 0xC000];
 
 	if (Addr < 0xE000) // SRAM
 		return &memory_map.SRAM[Addr - 0xE000];
@@ -37,6 +63,22 @@ static void* mem_translation(uint16_t Addr)
 
 	// TODO I/O ports
 	return NULL;
+}
+
+void mem_init()
+{
+    // Init BootROM location
+    memory_map.pBootROM = (uint8_t *) 0x08100000;
+    memory_map.BootROM = true;
+
+    // Init Cartridge ROM banks location
+    memset(memory_map.aCartridgeROMBank, 0, MEM_CARTRIDGE_ROM_BANK_MAX * sizeof(uint8_t *));
+    memory_map.aCartridgeROMBank[0] = (uint8_t *) 0x08110000;
+    memory_map.aCartridgeROMBank[1] = (uint8_t *) 0x08118000;
+
+    // Map memory
+    memory_map.pMappedROMBank = memory_map.aCartridgeROMBank[1];
+    memory_map.pMappedRAMBank = NULL;
 }
 
 uint8_t mem_read_u8(uint16_t Addr)

@@ -9,7 +9,9 @@
 #define INC_GAMEBOY_CPU_MEMORY_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
+void mem_init();
 uint8_t mem_read_u8(uint16_t Addr);
 int8_t mem_read_s8(uint16_t Addr);
 uint16_t mem_read_u16(uint16_t Addr);

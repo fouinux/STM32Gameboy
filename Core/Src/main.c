@@ -124,6 +124,7 @@ int main(void)
   MX_USB_HOST_Init();
   /* USER CODE BEGIN 2 */
   core_init();
+  mem_init();
 
   BSP_LCD_Init();
   /* Layer2 Init */
@@ -147,7 +148,6 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  int x = 0, y = 0;
   while (1)
   {
     /* USER CODE END WHILE */
@@ -157,9 +157,8 @@ int main(void)
 	  HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 
 	  // Emulation cycle
-	  //core_execute();
+	  core_execute();
 
-	  BSP_LCD_DrawPixel(x++, y++, LCD_COLOR_BLACK);
 	  HAL_Delay(50);
   }
   /* USER CODE END 3 */
