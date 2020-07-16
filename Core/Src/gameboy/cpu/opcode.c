@@ -202,7 +202,7 @@ static uint8_t LDH_a8_A(void)
 {
     uint8_t a8 = mem_read_u8(core.reg.PC + 1);
     mem_write_u8(0xFF00 + a8, core.reg.A);
-    return 3; \
+    return 3;
 }
 
 // LDH A, (a8)
@@ -1000,7 +1000,7 @@ static uint8_t JP_HL(void)
 static uint8_t JR_r8(void)
 {
     int8_t r8 = mem_read_s8(core.reg.PC + 1);
-    core.reg.PC += r8;
+    core.reg.PC += 2 + r8;
     return 3;
 }
 
@@ -1033,6 +1033,7 @@ MACRO_JP_COND_a16(C, C, 1);     // JP C, a16
 static uint8_t JR_##name##_r8(void) \
 { \
     int8_t r8 = mem_read_s8(core.reg.PC + 1); \
+    core.reg.PC += 2; \
     if (core.reg.Flags.bit == state) \
     { \
         core.reg.PC += r8; /* Relative jump */ \
@@ -1040,7 +1041,7 @@ static uint8_t JR_##name##_r8(void) \
     } \
     else \
     { \
-        core.reg.PC += 2; /* Next opcode */ \
+        /* Next opcode */ \
         return 2; \
     } \
 }
