@@ -5,8 +5,7 @@
  *      Author: Guillaume Fouilleul
  */
 
-#include <gameboy/memory.h>
-
+#include <gameboy/mem.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>

@@ -5,21 +5,20 @@
  *      Author: Guillaume Fouilleul
  */
 
+#include <gameboy/cpu.h>
+#include <gameboy/mem.h>
 #include <gameboy/opcode_cb.h>
 #include <gameboy/opcode.h>
-#include <gameboy/core.h>
-#include <gameboy/memory.h>
-
 #include <stdio.h>
 
 // Macro: RLC r1
 #define MACRO_RLC_r1(r1) \
 static uint8_t RLC_##r1(void) \
 { \
-    core.reg.r1 = (core.reg.r1 << 1) | (core.reg.r1 >> 7); \
-    core.reg.F = 0x00; \
-    core.reg.Flags.Z = (core.reg.r1 == 0); \
-    core.reg.Flags.C = core.reg.r1 & 0x01; \
+    cpu.reg.r1 = (cpu.reg.r1 << 1) | (cpu.reg.r1 >> 7); \
+    cpu.reg.F = 0x00; \
+    cpu.reg.Flags.Z = (cpu.reg.r1 == 0); \
+    cpu.reg.Flags.C = cpu.reg.r1 & 0x01; \
     return 2; \
 }
 
@@ -36,14 +35,14 @@ MACRO_RLC_r1(A);    // RLC A
 // RLC (HL)
 static uint8_t RLC_HL(void)
 {
-    uint8_t t = mem_read_u8(core.reg.HL);
+    uint8_t t = mem_read_u8(cpu.reg.HL);
 
     t = (t << 1) | (t >> 7);
-    core.reg.F = 0x00;
-    core.reg.Flags.Z = (t == 0);
-    core.reg.Flags.C = t & 0x01;
+    cpu.reg.F = 0x00;
+    cpu.reg.Flags.Z = (t == 0);
+    cpu.reg.Flags.C = t & 0x01;
 
-    mem_write_u8(core.reg.HL, t);
+    mem_write_u8(cpu.reg.HL, t);
     return 4;
 }
 
@@ -51,11 +50,11 @@ static uint8_t RLC_HL(void)
 #define MACRO_RL_r1(r1) \
 static uint8_t RL_##r1(void) \
 { \
-    uint16_t t = (core.reg.r1 << 1) | core.reg.Flags.C; \
-    core.reg.r1 = t & 0xFF; \
-    core.reg.F = 0x00; \
-    core.reg.Flags.Z = (core.reg.r1 == 0); \
-    core.reg.Flags.C = (t > 0xFF); \
+    uint16_t t = (cpu.reg.r1 << 1) | cpu.reg.Flags.C; \
+    cpu.reg.r1 = t & 0xFF; \
+    cpu.reg.F = 0x00; \
+    cpu.reg.Flags.Z = (cpu.reg.r1 == 0); \
+    cpu.reg.Flags.C = (t > 0xFF); \
     return 2; \
 }
 
@@ -72,14 +71,14 @@ MACRO_RL_r1(A);    // RL A
 // RL (HL)
 static uint8_t RL_HL(void)
 {
-    uint16_t t = (uint16_t) mem_read_u8(core.reg.HL);
+    uint16_t t = (uint16_t) mem_read_u8(cpu.reg.HL);
 
-    t = (t << 1) | core.reg.Flags.C;
-    core.reg.F = 0x00;
-    core.reg.Flags.Z = ((t & 0xFF) == 0);
-    core.reg.Flags.C = (t > 0xFF);
+    t = (t << 1) | cpu.reg.Flags.C;
+    cpu.reg.F = 0x00;
+    cpu.reg.Flags.Z = ((t & 0xFF) == 0);
+    cpu.reg.Flags.C = (t > 0xFF);
 
-    mem_write_u8(core.reg.HL, t & 0xFF);
+    mem_write_u8(cpu.reg.HL, t & 0xFF);
     return 4;
 }
 
@@ -87,10 +86,10 @@ static uint8_t RL_HL(void)
 #define MACRO_RRC_r1(r1) \
 static uint8_t RRC_##r1(void) \
 { \
-    core.reg.F = 0x00; \
-    core.reg.Flags.C = core.reg.r1 & 0x01; \
-    core.reg.Flags.Z = (core.reg.r1 == 0); \
-    core.reg.r1 = (core.reg.r1 >> 1) | (core.reg.r1 << 7); \
+    cpu.reg.F = 0x00; \
+    cpu.reg.Flags.C = cpu.reg.r1 & 0x01; \
+    cpu.reg.Flags.Z = (cpu.reg.r1 == 0); \
+    cpu.reg.r1 = (cpu.reg.r1 >> 1) | (cpu.reg.r1 << 7); \
     return 2; \
 }
 
@@ -107,14 +106,14 @@ MACRO_RRC_r1(A);    // RRC A
 // RRC (HL)
 static uint8_t RRC_HL(void)
 {
-    uint8_t t = mem_read_u8(core.reg.HL);
+    uint8_t t = mem_read_u8(cpu.reg.HL);
 
-    core.reg.F = 0x00;
-    core.reg.Flags.C = t & 0x01;
-    core.reg.Flags.Z = (t == 0);
+    cpu.reg.F = 0x00;
+    cpu.reg.Flags.C = t & 0x01;
+    cpu.reg.Flags.Z = (t == 0);
     t = (t >> 1) | (t << 7);
 
-    mem_write_u8(core.reg.HL, t);
+    mem_write_u8(cpu.reg.HL, t);
     return 4;
 }
 
@@ -122,11 +121,11 @@ static uint8_t RRC_HL(void)
 #define MACRO_RR_r1(r1) \
 static uint8_t RR_##r1(void) \
 { \
-    uint8_t t = (core.reg.r1 >> 1) | (core.reg.Flags.C << 7); \
-    core.reg.F = 0x00; \
-    core.reg.Flags.C = core.reg.r1 & 0x01; \
-    core.reg.Flags.Z = (t == 0); \
-    core.reg.r1 = t; \
+    uint8_t t = (cpu.reg.r1 >> 1) | (cpu.reg.Flags.C << 7); \
+    cpu.reg.F = 0x00; \
+    cpu.reg.Flags.C = cpu.reg.r1 & 0x01; \
+    cpu.reg.Flags.Z = (t == 0); \
+    cpu.reg.r1 = t; \
     return 2; \
 }
 
@@ -143,14 +142,14 @@ MACRO_RR_r1(A);    // RR A
 // RR (HL)
 static uint8_t RR_HL(void)
 {
-    uint8_t u8 = mem_read_u8(core.reg.HL);
+    uint8_t u8 = mem_read_u8(cpu.reg.HL);
 
-    uint8_t t = (u8 >> 1) | (core.reg.Flags.C << 7);
-    core.reg.F = 0x00;
-    core.reg.Flags.C = u8 & 0x01;
-    core.reg.Flags.Z = (t == 0);
+    uint8_t t = (u8 >> 1) | (cpu.reg.Flags.C << 7);
+    cpu.reg.F = 0x00;
+    cpu.reg.Flags.C = u8 & 0x01;
+    cpu.reg.Flags.Z = (t == 0);
 
-    mem_write_u8(core.reg.HL, t);
+    mem_write_u8(cpu.reg.HL, t);
     return 4;
 }
 
@@ -158,10 +157,10 @@ static uint8_t RR_HL(void)
 #define MACRO_SLA_r1(r1) \
 static uint8_t SLA_##r1(void) \
 { \
-    core.reg.F = 0x00; \
-    core.reg.Flags.C = core.reg.r1 >> 7; \
-    core.reg.r1 <<= 1; \
-    core.reg.Flags.Z = (core.reg.r1 == 0); \
+    cpu.reg.F = 0x00; \
+    cpu.reg.Flags.C = cpu.reg.r1 >> 7; \
+    cpu.reg.r1 <<= 1; \
+    cpu.reg.Flags.Z = (cpu.reg.r1 == 0); \
     return 2; \
 }
 
@@ -178,14 +177,14 @@ MACRO_SLA_r1(A);    // SLA A
 // SLA (HL)
 static uint8_t SLA_HL(void)
 {
-    uint8_t t = mem_read_u8(core.reg.HL);
+    uint8_t t = mem_read_u8(cpu.reg.HL);
 
-    core.reg.F = 0x00;
-    core.reg.Flags.C = t >> 7;
+    cpu.reg.F = 0x00;
+    cpu.reg.Flags.C = t >> 7;
     t <<= 1;
-    core.reg.Flags.Z = (t == 0);
+    cpu.reg.Flags.Z = (t == 0);
 
-    mem_write_u8(core.reg.HL, t);
+    mem_write_u8(cpu.reg.HL, t);
     return 4;
 }
 
@@ -193,10 +192,10 @@ static uint8_t SLA_HL(void)
 #define MACRO_SRA_r1(r1) \
 static uint8_t SRA_##r1(void) \
 { \
-    core.reg.F = 0x00; \
-    core.reg.Flags.C = core.reg.r1 & 0x01; \
-    core.reg.r1 = (core.reg.r1 & 0x80) | (core.reg.r1 >>  1); \
-    core.reg.Flags.Z = (core.reg.r1 == 0); \
+    cpu.reg.F = 0x00; \
+    cpu.reg.Flags.C = cpu.reg.r1 & 0x01; \
+    cpu.reg.r1 = (cpu.reg.r1 & 0x80) | (cpu.reg.r1 >>  1); \
+    cpu.reg.Flags.Z = (cpu.reg.r1 == 0); \
     return 2; \
 }
 
@@ -213,14 +212,14 @@ MACRO_SRA_r1(A);    // SRA A
 // SRA (HL)
 static uint8_t SRA_HL(void)
 {
-    uint8_t t = mem_read_u8(core.reg.HL);
+    uint8_t t = mem_read_u8(cpu.reg.HL);
 
-    core.reg.F = 0x00;
-    core.reg.Flags.C = t & 0x01;
+    cpu.reg.F = 0x00;
+    cpu.reg.Flags.C = t & 0x01;
     t = (t & 0x80) | (t >> 1);
-    core.reg.Flags.Z = (t == 0);
+    cpu.reg.Flags.Z = (t == 0);
 
-    mem_write_u8(core.reg.HL, t);
+    mem_write_u8(cpu.reg.HL, t);
     return 4;
 }
 
@@ -228,9 +227,9 @@ static uint8_t SRA_HL(void)
 #define MACRO_SWAP_r1(r1) \
 static uint8_t SWAP_##r1(void) \
 { \
-    core.reg.r1 = (core.reg.r1 >> 4) | (core.reg.r1 << 4);\
-    core.reg.F = 0x00; \
-    core.reg.Flags.Z = (core.reg.r1 == 0); \
+    cpu.reg.r1 = (cpu.reg.r1 >> 4) | (cpu.reg.r1 << 4);\
+    cpu.reg.F = 0x00; \
+    cpu.reg.Flags.Z = (cpu.reg.r1 == 0); \
     return 2; \
 }
 
@@ -247,13 +246,13 @@ MACRO_SWAP_r1(A);    // SWAP A
 // SWAP (HL)
 static uint8_t SWAP_HL(void)
 {
-    uint8_t t = mem_read_u8(core.reg.HL);
+    uint8_t t = mem_read_u8(cpu.reg.HL);
 
     t = (t >> 4) | (t << 4);
-    core.reg.F = 0x00;
-    core.reg.Flags.Z = (t == 0);
+    cpu.reg.F = 0x00;
+    cpu.reg.Flags.Z = (t == 0);
 
-    mem_write_u8(core.reg.HL, t);
+    mem_write_u8(cpu.reg.HL, t);
     return 4;
 }
 
@@ -261,10 +260,10 @@ static uint8_t SWAP_HL(void)
 #define MACRO_SRL_r1(r1) \
 static uint8_t SRL_##r1(void) \
 { \
-    core.reg.F = 0x00; \
-    core.reg.Flags.C = (core.reg.r1 & 0x01); \
-    core.reg.r1 >>= 1; \
-    core.reg.Flags.Z = (core.reg.r1 == 0); \
+    cpu.reg.F = 0x00; \
+    cpu.reg.Flags.C = (cpu.reg.r1 & 0x01); \
+    cpu.reg.r1 >>= 1; \
+    cpu.reg.Flags.Z = (cpu.reg.r1 == 0); \
     return 2; \
 }
 
@@ -281,14 +280,14 @@ MACRO_SRL_r1(A);    // SRL A
 // SRL (HL)
 static uint8_t SRL_HL(void)
 {
-    uint8_t t = mem_read_u8(core.reg.HL);
+    uint8_t t = mem_read_u8(cpu.reg.HL);
 
-    core.reg.F = 0x00;
-    core.reg.Flags.C = (t & 0x01);
+    cpu.reg.F = 0x00;
+    cpu.reg.Flags.C = (t & 0x01);
     t >>= 1;
-    core.reg.Flags.Z = (t == 0);
+    cpu.reg.Flags.Z = (t == 0);
 
-    mem_write_u8(core.reg.HL, t);
+    mem_write_u8(cpu.reg.HL, t);
     return 4;
 }
 
@@ -296,9 +295,9 @@ static uint8_t SRL_HL(void)
 #define MACRO_BIT_n_r1(n, r1) \
 static uint8_t BIT_##n##_##r1(void) \
 { \
-    core.reg.Flags.Z = ((core.reg.r1 & (1 << n)) == 0); \
-    core.reg.Flags.N = 0; \
-    core.reg.Flags.H = 1; \
+    cpu.reg.Flags.Z = ((cpu.reg.r1 & (1 << n)) == 0); \
+    cpu.reg.Flags.N = 0; \
+    cpu.reg.Flags.H = 1; \
     return 2; \
 }
 
@@ -372,10 +371,10 @@ MACRO_BIT_n_r1(7, A);    // BIT 7, A
 #define MACRO_BIT_n_HL(n) \
 static uint8_t BIT_##n##_HL(void) \
 { \
-    uint8_t t = mem_read_u8(core.reg.HL);\
-    core.reg.Flags.Z = ((t & (1 << n)) == 0); \
-    core.reg.Flags.N = 0; \
-    core.reg.Flags.H = 1; \
+    uint8_t t = mem_read_u8(cpu.reg.HL);\
+    cpu.reg.Flags.Z = ((t & (1 << n)) == 0); \
+    cpu.reg.Flags.N = 0; \
+    cpu.reg.Flags.H = 1; \
     return 4;\
 }
 
@@ -394,7 +393,7 @@ MACRO_BIT_n_HL(7);      // BIT 7, (HL)
 #define MACRO_RES_n_r1(n, r1) \
 static uint8_t RES_##n##_##r1(void) \
 { \
-    core.reg.r1 &= ~(1 << n);\
+    cpu.reg.r1 &= ~(1 << n);\
     return 2; \
 }
 
@@ -468,9 +467,9 @@ MACRO_RES_n_r1(7, A);    // RES 7, A
 #define MACRO_RES_n_HL(n) \
 static uint8_t RES_##n##_HL(void) \
 { \
-    uint8_t t = mem_read_u8(core.reg.HL);\
+    uint8_t t = mem_read_u8(cpu.reg.HL);\
     t &= ~(1 << n);\
-    mem_write_u8(core.reg.HL, t);\
+    mem_write_u8(cpu.reg.HL, t);\
     return 4; \
 }
 
@@ -489,7 +488,7 @@ MACRO_RES_n_HL(7);      // RES 7, (HL)
 #define MACRO_SET_n_r1(n, r1) \
 static uint8_t SET_##n##_##r1(void) \
 { \
-    core.reg.r1 |= (1 << n);\
+    cpu.reg.r1 |= (1 << n);\
     return 2; \
 }
 
@@ -563,9 +562,9 @@ MACRO_SET_n_r1(7, A);    // SET 7, A
 #define MACRO_SET_n_HL(n) \
 static uint8_t SET_##n##_HL(void) \
 { \
-    uint8_t t = mem_read_u8(core.reg.HL);\
+    uint8_t t = mem_read_u8(cpu.reg.HL);\
     t |= (1 << n);\
-    mem_write_u8(core.reg.HL, t);\
+    mem_write_u8(cpu.reg.HL, t);\
     return 4; \
 }
 

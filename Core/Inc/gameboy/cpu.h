@@ -1,17 +1,17 @@
 /*
- * core.h
+ * cpu.h
  *
  *  Created on: 6 juil. 2020
  *      Author: Guillaume Fouilleul
  */
 
-#ifndef INC_GAMEBOY_CORE_H_
-#define INC_GAMEBOY_CORE_H_
+#ifndef INC_GAMEBOY_CPU_H_
+#define INC_GAMEBOY_CPU_H_
 
 #include <stdint.h>
 #include <stdbool.h>
 
-struct core_reg_t
+struct cpu_reg_t
 {
 	union
 	{
@@ -67,18 +67,18 @@ struct core_reg_t
 	uint16_t PC; // Program Counter
 };
 
-struct core_t
+struct cpu_t
 {
-    struct core_reg_t reg;
+    struct cpu_reg_t reg;
     bool ime; // Interrupt Master Enable
     bool halted;
     uint8_t cycle_counter;
     bool prefix_cb;
 };
 
-extern struct core_t core;
+extern struct cpu_t cpu;
 
-void core_init(void);
-void core_execute(void);
+void cpu_init(void);
+void cpu_execute(void);
 
-#endif /* INC_GAMEBOY_CORE_H_ */
+#endif /* INC_GAMEBOY_CPU_H_ */

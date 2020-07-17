@@ -25,7 +25,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stm32f429i_discovery_lcd.h"
-#include <gameboy/cpu/core.h>
+#include <gameboy/cpu.h>
+#include <gameboy/mem.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -123,7 +124,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USB_HOST_Init();
   /* USER CODE BEGIN 2 */
-  core_init();
+  cpu_init();
   mem_init();
 
   BSP_LCD_Init();
@@ -157,7 +158,7 @@ int main(void)
 	  HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 
 	  // Emulation cycle
-	  core_execute();
+	  cpu_execute();
 
 	  HAL_Delay(50);
   }
