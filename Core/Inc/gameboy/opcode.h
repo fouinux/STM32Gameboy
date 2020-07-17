@@ -5,8 +5,8 @@
  *      Author: Guillaume Fouilleul
  */
 
-#ifndef INC_GAMEBOY_CPU_OPCODE_H_
-#define INC_GAMEBOY_CPU_OPCODE_H_
+#ifndef INC_GAMEBOY_OPCODE_H_
+#define INC_GAMEBOY_OPCODE_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -21,4 +21,4 @@ struct opcode_t
 extern struct opcode_t opcodeList[256];
 
 
-#endif /* INC_GAMEBOY_CPU_OPCODE_H_ */
+#endif /* INC_GAMEBOY_OPCODE_H_ */

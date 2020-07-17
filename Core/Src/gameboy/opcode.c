@@ -5,10 +5,10 @@
  *      Author: Guillaume Fouilleul
  */
 
-#include <gameboy/cpu/opcode.h>
-#include <gameboy/cpu/opcode_cb.h>
-#include <gameboy/cpu/core.h>
-#include <gameboy/cpu/memory.h>
+#include <gameboy/opcode.h>
+#include <gameboy/opcode_cb.h>
+#include <gameboy/core.h>
+#include <gameboy/memory.h>
 
 #include <stdio.h>
 

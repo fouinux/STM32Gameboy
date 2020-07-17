@@ -5,8 +5,8 @@
  *      Author: Guillaume Fouilleul
  */
 
-#ifndef INC_GAMEBOY_CPU_MEMORY_H_
-#define INC_GAMEBOY_CPU_MEMORY_H_
+#ifndef INC_GAMEBOY_MEMORY_H_
+#define INC_GAMEBOY_MEMORY_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -18,4 +18,4 @@ uint16_t mem_read_u16(uint16_t Addr);
 void mem_write_u8(uint16_t Addr, uint8_t Value);
 void mem_write_u16(uint16_t Addr, uint16_t Value);
 
-#endif /* INC_GAMEBOY_CPU_MEMORY_H_ */
+#endif /* INC_GAMEBOY_MEMORY_H_ */

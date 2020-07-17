@@ -5,8 +5,8 @@
  *      Author: Guillaume Fouilleul
  */
 
-#ifndef INC_GAMEBOY_CPU_CORE_H_
-#define INC_GAMEBOY_CPU_CORE_H_
+#ifndef INC_GAMEBOY_CORE_H_
+#define INC_GAMEBOY_CORE_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -81,4 +81,4 @@ extern struct core_t core;
 void core_init(void);
 void core_execute(void);
 
-#endif /* INC_GAMEBOY_CPU_CORE_H_ */
+#endif /* INC_GAMEBOY_CORE_H_ */
