@@ -6,11 +6,12 @@
  */
 
 #include <gameboy/cpu.h>
+#include <gameboy/irq.h>
 #include <gameboy/mem.h>
 #include <gameboy/opcode.h>
 #include <gameboy/opcode_cb.h>
 
-// Also defined as global
+// Exported to be use directly
 struct cpu_t cpu;
 
 void cpu_init(void)
@@ -24,7 +25,6 @@ void cpu_init(void)
     cpu.reg.PC = 0;
 
     // Init Flags
-    cpu.ime = false;
     cpu.halted = false;
     cpu.cycle_counter = 1;
 }
@@ -37,24 +37,28 @@ void cpu_execute(void)
 
     if (0 == cpu.cycle_counter)
     {
-        // Read opcode
-        uint8_t opcode = mem_read_u8(cpu.reg.PC);
-
-        // Execute opcode
-        if (cpu.prefix_cb)
+        // Check for interrupt
+        if (false == irq_check())
         {
-            cpu.prefix_cb = false;
-            cpu.cycle_counter = opcodeCbList[opcode].func();
-            update_pc = opcodeCbList[opcode].update_pc;
-        }
-        else
-        {
-            cpu.cycle_counter = opcodeList[opcode].func();
-            update_pc = opcodeList[opcode].update_pc;
-        }
+            // Read opcode
+            uint8_t opcode = mem_read_u8(cpu.reg.PC);
 
-        // Update Program Counter
-        if (update_pc)
-            cpu.reg.PC += opcodeList[opcode].length;
+            // Execute opcode
+            if (cpu.prefix_cb)
+            {
+                cpu.prefix_cb = false;
+                cpu.cycle_counter = opcodeCbList[opcode].func();
+                update_pc = opcodeCbList[opcode].update_pc;
+            }
+            else
+            {
+                cpu.cycle_counter = opcodeList[opcode].func();
+                update_pc = opcodeList[opcode].update_pc;
+            }
+
+            // Update Program Counter
+            if (update_pc)
+                cpu.reg.PC += opcodeList[opcode].length;
+        }
     }
 }

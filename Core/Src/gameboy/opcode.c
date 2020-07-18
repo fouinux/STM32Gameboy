@@ -6,6 +6,7 @@
  */
 
 #include <gameboy/cpu.h>
+#include <gameboy/irq.h>
 #include <gameboy/mem.h>
 #include <gameboy/opcode.h>
 #include <gameboy/opcode_cb.h>
@@ -916,14 +917,16 @@ static uint8_t STOP(void)
 // DI
 static uint8_t DI(void)
 {
-    cpu.ime = false;
+    // Disable IRQ
+    irq.ime = false;
     return 1;
 }
 
 // EI
 static uint8_t EI(void)
 {
-    cpu.ime = true;
+    // Enable IRQ
+    irq.ime = true;
     return 1;
 }
 
@@ -1157,7 +1160,8 @@ MACRO_RET_COND(C, C, 1);      // RET C
 // RETI
 static uint8_t RETI(void)
 {
-    cpu.ime = true;
+    // Enable IRQ
+    irq.ime = true;
     cpu.reg.PC = mem_read_u16(cpu.reg.SP);
     cpu.reg.SP += 2;
     return 4;

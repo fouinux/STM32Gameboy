@@ -26,6 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include "stm32f429i_discovery_lcd.h"
 #include <gameboy/cpu.h>
+#include <gameboy/irq.h>
 #include <gameboy/mem.h>
 /* USER CODE END Includes */
 
@@ -125,6 +126,7 @@ int main(void)
   MX_USB_HOST_Init();
   /* USER CODE BEGIN 2 */
   cpu_init();
+  irq_init();
   mem_init();
 
   BSP_LCD_Init();

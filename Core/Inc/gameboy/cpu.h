@@ -70,7 +70,6 @@ struct cpu_reg_t
 struct cpu_t
 {
     struct cpu_reg_t reg;
-    bool ime; // Interrupt Master Enable
     bool halted;
     uint8_t cycle_counter;
     bool prefix_cb;
