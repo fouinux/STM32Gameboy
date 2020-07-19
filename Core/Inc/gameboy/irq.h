@@ -15,7 +15,7 @@ struct irq_reg_t
 {
     union
     {
-        uint8_t IF; // 0xFF0F - Interrupt Flag
+        uint8_t Value;
         struct
         {
             uint8_t : 3;
@@ -24,27 +24,14 @@ struct irq_reg_t
             uint8_t Timer : 1;
             uint8_t LCDC : 1;
             uint8_t VBlank : 1;
-        } IF_Flags;
-    };
-
-    union
-    {
-        uint8_t IE; // 0xFFFF - Interrupt Enable
-        struct
-        {
-            uint8_t : 3;
-            uint8_t P10_P13 : 1;
-            uint8_t Serial : 1;
-            uint8_t Timer : 1;
-            uint8_t LCDC : 1;
-            uint8_t VBlank : 1;
-        } IE_Flags;
+        } Flags;
     };
 };
 
 struct irq_t
 {
-    struct irq_reg_t reg;
+    struct irq_reg_t *pIF; // 0xFF0F - Interrupt Flag
+    struct irq_reg_t *pIE; // 0xFFFF - Interrupt Enable
     bool ime; // Interrupt Master Enable
 };
 

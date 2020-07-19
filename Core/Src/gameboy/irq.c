@@ -36,15 +36,17 @@ inline static void switch_context(uint8_t Addr)
 void irq_init(void)
 {
     irq.ime = false;
-    irq.reg.IE = 0x00;
-    irq.reg.IF = 0x00;
+    irq.pIF = (struct irq_reg_t *) mem_get_register(IF);
+    irq.pIF->Value = 0x00;
+    irq.pIE = (struct irq_reg_t *) mem_get_register(IE);
+    irq.pIE->Value = 0x00;
 }
 
 bool irq_check(void)
 {
     if (true == irq.ime)
     {
-        uint8_t mask = irq.reg.IE & irq.reg.IF;
+        uint8_t mask = irq.pIE->Value & irq.pIF->Value;
         if (mask)
         {
             // Disable IRQ
@@ -55,7 +57,7 @@ bool irq_check(void)
             // Search for active IRQ according to priorities
             if (mask & IRQ_MASK_VBLANK) // V-Blank
             {
-                irq.reg.IF_Flags.VBlank = 0;
+                irq.pIF->Flags.VBlank = 0;
                 switch_context(IRQ_ADDR_VBLANK);
                 cpu.cycle_counter = IRQ_SWITCH_CYCLE;
                 return true;
@@ -63,7 +65,7 @@ bool irq_check(void)
 
             if (mask & IRQ_MASK_LCDC) // LCDC
             {
-                irq.reg.IF_Flags.LCDC = 0;
+                irq.pIF->Flags.LCDC = 0;
                 switch_context(IRQ_ADDR_LCDC);
                 cpu.cycle_counter = IRQ_SWITCH_CYCLE;
                 return true;
@@ -71,7 +73,7 @@ bool irq_check(void)
 
             if (mask & IRQ_MASK_TIMER) // Timer
             {
-                irq.reg.IF_Flags.Timer = 0;
+                irq.pIF->Flags.Timer = 0;
                 switch_context(IRQ_ADDR_TIMER);
                 cpu.cycle_counter = IRQ_SWITCH_CYCLE;
                 return true;
@@ -79,7 +81,7 @@ bool irq_check(void)
 
             if (mask & IRQ_MASK_SERIAL) // Serial
             {
-                irq.reg.IF_Flags.Serial = 0;
+                irq.pIF->Flags.Serial = 0;
                 switch_context(IRQ_ADDR_SERIAL);
                 cpu.cycle_counter = IRQ_SWITCH_CYCLE;
                 return true;
@@ -87,7 +89,7 @@ bool irq_check(void)
 
             if (mask & IRQ_MASK_P10_P13) // P10_P13
             {
-                irq.reg.IF_Flags.P10_P13 = 0;
+                irq.pIF->Flags.P10_P13 = 0;
                 switch_context(IRQ_ADDR_P10_P13);
                 cpu.cycle_counter = IRQ_SWITCH_CYCLE;
                 return true;
