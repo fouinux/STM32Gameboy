@@ -1,2 +1,2 @@
-# STM23Gameboy
+# STM32Gameboy
 Gameboy emulator running on STM32.
