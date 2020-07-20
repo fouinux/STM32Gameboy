@@ -35,63 +35,81 @@ struct memory_map_t
 	uint8_t SRAM[MEM_SRAM_SIZE];
 	uint8_t VRAM[MEM_VRAM_SIZE];
 	uint8_t OAM_RAM[MEM_OAM_RAM_SIZE];
-	uint8_t HRAM[MEM_OAM_RAM_SIZE];
+	uint8_t HRAM[MEM_HRAM_SIZE];
 	uint8_t IOPorts[MEM_IO_PORTS_SIZE];
 
-} memory_map;
+} mem;
+
+// IO Ports map
+bool aIOPortsMap[MEM_IO_PORTS_SIZE] =
+{
+  //   00     01     02     03     04     05     06     07     08     09     0A     0B     0C     0D     0E     0F
+     true,  true,  true, false,  true,  true,  true,  true, false, false, false, false, false, false, false,  true, // 0xFF00
+     true,  true,  true,  true,  true, false,  true,  true,  true,  true,  true,  true,  true,  true,  true, false, // 0xFF10
+     true,  true,  true,  true,  true,  true,  true, false, false, false, false, false, false, false, false, false, // 0xFF20
+     true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true, // 0xFF30
+     true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true, false, false, false, false, // 0xFF40
+     true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF50
+    false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF60
+    false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF70
+};
 
 
 static void* mem_translation(uint16_t Addr)
 {
-    if ((Addr < 0x100) && (*memory_map.pBootReg & 0x01))
+    if ((Addr < 0x100) && (*mem.pBootReg & 0x01))
     {
-        return &memory_map.pBootROM[Addr];
+        return &mem.pBootROM[Addr];
     }
 
 	if (Addr < 0x4000) // ROM Bank #0
-		return &memory_map.aCartridgeROMBank[0][Addr];
+		return &mem.aCartridgeROMBank[0][Addr];
 
 	if (Addr < 0x8000) // Mapped ROM Bank
-		return &memory_map.pMappedROMBank[Addr - 0x4000];
+		return &mem.pMappedROMBank[Addr - 0x4000];
 
 	if (Addr < 0xA000) // VRAM
-		return &memory_map.VRAM[Addr - 0x8000];
+		return &mem.VRAM[Addr - 0x8000];
 
 	if (Addr < 0xC000) // Mapped RAM Bank
-		return &memory_map.pMappedRAMBank[Addr - 0xA000];
+		return &mem.pMappedRAMBank[Addr - 0xA000];
 
 	if (Addr < 0xE000) // SRAM
-		return &memory_map.SRAM[Addr - 0xC000];
+		return &mem.SRAM[Addr - 0xC000];
 
 	if (Addr < 0xFE00) // Echo of SRAM
-		return &memory_map.SRAM[Addr - 0xE000];
+		return &mem.SRAM[Addr - 0xE000];
 
 	if (Addr < 0xFEA0) // OAM RAM
-		return &memory_map.OAM_RAM[Addr - 0xFE00];
+		return &mem.OAM_RAM[Addr - 0xFE00];
 
 	if (Addr < 0xFF00) // Empty
 		return NULL;
 
 	if (Addr < 0xFF80) // IO Ports
-		return &memory_map.OAM_RAM[Addr - 0xFF00];
+	{
+	    if (aIOPortsMap[Addr -  0xFF00] == true)
+            return &mem.OAM_RAM[Addr - 0xFF00];
+	    return NULL;
+	}
 
-	return &memory_map.HRAM[Addr - 0xFF80];
+	return &mem.HRAM[Addr - 0xFF80];
 }
 
 void mem_init()
 {
     // Init BootROM location
-    memory_map.pBootROM = (uint8_t *) 0x08100000;
-    memory_map.pBootReg = mem_get_register(BOOT);
+    mem.pBootROM = (uint8_t *) 0x08100000;
+    mem.pBootReg = mem_get_register(BOOT);
 
     // Init Cartridge ROM banks location
-    memset(memory_map.aCartridgeROMBank, 0, MEM_CARTRIDGE_ROM_BANK_MAX * sizeof(uint8_t *));
-    memory_map.aCartridgeROMBank[0] = (uint8_t *) 0x08110000;
-    memory_map.aCartridgeROMBank[1] = (uint8_t *) 0x08118000;
+    memset(mem.aCartridgeROMBank, 0, MEM_CARTRIDGE_ROM_BANK_MAX * sizeof(uint8_t *));
+    mem.aCartridgeROMBank[0] = (uint8_t *) 0x08110000;
+    mem.aCartridgeROMBank[1] = (uint8_t *) 0x08118000;
 
     // Map memory
-    memory_map.pMappedROMBank = memory_map.aCartridgeROMBank[1];
-    memory_map.pMappedRAMBank = NULL;
+    mem.pMappedROMBank = mem.aCartridgeROMBank[1];
+    mem.pMappedRAMBank = NULL;
 }
 
 uint8_t mem_read_u8(uint16_t Addr)
@@ -124,21 +142,21 @@ uint8_t* mem_get_register(enum IOPorts_reg reg)
     switch (reg)
     {
         case JOYPAD:
-            return &memory_map.IOPorts[0x00];
+            return &mem.IOPorts[0x00];
         case SERIAL:
-            return &memory_map.IOPorts[0x01];
+            return &mem.IOPorts[0x01];
         case TIMER:
-            return &memory_map.IOPorts[0x04];
+            return &mem.IOPorts[0x04];
         case SOUND:
-            return &memory_map.IOPorts[0x10];
+            return &mem.IOPorts[0x10];
         case PPU:
-            return &memory_map.IOPorts[0x40];
+            return &mem.IOPorts[0x40];
         case IF:
-            return &memory_map.IOPorts[0x0F];
+            return &mem.IOPorts[0x0F];
         case IE:
-            return &memory_map.IOPorts[0xFF];
+            return &mem.IOPorts[0xFF];
         case BOOT:
-            return &memory_map.IOPorts[0x50];
+            return &mem.IOPorts[0x50];
         default:
             return NULL;
     }
