@@ -32,13 +32,14 @@ struct memory_map_t
     uint8_t *pMappedRAMBank; // [0xA000 - 0xC000]
 
     // On board RAM
-	uint8_t SRAM[MEM_SRAM_SIZE];
-	uint8_t VRAM[MEM_VRAM_SIZE];
-	uint8_t OAM_RAM[MEM_OAM_RAM_SIZE];
-	uint8_t HRAM[MEM_HRAM_SIZE];
-	uint8_t IOPorts[MEM_IO_PORTS_SIZE];
+    uint8_t SRAM[MEM_SRAM_SIZE];
+    uint8_t VRAM[MEM_VRAM_SIZE];
+    uint8_t OAM_RAM[MEM_OAM_RAM_SIZE];
+    uint8_t HRAM[MEM_HRAM_SIZE];
+    uint8_t IOPorts[MEM_IO_PORTS_SIZE];
 
 } mem;
+
 
 // IO Ports map
 bool aIOPortsMap[MEM_IO_PORTS_SIZE] =
@@ -161,3 +162,14 @@ uint8_t* mem_get_register(enum IOPorts_reg reg)
             return NULL;
     }
 }
+
+uint8_t* mem_get_oam_ram(void)
+{
+    return &mem.OAM_RAM[0];
+}
+
+uint8_t* mem_get_vram(void)
+{
+    return &mem.VRAM[0];
+}
+

@@ -28,6 +28,7 @@
 #include <gameboy/cpu.h>
 #include <gameboy/irq.h>
 #include <gameboy/mem.h>
+#include <gameboy/ppu.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -128,6 +129,7 @@ int main(void)
   cpu_init();
   irq_init();
   mem_init();
+  ppu_init();
 
   BSP_LCD_Init();
   /* Layer2 Init */
@@ -160,7 +162,8 @@ int main(void)
 	  HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 
 	  // Emulation cycle
-	  cpu_execute();
+	  cpu_exec();
+	  ppu_exec();
 
 	  HAL_Delay(50);
   }

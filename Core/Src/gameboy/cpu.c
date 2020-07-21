@@ -29,7 +29,7 @@ void cpu_init(void)
     cpu.cycle_counter = 1;
 }
 
-void cpu_execute(void)
+void cpu_exec(void)
 {
     bool update_pc = false;
 

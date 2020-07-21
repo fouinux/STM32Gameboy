@@ -31,4 +31,7 @@ void mem_write_u8(uint16_t Addr, uint8_t Value);
 void mem_write_u16(uint16_t Addr, uint16_t Value);
 uint8_t* mem_get_register(enum IOPorts_reg reg);
 
+uint8_t* mem_get_oam_ram(void);
+uint8_t* mem_get_vram(void);
+
 #endif /* INC_GAMEBOY_MEM_H_ */
