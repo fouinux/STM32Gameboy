@@ -115,27 +115,43 @@ void mem_init()
 
 uint8_t mem_read_u8(uint16_t Addr)
 {
-	return *((uint8_t *) mem_translation(Addr));
+    uint8_t *pU8 = (uint8_t *) mem_translation(Addr);
+    if (NULL == pU8)
+        return 0xFF;
+    else
+        return *pU8;
 }
 
 int8_t mem_read_s8(uint16_t Addr)
 {
-	return *((int8_t *) mem_translation(Addr));
+    int8_t *pS8 = (int8_t *) mem_translation(Addr);
+    if (NULL == pS8)
+        return 0xFF;
+    else
+        return *pS8;
 }
 
 uint16_t mem_read_u16(uint16_t Addr)
 {
-	return *((uint16_t *) mem_translation(Addr));
+    uint16_t *pU16 = (uint16_t *) mem_translation(Addr);
+    if (NULL == pU16)
+        return 0xFFFF;
+    else
+        return *pU16;
 }
 
 void mem_write_u8(uint16_t Addr, uint8_t Value)
 {
-	*((uint8_t *) mem_translation(Addr)) = Value;
+    uint8_t *pU8 = (uint8_t *) mem_translation(Addr);
+    if (NULL != pU8)
+        *pU8 = Value;
 }
 
 void mem_write_u16(uint16_t Addr, uint16_t Value)
 {
-	*((uint16_t *) mem_translation(Addr)) = Value;
+    uint16_t *pU16 = (uint16_t *) mem_translation(Addr);
+    if (NULL != pU16)
+        *pU16 = Value;
 }
 
 uint8_t* mem_get_register(enum IOPorts_reg reg)
