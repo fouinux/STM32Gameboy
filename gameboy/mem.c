@@ -90,7 +90,7 @@ static void* mem_translation(uint16_t Addr)
 	if (Addr < 0xFF80) // IO Ports
 	{
 	    if (aIOPortsMap[Addr -  0xFF00] == true)
-            return &mem.OAM_RAM[Addr - 0xFF00];
+            return &mem.IOPorts[Addr - 0xFF00];
 	    return NULL;
 	}
 
@@ -144,7 +144,10 @@ void mem_write_u8(uint16_t Addr, uint8_t Value)
 {
     uint8_t *pU8 = (uint8_t *) mem_translation(Addr);
     if (NULL != pU8)
-        *pU8 = Value;
+        if (Addr == 0xFF04) // Reset DIV
+            *pU8 = 0;
+        else
+            *pU8 = Value;
 }
 
 void mem_write_u16(uint16_t Addr, uint16_t Value)
