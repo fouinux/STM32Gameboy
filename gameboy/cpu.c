@@ -65,8 +65,6 @@ void cpu_init(void)
 
 void cpu_exec(void)
 {
-    bool update_pc = false;
-
     cpu.cycle_counter--;
 
     if (0 == cpu.cycle_counter)
@@ -81,24 +79,25 @@ void cpu_exec(void)
             if (cpu.prefix_cb)
             {
 #ifdef DEBUG
-                cpu_print_state(opcode);
+                if (cpu.reg.PC > 0x0a)
+                    cpu_print_state(opcode);
 #endif
                 cpu.prefix_cb = false;
                 cpu.cycle_counter = opcodeCbList[opcode].func();
-                update_pc = opcodeCbList[opcode].update_pc;
+                cpu.reg.PC++; //  All CB opcode have a size of 1
             }
             else
             {
 #ifdef DEBUG
-                cpu_print_state(opcode);
+                if (cpu.reg.PC > 0x0a)
+                    cpu_print_state(opcode);
 #endif
                 cpu.cycle_counter = opcodeList[opcode].func();
-                update_pc = opcodeList[opcode].update_pc;
+
+                if (opcodeList[opcode].update_pc) // Update Program Counter
+                    cpu.reg.PC += opcodeList[opcode].length;
             }
 
-            // Update Program Counter
-            if (update_pc)
-                cpu.reg.PC += opcodeList[opcode].length;
         }
     }
 }

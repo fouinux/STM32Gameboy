@@ -8,6 +8,8 @@
 #include "ppu.h"
 #include "mem.h"
 
+#include <SDL2/SDL.h>
+
 #define STATE_HBLANK_DURATION       51
 #define STATE_VBLANK_DURATION       114
 #define STATE_OAM_SEARCH_DURATION   20
@@ -17,6 +19,10 @@
 #define LINE_MAX                    154
 
 #define OAM_NB                      40
+
+#define TILE_SIZE                   16
+
+#define get_tile_offset(ID)         (ID * TILE_SIZE)
 
 struct oam_entry_t
 {
@@ -72,6 +78,11 @@ static inline void exec_oam_search(void)
     }
 
     // TODO Sort sprite array?
+}
+
+static inline uint16_t* get_tile_id(uint8_t TileId)
+{
+
 }
 
 void ppu_init(void)
@@ -131,5 +142,61 @@ void ppu_exec(void)
                 ppu.state = STATE_HBLANK;
             }
             break;
+    }
+}
+
+void ppu_print_bg(uint8_t *pPixels, int pitch)
+{
+    // Create colors
+    SDL_PixelFormat *pPixelFormat = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+    uint32_t aColor[4];
+    aColor[0] = SDL_MapRGBA(pPixelFormat, 0xFF, 0xFF, 0xFF, 0xFF); // White
+    aColor[1] = SDL_MapRGBA(pPixelFormat, 0xAA, 0xAA, 0xAA, 0xFF); // Light gray
+    aColor[2] = SDL_MapRGBA(pPixelFormat, 0x55, 0x55, 0x55, 0xFF); // Dark gray
+    aColor[3] = SDL_MapRGBA(pPixelFormat, 0x00, 0x00, 0x00, 0xFF); // Black
+
+    // Mapping BG colors
+    uint8_t aBGPalette[4];
+    aBGPalette[0] = ppu.pReg->BGP >> 0 & 0x03;
+    aBGPalette[1] = ppu.pReg->BGP >> 2 & 0x03;
+    aBGPalette[2] = ppu.pReg->BGP >> 4 & 0x03;
+    aBGPalette[3] = ppu.pReg->BGP >> 6 & 0x03;
+
+    // Get BG map and data
+    uint8_t* pVRAM = mem_get_vram();
+    uint16_t BGTileMapOffset = (ppu.pReg->LCDC_Flags.BGTileMapAddr == 0) ? 0x1800 : 0x1C00;
+    uint16_t BGTileDataOffset = (ppu.pReg->LCDC_Flags.BGWindowTileData == 0) ? 0x0800 : 0x0000;
+    uint8_t* pBGTileMap = pVRAM + BGTileMapOffset;
+    uint8_t* pBGTileData = pVRAM + BGTileDataOffset;
+
+
+    // 32 x 32 tiles to render
+    for (int y = 0 ; y < 32 ; y++)
+    {
+        for (int x = 0 ; x < 32 ; x++)
+        {
+            // Get BG tile id
+            uint8_t tileId = *(pBGTileMap + x + y * 32);
+            uint8_t *pTile = pBGTileData + get_tile_offset(tileId);
+
+            // Draw the tile
+            for (int i = 0 ; i < TILE_SIZE ; i+=2)
+            {
+                uint8_t upper = pTile[i];
+                uint8_t lower = pTile[i+1];
+
+                // Get the line
+                uint32_t *p = (uint32_t *)(pPixels + pitch*(y*8+i/2));
+                p += 8 * x; // correct the x
+
+                for (int pixel = 0 ; pixel < 8 ; pixel++)
+                {
+                    // Print pixel
+                    uint8_t colorId = (upper >> pixel & 0x01) << 1 + (lower >> pixel & 0x01);
+                    *p = aBGPalette[colorId];
+                    p++;
+                }
+            }
+        }
     }
 }

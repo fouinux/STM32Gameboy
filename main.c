@@ -7,10 +7,13 @@
 #include "gameboy/irq.h"
 #include "gameboy/mem.h"
 #include "gameboy/ppu.h"
+#include "gameboy/timer.h"
 
-#define DISPLAY_X   160
-#define DISPLAY_Y   144
-#define SCALE       4
+// #define DISPLAY_X   160
+// #define DISPLAY_Y   144
+#define DISPLAY_X   256
+#define DISPLAY_Y   256
+#define SCALE       2
 
 uint8_t aBootROM[256];
 uint8_t aGameROM[32 * 1024];
@@ -33,7 +36,9 @@ static int load_bootrom(const char *pFilename)
     fclose(pBootROM);
     return EXIT_SUCCESS;
 
-}static int load_gamerom(const char *pFilename)
+}
+
+static int load_gamerom(const char *pFilename)
 {
     FILE *pGameROM = fopen(pFilename, "rb");
     if (NULL == pGameROM)
@@ -54,14 +59,17 @@ static int load_bootrom(const char *pFilename)
 
 int main(int argc, char *argv[])
 {
-    // SDL variables
-    SDL_Window* pWindow = NULL;
-    SDL_Renderer *pRenderer;
-    SDL_Texture *pTexture;
+    // Common vars
     SDL_PixelFormat *pPixelFormat;
     SDL_Event event;
     uint8_t *pPixels;
     int pitch;
+
+    // Main window
+    SDL_Window* pWindow = NULL;
+    SDL_Renderer *pRenderer;
+    SDL_Texture *pTexture;
+
 
     // Init SDL
     if (SDL_Init(SDL_INIT_VIDEO) != 0 )
@@ -70,8 +78,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    /* Create window */
-    pWindow = SDL_CreateWindow("SDL Gameboy",
+    /* Create main window */
+    pWindow = SDL_CreateWindow("Main Screen",
                                SDL_WINDOWPOS_UNDEFINED,
                                SDL_WINDOWPOS_UNDEFINED,
                                DISPLAY_X * SCALE,
@@ -101,6 +109,7 @@ int main(int argc, char *argv[])
     irq_init();
     mem_init();
     ppu_init();
+    timer_init();
 
     // Overwrite mem values
     mem_set_bootrom(&aBootROM[0]);
@@ -113,28 +122,43 @@ int main(int argc, char *argv[])
         if (event.type == SDL_QUIT)
             break;
 
-        SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
+        // SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
 
         // Test SDL
-        for (int y = 0 ; y < DISPLAY_Y ; y++)
-        {
-            uint32_t *p = (uint32_t *)(pPixels + pitch*y); // cast for a pointer increments by 4 bytes.(RGBA)
-            for (int x = 0 ; x < DISPLAY_X ; x++)
-            {
-                *p = SDL_MapRGBA(pPixelFormat, x*y, x*y, x*y, 255);
-                p++;
-            }
-        }
+        // for (int y = 0 ; y < DISPLAY_Y ; y++)
+        // {
+        //     uint32_t *p = (uint32_t *)(pPixels + pitch*y); // cast for a pointer increments by 4 bytes.(RGBA)
+        //     for (int x = 0 ; x < DISPLAY_X ; x++)
+        //     {
+        //         *p = SDL_MapRGBA(pPixelFormat, x*y, x*y, x*y, 255);
+        //         p++;
+        //     }
+        //     printf("y = %d\n", y);
+        // }
+
+
+        // ppu_print_bg(pPixels, pitch);
 
         // Run Gameboy emulation
         cpu_exec();
         ppu_exec();
+        if (cpu.reg.PC > 0x95)
+        {
+            SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
+            ppu_print_bg(pPixels, pitch);
+            SDL_UnlockTexture(pTexture);
 
-        SDL_UnlockTexture(pTexture);
+            SDL_RenderClear(pRenderer);
+            SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
+            SDL_RenderPresent(pRenderer);
+        }
 
-        SDL_RenderClear(pRenderer);
-        SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
-        SDL_RenderPresent(pRenderer);
+        // SDL_UnlockTexture(pTexture);
+
+        // SDL_RenderClear(pRenderer);
+        // SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
+        // SDL_RenderPresent(pRenderer);
+        // SDL_Delay(50);
     }
 
     // Close and destroy the window

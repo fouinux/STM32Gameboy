@@ -82,4 +82,6 @@ struct ppu_t
 void ppu_init(void);
 void ppu_exec(void);
 
+void ppu_print_bg(uint8_t *pPixels, int pitch);
+
 #endif /* INC_PPU_H_ */
