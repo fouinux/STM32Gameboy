@@ -685,7 +685,7 @@ static uint8_t CP_A_HL(void)
 // CP A, d8
 static uint8_t CP_A_d8(void)
 {
-    uint8_t d8 = mem_read_u8(cpu.reg.HL);
+    uint8_t d8 = mem_read_u8(cpu.reg.PC + 1);
     int16_t t = cpu.reg.A - d8;
     cpu.reg.F = 0x40; /* N = 1 */
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
