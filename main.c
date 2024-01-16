@@ -120,7 +120,26 @@ int main(int argc, char *argv[])
     {
         SDL_PollEvent(&event);
         if (event.type == SDL_QUIT)
+        {
+            extern struct ppu_t ppu;
+            printf("BGP = %02X\n", ppu.pReg->BGP);
+            printf("LCDC = %02X\n", ppu.pReg->LCDC);
+
+            // Dump VRAM
+            uint8_t* pVRAM = mem_get_vram();
+            printf("          00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n");
+            for (int addr = 0 ; addr < 0x2000 ; addr += 16)
+            {
+                printf("%08X  ", 0x8000 + addr);
+                for (int i = 0 ; i < 16 ; i++)
+                {
+                    printf("%02X ", pVRAM[addr + i]);
+                }
+                printf("\n");
+            }
+
             break;
+        }
 
         // SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
 
