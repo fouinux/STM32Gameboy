@@ -57,6 +57,21 @@ static int load_gamerom(const char *pFilename)
     return EXIT_SUCCESS;
 }
 
+static int dump_memory(const int addr, const size_t size)
+{
+    printf("Offset(h) | 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n");
+    printf("-----------------------------------------------------------\n");
+    for (int a = addr ; a < addr + size ; a += 16)
+    {
+        printf("%08X  | ", a);
+        for (int i = 0 ; i < 16 ; i++)
+        {
+            printf("%02X ", mem_read_u8(a + i));
+        }
+        printf("\n");
+    }
+}
+
 int main(int argc, char *argv[])
 {
     // Common vars
@@ -125,18 +140,12 @@ int main(int argc, char *argv[])
             printf("BGP = %02X\n", ppu.pReg->BGP);
             printf("LCDC = %02X\n", ppu.pReg->LCDC);
 
+            // Dump MEM
+            dump_memory(0x0, 0x200);
+            printf("\n");
+
             // Dump VRAM
-            uint8_t* pVRAM = mem_get_vram();
-            printf("          00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n");
-            for (int addr = 0 ; addr < 0x2000 ; addr += 16)
-            {
-                printf("%08X  ", 0x8000 + addr);
-                for (int i = 0 ; i < 16 ; i++)
-                {
-                    printf("%02X ", pVRAM[addr + i]);
-                }
-                printf("\n");
-            }
+            dump_memory(0x8000, 0x2000);
 
             break;
         }
