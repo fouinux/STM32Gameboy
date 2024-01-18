@@ -121,16 +121,16 @@ int main(int argc, char *argv[])
         SDL_PollEvent(&event);
         if (event.type == SDL_QUIT)
         {
-            extern struct ppu_t ppu;
-            printf("BGP = %02X\n", ppu.pReg->BGP);
-            printf("LCDC = %02X\n", ppu.pReg->LCDC);
+            // extern struct ppu_t ppu;
+            // printf("BGP = %02X\n", ppu.pReg->BGP);
+            // printf("LCDC = %02X\n", ppu.pReg->LCDC);
 
-            // Dump MEM
-            mem_hexdump(0x0, 0x200);
-            printf("\n");
+            // // Dump MEM
+            // mem_hexdump(0x0, 0x200);
+            // printf("\n");
 
-            // Dump VRAM
-            mem_hexdump(0x8000, 0x2000);
+            // // Dump VRAM
+            // mem_hexdump(0x8000, 0x2000);
 
             break;
         }
@@ -155,16 +155,19 @@ int main(int argc, char *argv[])
         // Run Gameboy emulation
         cpu_exec();
         ppu_exec();
-        if (cpu.reg.PC > 0x95)
-        {
-            SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
-            ppu_print_bg(pPixels, pitch);
-            SDL_UnlockTexture(pTexture);
+        // if (cpu.reg.PC > 0x95)
+        // {
+        //     SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
+        //     ppu_print_bg(pPixels, pitch);
+        //     SDL_UnlockTexture(pTexture);
 
-            SDL_RenderClear(pRenderer);
-            SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
-            SDL_RenderPresent(pRenderer);
-        }
+        //     SDL_RenderClear(pRenderer);
+        //     SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
+        //     SDL_RenderPresent(pRenderer);
+        // }
+
+        if (cpu.reg.PC == 0x55)
+            mem_hexdump(0x8000, 0x2000);
 
         // SDL_UnlockTexture(pTexture);
 
