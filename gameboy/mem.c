@@ -201,3 +201,18 @@ void mem_set_gamerom(uint8_t *pGameROM, uint8_t index)
 {
     mem.aCartridgeROMBank[index] = pGameROM;
 }
+
+void mem_hexdump(const uint16_t Addr, const size_t Size)
+{
+    printf("Offset(h) | 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n");
+    printf("-----------------------------------------------------------\n");
+    for (int a = Addr ; a < Addr + Size ; a += 16)
+    {
+        printf("%08X  | ", a);
+        for (int i = 0 ; i < 16 ; i++)
+        {
+            printf("%02X ", mem_read_u8(a + i));
+        }
+        printf("\n");
+    }
+}

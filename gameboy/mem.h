@@ -8,6 +8,7 @@
 #ifndef INC_GAMEBOY_MEM_H_
 #define INC_GAMEBOY_MEM_H_
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -36,5 +37,7 @@ uint8_t* mem_get_vram(void);
 
 void mem_set_bootrom(uint8_t *pBootROM);
 void mem_set_gamerom(uint8_t *pGameROM, uint8_t index);
+
+void mem_hexdump(const uint16_t Addr, const size_t Size);
 
 #endif /* INC_GAMEBOY_MEM_H_ */
