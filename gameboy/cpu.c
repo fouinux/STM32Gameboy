@@ -21,7 +21,7 @@ struct cpu_t cpu;
 static void cpu_print_state(uint8_t Opcode)
 {
     if (true == cpu.prefix_cb)
-        printf("%04X: %s\n", cpu.reg.PC, opcodeCbList[Opcode].pFuncName);
+        printf("%04X: %s\n", cpu.reg.PC - 1, opcodeCbList[Opcode].pFuncName);
     else
         printf("%04X: %s\n", cpu.reg.PC, opcodeList[Opcode].pFuncName);
     printf("\tA = 0x%02X\tF = 0x%02X\tAF = 0x%04X\n", cpu.reg.A, cpu.reg.F, cpu.reg.AF);
@@ -89,8 +89,10 @@ void cpu_exec(void)
             else
             {
 #ifdef DEBUG
-                if (cpu.reg.PC > 0x0a)
+                if (cpu.reg.PC > 0x0a && opcode != 0xCB)
                     cpu_print_state(opcode);
+                if (cpu.reg.PC == 0xa7)
+                    mem_hexdump(0x8000, 64);
 #endif
                 cpu.cycle_counter = opcodeList[opcode].func();
 
