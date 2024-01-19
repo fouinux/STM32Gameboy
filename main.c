@@ -155,19 +155,17 @@ int main(int argc, char *argv[])
         // Run Gameboy emulation
         cpu_exec();
         ppu_exec();
-        // if (cpu.reg.PC > 0x95)
-        // {
-        //     SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
-        //     ppu_print_bg(pPixels, pitch);
-        //     SDL_UnlockTexture(pTexture);
 
-        //     SDL_RenderClear(pRenderer);
-        //     SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
-        //     SDL_RenderPresent(pRenderer);
-        // }
+        if (cpu.reg.PC == 0x60)
+        {
+            SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
+            ppu_print_bg(pPixels, pitch);
+            SDL_UnlockTexture(pTexture);
 
-        if (cpu.reg.PC == 0x55)
-            mem_hexdump(0x8000, 0x2000);
+            SDL_RenderClear(pRenderer);
+            SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
+            SDL_RenderPresent(pRenderer);
+        }
 
         // SDL_UnlockTexture(pTexture);
 
