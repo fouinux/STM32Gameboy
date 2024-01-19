@@ -18,12 +18,12 @@ struct irq_reg_t
         uint8_t Value;
         struct
         {
-            uint8_t : 3;
-            uint8_t P10_P13 : 1;
-            uint8_t Serial : 1;
-            uint8_t Timer : 1;
-            uint8_t LCDC : 1;
             uint8_t VBlank : 1;
+            uint8_t LCDC : 1;
+            uint8_t Timer : 1;
+            uint8_t Serial : 1;
+            uint8_t P10_P13 : 1;
+            uint8_t : 3;
         } Flags;
     };
 };

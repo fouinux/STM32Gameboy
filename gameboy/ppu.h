@@ -27,14 +27,14 @@ struct ppu_reg_t
         uint8_t LCDC; // LCD Control
         struct
         {
-            uint8_t DisplayEnable : 1;
-            uint8_t WindowTileMapAddr : 1;
-            uint8_t WindowEnable : 1;
-            uint8_t BGWindowTileData : 1;
-            uint8_t BGTileMapAddr : 1;
-            uint8_t OBJSize : 1;
-            uint8_t OBJEnable : 1;
             uint8_t BGEnable : 1;
+            uint8_t OBJEnable : 1;
+            uint8_t OBJSize : 1;
+            uint8_t BGTileMapAddr : 1;
+            uint8_t BGWindowTileData : 1;
+            uint8_t WindowEnable : 1;
+            uint8_t WindowTileMapAddr : 1;
+            uint8_t DisplayEnable : 1;
         } LCDC_Flags;
     };
 
@@ -43,13 +43,13 @@ struct ppu_reg_t
         uint8_t STAT; // LCD Status
         struct
         {
-            uint8_t : 1;
-            uint8_t LYCeqLY : 1;
-            uint8_t Mode2_OAM : 1;
-            uint8_t Mode1_VBlank : 1;
-            uint8_t Mode0_HBlank : 1;
-            uint8_t LYCeqLY_Flag : 1;
             uint8_t ModeFlag : 2;
+            uint8_t LYCeqLY_Flag : 1;
+            uint8_t Mode0_HBlank : 1;
+            uint8_t Mode1_VBlank : 1;
+            uint8_t Mode2_OAM : 1;
+            uint8_t LYCeqLY : 1;
+            uint8_t : 1;
         } STAT_Flags;
     };
 

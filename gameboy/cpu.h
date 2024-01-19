@@ -22,11 +22,11 @@ struct cpu_reg_t
 				uint8_t F; // Flags
 				struct
 				{
-					uint8_t Z: 1; // Zero Flag
-					uint8_t N: 1; // Subtract Flag
-					uint8_t H: 1; // Half Carry Flag
-					uint8_t C: 1; // Carry Flag
 					uint8_t  : 4;
+					uint8_t C: 1; // Carry Flag
+					uint8_t H: 1; // Half Carry Flag
+					uint8_t N: 1; // Subtract Flag
+					uint8_t Z: 1; // Zero Flag
 				} Flags;
 			};
 			uint8_t A; // Accumulator

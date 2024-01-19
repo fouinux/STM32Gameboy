@@ -169,7 +169,6 @@ void ppu_print_bg(uint8_t *pPixels, int pitch)
     uint8_t* pBGTileMap = pVRAM + BGTileMapOffset;
     uint8_t* pBGTileData = pVRAM + BGTileDataOffset;
 
-
     // 32 x 32 tiles to render
     for (int y = 0 ; y < 32 ; y++)
     {
@@ -192,8 +191,8 @@ void ppu_print_bg(uint8_t *pPixels, int pitch)
                 for (int pixel = 0 ; pixel < 8 ; pixel++)
                 {
                     // Print pixel
-                    uint8_t colorId = (upper >> pixel & 0x01) << 1 + (lower >> pixel & 0x01);
-                    *p = aBGPalette[colorId];
+                    uint8_t colorId = (upper >> (7-pixel) & 0x01) + (lower >> (7-pixel) & 0x01) << 1;
+                    *p = aColor[aBGPalette[colorId]];
                     p++;
                 }
             }
