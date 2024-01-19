@@ -120,37 +120,7 @@ int main(int argc, char *argv[])
     {
         SDL_PollEvent(&event);
         if (event.type == SDL_QUIT)
-        {
-            // extern struct ppu_t ppu;
-            // printf("BGP = %02X\n", ppu.pReg->BGP);
-            // printf("LCDC = %02X\n", ppu.pReg->LCDC);
-
-            // // Dump MEM
-            // mem_hexdump(0x0, 0x200);
-            // printf("\n");
-
-            // // Dump VRAM
-            // mem_hexdump(0x8000, 0x2000);
-
             break;
-        }
-
-        // SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
-
-        // Test SDL
-        // for (int y = 0 ; y < DISPLAY_Y ; y++)
-        // {
-        //     uint32_t *p = (uint32_t *)(pPixels + pitch*y); // cast for a pointer increments by 4 bytes.(RGBA)
-        //     for (int x = 0 ; x < DISPLAY_X ; x++)
-        //     {
-        //         *p = SDL_MapRGBA(pPixelFormat, x*y, x*y, x*y, 255);
-        //         p++;
-        //     }
-        //     printf("y = %d\n", y);
-        // }
-
-
-        // ppu_print_bg(pPixels, pitch);
 
         // Run Gameboy emulation
         cpu_exec();
@@ -166,13 +136,6 @@ int main(int argc, char *argv[])
             SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
             SDL_RenderPresent(pRenderer);
         }
-
-        // SDL_UnlockTexture(pTexture);
-
-        // SDL_RenderClear(pRenderer);
-        // SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
-        // SDL_RenderPresent(pRenderer);
-        // SDL_Delay(50);
     }
 
     // Close and destroy the window
