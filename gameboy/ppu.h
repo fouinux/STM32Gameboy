@@ -9,6 +9,13 @@
 #define INC_PPU_H_
 
 #include <stdint.h>
+#include "fifo.h"
+
+#define PPU_SCREEN_W    160
+#define PPU_SCREEN_H    144
+
+#define PPU_BG_W        256
+#define PPU_BG_H        256
 
 #define PPU_OAM_VISIBLE_MAX 10
 
@@ -77,6 +84,11 @@ struct ppu_t
 
     uint8_t OAM_counter;
     uint8_t aOAM_visible[PPU_OAM_VISIBLE_MAX];
+
+    // Screen
+    uint8_t aScreen[PPU_SCREEN_W][PPU_SCREEN_H];
+    struct fifo_t Fifo_BG;
+    struct fifo_t Fifo_OAM;
 };
 
 extern struct ppu_t ppu;

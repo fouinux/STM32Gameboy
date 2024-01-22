@@ -28,18 +28,18 @@ struct oam_entry_t
 {
     uint8_t Y;
     uint8_t X;
-    uint8_t Number;
+    uint8_t TileId;
     union
     {
-        uint8_t Flags;
+        uint8_t Attributes;
         struct
         {
-            uint8_t Priority : 1;
-            uint8_t Y_Flip : 1;
-            uint8_t X_Flip : 1;
-            uint8_t Palette : 1;
             uint8_t : 4;
-        };
+            uint8_t Palette : 1;
+            uint8_t X_Flip : 1;
+            uint8_t Y_Flip : 1;
+            uint8_t Priority : 1;
+        } Attributes_Flags;
     };
 };
 
@@ -77,12 +77,30 @@ static inline void exec_oam_search(void)
         }
     }
 
-    // TODO Sort sprite array?
+    // TODO Improve sort ?
+    for (int round = 0 ; round < PPU_OAM_VISIBLE_MAX ; round++)
+    {
+        for (int i = 0 ; i < (PPU_OAM_VISIBLE_MAX - round - 1) ; i++)
+        {
+            if (ppu.aOAM_visible[i] > ppu.aOAM_visible[i+1])
+            {
+                uint8_t temp = ppu.aOAM_visible[i];
+                ppu.aOAM_visible[i] = ppu.aOAM_visible[i+1];
+                ppu.aOAM_visible[i+1] = temp;
+            }
+        }
+    }
 }
 
 static inline uint16_t* get_tile_id(uint8_t TileId)
 {
 
+}
+
+static inline void exec_pxl_xfer(void)
+{
+    // Fetch BG
+    
 }
 
 void ppu_init(void)
@@ -95,10 +113,17 @@ void ppu_init(void)
     // Start at y = 0 & x = 0
     ppu.y = 0;
     ppu.x = 0;
+
+    // Init FIFO
+    fifo_init(&ppu.Fifo_BG);
+    fifo_init(&ppu.Fifo_OAM);
 }
 
 void ppu_exec(void)
 {
+    if (ppu.pReg->LCDC_Flags.DisplayEnable == 0)
+        return;
+
     switch(ppu.state)
     {
         case STATE_HBLANK:
@@ -136,6 +161,7 @@ void ppu_exec(void)
             break;
 
         case STATE_PXL_XFER:
+            exec_pxl_xfer();
             if (ppu.state_counter >= STATE_PXL_XFER_DURATION)
             {
                 ppu.state_counter = 0;
