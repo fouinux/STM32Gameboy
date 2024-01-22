@@ -79,6 +79,8 @@ struct ppu_t
     uint8_t aOAM_visible[PPU_OAM_VISIBLE_MAX];
 };
 
+extern struct ppu_t ppu;
+
 void ppu_init(void);
 void ppu_exec(void);
 

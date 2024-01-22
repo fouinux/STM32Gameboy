@@ -6,6 +6,7 @@
  */
 
 #include "mem.h"
+#include "ppu.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
@@ -70,7 +71,11 @@ static void* mem_translation(uint16_t Addr)
 		return &mem.aCartridgeROMBank[mem.ROMIndex][Addr - 0x4000];
 
 	if (Addr < 0xA000) // VRAM
-		return &mem.VRAM[Addr - 0x8000];
+    {
+        if (ppu.pReg->STAT_Flags.ModeFlag != STATE_PXL_XFER)
+		    return &mem.VRAM[Addr - 0x8000];
+        return NULL; // Not accessible during Pixel Transfer
+    }
 
 	if (Addr < 0xC000) // Mapped RAM Bank
 		return NULL; //&mem.pMappedRAMBank[Addr - 0xA000];
@@ -82,7 +87,11 @@ static void* mem_translation(uint16_t Addr)
 		return &mem.SRAM[Addr - 0xE000];
 
 	if (Addr < 0xFEA0) // OAM RAM
-		return &mem.OAM_RAM[Addr - 0xFE00];
+    {
+        if (ppu.pReg->STAT_Flags.ModeFlag < STATE_OAM_SEARCH)
+		    return &mem.OAM_RAM[Addr - 0xFE00];
+        return NULL; // Not accessible during OAM Seach and Pixel Transfer
+    }
 
 	if (Addr < 0xFF00) // Empty
 		return NULL;
