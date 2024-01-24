@@ -8,6 +8,8 @@
 #include "gameboy/mem.h"
 #include "gameboy/ppu.h"
 #include "gameboy/timer.h"
+#include "gameboy/apu.h"
+#include "gameboy/joypad.h"
 
 // #define DISPLAY_X   160
 // #define DISPLAY_Y   144
@@ -57,6 +59,74 @@ static int load_gamerom(const char *pFilename)
     return EXIT_SUCCESS;
 }
 
+static void handle_keyboard(SDL_KeyboardEvent *pEvent)
+{
+    if (NULL == pEvent)
+        return;
+
+    if (SDL_KEYDOWN == pEvent->type)
+    {
+        switch (pEvent->keysym.sym)
+        {
+            case SDLK_UP:
+                joypad_set_input(UP, true);
+                break;
+            case SDLK_DOWN:
+                joypad_set_input(DOWN, true);
+                break;
+            case SDLK_RIGHT:
+                joypad_set_input(RIGHT, true);
+                break;
+            case SDLK_LEFT:
+                joypad_set_input(LEFT, true);
+                break;
+            case SDLK_KP_PERIOD:
+                joypad_set_input(A, true);
+                break;
+            case SDLK_KP_0:
+                joypad_set_input(B, true);
+                break;
+            case SDLK_DELETE:
+                joypad_set_input(SELECT, true);
+                break;
+            case SDLK_END:
+                joypad_set_input(START, true);
+                break;
+        }
+    }
+
+    if (SDL_KEYUP == pEvent->type)
+    {
+        switch (pEvent->keysym.sym)
+        {
+            case SDLK_UP:
+                joypad_set_input(UP, false);
+                break;
+            case SDLK_DOWN:
+                joypad_set_input(DOWN, false);
+                break;
+            case SDLK_RIGHT:
+                joypad_set_input(RIGHT, false);
+                break;
+            case SDLK_LEFT:
+                joypad_set_input(LEFT, false);
+                break;
+            case SDLK_KP_PERIOD:
+                joypad_set_input(A, false);
+                break;
+            case SDLK_KP_0:
+                joypad_set_input(B, false);
+                break;
+            case SDLK_DELETE:
+                joypad_set_input(SELECT, false);
+                break;
+            case SDLK_END:
+                joypad_set_input(START, false);
+                break;
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
     // Common vars
@@ -79,7 +149,7 @@ int main(int argc, char *argv[])
     }
 
     /* Create main window */
-    pWindow = SDL_CreateWindow("Main Screen",
+    pWindow = SDL_CreateWindow("STM32 Gameboy",
                                SDL_WINDOWPOS_UNDEFINED,
                                SDL_WINDOWPOS_UNDEFINED,
                                DISPLAY_X * SCALE,
@@ -110,6 +180,8 @@ int main(int argc, char *argv[])
     mem_init();
     ppu_init();
     timer_init();
+    apu_init();
+    joypad_init();
 
     // Overwrite mem values
     mem_set_bootrom(&aBootROM[0]);
@@ -121,6 +193,10 @@ int main(int argc, char *argv[])
         SDL_PollEvent(&event);
         if (event.type == SDL_QUIT)
             break;
+
+        // Handle keyboard
+        if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP)
+            handle_keyboard(&event.key);
 
         // Run Gameboy emulation
         cpu_exec();
