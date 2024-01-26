@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include "fifo.h"
 
+#include <SDL2/SDL.h>
+
 #define PPU_SCREEN_W    160
 #define PPU_SCREEN_H    144
 
@@ -84,11 +86,15 @@ struct ppu_t
 
     uint8_t OAM_counter;
     uint8_t aOAM_visible[PPU_OAM_VISIBLE_MAX];
+    uint8_t OAM_visible_id;
 
     // Screen
     uint8_t aScreen[PPU_SCREEN_W][PPU_SCREEN_H];
     struct fifo_t Fifo_BG;
     struct fifo_t Fifo_OAM;
+
+    // SDL Specific
+    uint32_t aColor[4];
 };
 
 extern struct ppu_t ppu;

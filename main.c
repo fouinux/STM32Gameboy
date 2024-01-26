@@ -9,10 +9,7 @@
 #include "gameboy/ppu.h"
 #include "gameboy/timer.h"
 
-// #define DISPLAY_X   160
-// #define DISPLAY_Y   144
-#define DISPLAY_X   256
-#define DISPLAY_Y   256
+
 #define SCALE       2
 
 uint8_t aBootROM[256];
@@ -82,8 +79,8 @@ int main(int argc, char *argv[])
     pWindow = SDL_CreateWindow("Main Screen",
                                SDL_WINDOWPOS_UNDEFINED,
                                SDL_WINDOWPOS_UNDEFINED,
-                               DISPLAY_X * SCALE,
-                               DISPLAY_Y * SCALE,
+                               PPU_SCREEN_W * SCALE,
+                               PPU_SCREEN_H * SCALE,
                                SDL_WINDOW_OPENGL);
     if(NULL == pWindow)
     {
@@ -93,7 +90,7 @@ int main(int argc, char *argv[])
     }
     pRenderer = SDL_CreateRenderer(pWindow, -1, 0);
     pTexture = SDL_CreateTexture(pRenderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING,
-                                 DISPLAY_X, DISPLAY_Y);
+                                 PPU_SCREEN_W, PPU_SCREEN_H);
     pPixelFormat = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
 
     // Load bootrom
@@ -126,16 +123,16 @@ int main(int argc, char *argv[])
         cpu_exec();
         ppu_exec();
 
-        if (cpu.reg.PC == 0x60)
-        {
-            SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
-            ppu_print_bg(pPixels, pitch);
-            SDL_UnlockTexture(pTexture);
+        // if (cpu.reg.PC == 0x60)
+        // {
+        //     SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
+        //     ppu_print_bg(pPixels, pitch);
+        //     SDL_UnlockTexture(pTexture);
 
-            SDL_RenderClear(pRenderer);
-            SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
-            SDL_RenderPresent(pRenderer);
-        }
+        //     SDL_RenderClear(pRenderer);
+        //     SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
+        //     SDL_RenderPresent(pRenderer);
+        // }
     }
 
     // Close and destroy the window

@@ -99,8 +99,61 @@ static inline uint16_t* get_tile_id(uint8_t TileId)
 
 static inline void exec_pxl_xfer(void)
 {
+    // BG and Window disabled
+    if (ppu.pReg->LCDC_Flags.BGEnable == 0)
+    {
+        ppu.aScreen[ppu.x++][ppu.y] = ppu.aColor[0]; // White
+        ppu.aScreen[ppu.x++][ppu.y] = ppu.aColor[0]; // White
+        ppu.aScreen[ppu.x++][ppu.y] = ppu.aColor[0]; // White
+        ppu.aScreen[ppu.x++][ppu.y] = ppu.aColor[0]; // White
+        return;
+    }
+
+
+    // FIFO mixer
+    if (ppu.Fifo_BG.Size > 8)
+    {
+        // Mapping BG colors
+        uint8_t aBGPalette[4];
+        aBGPalette[0] = ppu.pReg->BGP >> 0 & 0x03;
+        aBGPalette[1] = ppu.pReg->BGP >> 2 & 0x03;
+        aBGPalette[2] = ppu.pReg->BGP >> 4 & 0x03;
+        aBGPalette[3] = ppu.pReg->BGP >> 6 & 0x03;
+
+        for (int i = 0 ; i < 4 ; i++)
+        {
+            // Can out a pixel only if fifo has more than 8 pixels
+            if (ppu.Fifo_BG.Size <= 8)
+                break;
+
+            uint8_t bg = fifo_dequeue(&ppu.Fifo_BG);
+
+            // TODO Sprite
+
+            ppu.aScreen[ppu.x++][ppu.y] = ppu.aColor[aBGPalette[bg]];
+        }
+    }
+
+    // Get BG map and data
+    uint8_t* pVRAM = mem_get_vram();
+    uint16_t BGTileMapOffset = (ppu.pReg->LCDC_Flags.BGTileMapAddr == 0) ? 0x1800 : 0x1C00;
+    uint16_t BGTileDataOffset = (ppu.pReg->LCDC_Flags.BGWindowTileData == 0) ? 0x0800 : 0x0000;
+    uint8_t* pBGTileMap = pVRAM + BGTileMapOffset;
+    uint8_t* pBGTileData = pVRAM + BGTileDataOffset;
+
     // Fetch BG
-    
+    if (ppu.pReg->LCDC_Flags.WindowEnable == 0)
+    {
+
+    }
+
+    //  Fetch OBJ
+    if (ppu.pReg->LCDC_Flags.OBJEnable)
+    {
+
+    }
+
+
 }
 
 void ppu_init(void)
@@ -117,6 +170,13 @@ void ppu_init(void)
     // Init FIFO
     fifo_init(&ppu.Fifo_BG);
     fifo_init(&ppu.Fifo_OAM);
+
+    // SDL Specific
+    SDL_PixelFormat *pPixelFormat = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+    ppu.aColor[0] = SDL_MapRGBA(pPixelFormat, 0xFF, 0xFF, 0xFF, 0xFF); // White
+    ppu.aColor[1] = SDL_MapRGBA(pPixelFormat, 0xAA, 0xAA, 0xAA, 0xFF); // Light gray
+    ppu.aColor[2] = SDL_MapRGBA(pPixelFormat, 0x55, 0x55, 0x55, 0xFF); // Dark gray
+    ppu.aColor[3] = SDL_MapRGBA(pPixelFormat, 0x00, 0x00, 0x00, 0xFF); // Black
 }
 
 void ppu_exec(void)
@@ -173,14 +233,6 @@ void ppu_exec(void)
 
 void ppu_print_bg(uint8_t *pPixels, int pitch)
 {
-    // Create colors
-    SDL_PixelFormat *pPixelFormat = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
-    uint32_t aColor[4];
-    aColor[0] = SDL_MapRGBA(pPixelFormat, 0xFF, 0xFF, 0xFF, 0xFF); // White
-    aColor[1] = SDL_MapRGBA(pPixelFormat, 0xAA, 0xAA, 0xAA, 0xFF); // Light gray
-    aColor[2] = SDL_MapRGBA(pPixelFormat, 0x55, 0x55, 0x55, 0xFF); // Dark gray
-    aColor[3] = SDL_MapRGBA(pPixelFormat, 0x00, 0x00, 0x00, 0xFF); // Black
-
     // Mapping BG colors
     uint8_t aBGPalette[4];
     aBGPalette[0] = ppu.pReg->BGP >> 0 & 0x03;
@@ -218,7 +270,7 @@ void ppu_print_bg(uint8_t *pPixels, int pitch)
                 {
                     // Print pixel
                     uint8_t colorId = (upper >> (7-pixel) & 0x01) + (lower >> (7-pixel) & 0x01) << 1;
-                    *p = aColor[aBGPalette[colorId]];
+                    *p = ppu.aColor[aBGPalette[colorId]];
                     p++;
                 }
             }
