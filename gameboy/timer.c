@@ -19,7 +19,7 @@ void timer_init(void)
 /**
  * This function needs to be run at the same rate as the CPU cycle.
  */
-bool timer_exec(void)
+void timer_exec(void)
 {
     // Run DIV register
     timer.fullDiv += 4;

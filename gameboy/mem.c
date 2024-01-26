@@ -7,6 +7,7 @@
 
 #include "mem.h"
 #include "ppu.h"
+#include "joypad.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
@@ -52,6 +53,20 @@ bool aIOPortsMap[MEM_IO_PORTS_SIZE] =
      true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true, // 0xFF30
      true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true,  true, false, false, false, false, // 0xFF40
      true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF50
+    false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF60
+    false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF70
+};
+
+// IO Ports action on Write
+bool aIOPortsActionOnWrMap[MEM_IO_PORTS_SIZE] =
+{
+  //   00     01     02     03     04     05     06     07     08     09     0A     0B     0C     0D     0E     0F
+     true, false, false, false,  true, false, false, false, false, false, false, false, false, false, false, false, // 0xFF00
+    false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF10
+    false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF20
+    false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF30
+    false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF40
+    false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF50
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF60
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF70
 };
@@ -106,6 +121,21 @@ static void* mem_translation(uint16_t Addr)
 	return &mem.HRAM[Addr - 0xFF80];
 }
 
+static void action_on_w8(uint16_t Addr, uint8_t Value, uint8_t *pU8)
+{
+    switch (Addr)
+    {
+        case 0xFF00: // Joypad
+            *pU8 = Value & 0x30;
+            joypad_update();
+            break;
+
+        case 0xFF04: // Reset DIV
+            *pU8 = 0;
+            break;
+    }
+}
+
 void mem_init()
 {
     // Init BootROM location
@@ -153,10 +183,12 @@ void mem_write_u8(uint16_t Addr, uint8_t Value)
 {
     uint8_t *pU8 = (uint8_t *) mem_translation(Addr);
     if (NULL != pU8)
-        if (Addr == 0xFF04) // Reset DIV
-            *pU8 = 0;
+    {
+        if (Addr >= 0xFF00 && Addr <= 0xFF7F && aIOPortsActionOnWrMap[Addr -  0xFF00] == true)
+            action_on_w8(Addr, Value, pU8);
         else
             *pU8 = Value;
+    }
 }
 
 void mem_write_u16(uint16_t Addr, uint16_t Value)

@@ -18,6 +18,7 @@
 // Exported to be use directly
 struct cpu_t cpu;
 
+#ifdef DEBUG
 static void cpu_print_state(uint8_t Opcode)
 {
     if (true == cpu.prefix_cb)
@@ -47,6 +48,7 @@ static void cpu_print_state(uint8_t Opcode)
     else
         printf("-\n");
 }
+#endif
 
 void cpu_init(void)
 {

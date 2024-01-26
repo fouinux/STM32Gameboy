@@ -38,6 +38,6 @@ struct timer_t
 };
 
 void timer_init(void);
-bool timer_exec(void);
+void timer_exec(void);
 
 #endif /* INC_GAMEBOY_TIMER_H_ */
