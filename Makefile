@@ -1,6 +1,6 @@
 CC = gcc
 
-CFLAGS = -g -Wall -Werror
+CFLAGS = -g -Wall# -Werror
 LDFLAGS = -lSDL2
 
 SRCS := $(wildcard main.c gameboy/*.c)

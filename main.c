@@ -132,10 +132,9 @@ int main(int argc, char *argv[])
     int pitch;
 
     // Main window
+    SDL_Texture* pTexture;
     SDL_Window* pWindow = NULL;
     SDL_Renderer *pRenderer;
-    SDL_Texture *pTexture;
-
 
     // Init SDL
     if (SDL_Init(SDL_INIT_VIDEO) != 0 )
@@ -198,16 +197,16 @@ int main(int argc, char *argv[])
         ppu_exec();
         timer_exec();
 
-        // if (cpu.reg.PC == 0x60)
-        // {
-        //     SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
-        //     ppu_print_bg(pPixels, pitch);
-        //     SDL_UnlockTexture(pTexture);
+        if (cpu.reg.PC == 0x60)
+        {
+            SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
+            ppu_print_bg(pPixels, pitch);
+            SDL_UnlockTexture(pTexture);
 
-        //     SDL_RenderClear(pRenderer);
-        //     SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
-        //     SDL_RenderPresent(pRenderer);
-        // }
+            SDL_RenderClear(pRenderer);
+            SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
+            SDL_RenderPresent(pRenderer);
+        }
     }
 
     // Close and destroy the window
