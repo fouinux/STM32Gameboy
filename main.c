@@ -130,7 +130,6 @@ static void handle_keyboard(SDL_KeyboardEvent *pEvent)
 int main(int argc, char *argv[])
 {
     // Common vars
-    SDL_PixelFormat *pPixelFormat;
     SDL_Event event;
     uint8_t *pPixels;
     int pitch;
@@ -164,7 +163,6 @@ int main(int argc, char *argv[])
     pRenderer = SDL_CreateRenderer(pWindow, -1, 0);
     pTexture = SDL_CreateTexture(pRenderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING,
                                  DISPLAY_X, DISPLAY_Y);
-    pPixelFormat = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
 
     // Load bootrom
     if (load_bootrom("DMG_ROM.bin"))
@@ -201,6 +199,7 @@ int main(int argc, char *argv[])
         // Run Gameboy emulation
         cpu_exec();
         ppu_exec();
+        timer_exec();
 
         if (cpu.reg.PC == 0x60)
         {

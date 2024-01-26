@@ -14,3 +14,8 @@ void apu_init(void)
 {
     apu.pReg = (struct apu_reg_t *) mem_get_register(SOUND);
 }
+
+void apu_exec(void)
+{
+
+}

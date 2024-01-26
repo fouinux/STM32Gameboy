@@ -183,10 +183,12 @@ void mem_write_u8(uint16_t Addr, uint8_t Value)
 {
     uint8_t *pU8 = (uint8_t *) mem_translation(Addr);
     if (NULL != pU8)
+    {
         if (Addr >= 0xFF00 && Addr <= 0xFF7F && aIOPortsActionOnWrMap[Addr -  0xFF00] == true)
             action_on_w8(Addr, Value, pU8);
         else
             *pU8 = Value;
+    }
 }
 
 void mem_write_u16(uint16_t Addr, uint16_t Value)

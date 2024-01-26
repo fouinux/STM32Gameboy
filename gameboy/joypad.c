@@ -107,5 +107,5 @@ void joypad_update(void)
 
     nibble ^= 0x0F; // Invert bits
 
-    joypad.pReg->P1 = (joypad.pReg->P1 & 0x30) | nibble & 0x0F;
+    joypad.pReg->P1 = (joypad.pReg->P1 & 0x30) | (nibble & 0x0F);
 }

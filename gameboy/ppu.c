@@ -92,15 +92,10 @@ static inline void exec_oam_search(void)
     }
 }
 
-static inline uint16_t* get_tile_id(uint8_t TileId)
-{
-
-}
-
 static inline void exec_pxl_xfer(void)
 {
     // Fetch BG
-    
+
 }
 
 void ppu_init(void)
@@ -217,7 +212,7 @@ void ppu_print_bg(uint8_t *pPixels, int pitch)
                 for (int pixel = 0 ; pixel < 8 ; pixel++)
                 {
                     // Print pixel
-                    uint8_t colorId = (upper >> (7-pixel) & 0x01) + (lower >> (7-pixel) & 0x01) << 1;
+                    uint8_t colorId = (upper >> (7-pixel) & 0x01) + ((lower >> (7-pixel) & 0x01) << 1);
                     *p = aColor[aBGPalette[colorId]];
                     p++;
                 }
