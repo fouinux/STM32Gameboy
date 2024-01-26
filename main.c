@@ -64,66 +64,34 @@ static void handle_keyboard(SDL_KeyboardEvent *pEvent)
     if (NULL == pEvent)
         return;
 
-    if (SDL_KEYDOWN == pEvent->type)
-    {
-        switch (pEvent->keysym.sym)
-        {
-            case SDLK_UP:
-                joypad_set_input(UP, true);
-                break;
-            case SDLK_DOWN:
-                joypad_set_input(DOWN, true);
-                break;
-            case SDLK_RIGHT:
-                joypad_set_input(RIGHT, true);
-                break;
-            case SDLK_LEFT:
-                joypad_set_input(LEFT, true);
-                break;
-            case SDLK_KP_PERIOD:
-                joypad_set_input(A, true);
-                break;
-            case SDLK_KP_0:
-                joypad_set_input(B, true);
-                break;
-            case SDLK_DELETE:
-                joypad_set_input(SELECT, true);
-                break;
-            case SDLK_END:
-                joypad_set_input(START, true);
-                break;
-        }
-    }
+    bool state = (SDL_KEYDOWN == pEvent->type) ? true : false;
 
-    if (SDL_KEYUP == pEvent->type)
+    switch (pEvent->keysym.sym)
     {
-        switch (pEvent->keysym.sym)
-        {
-            case SDLK_UP:
-                joypad_set_input(UP, false);
-                break;
-            case SDLK_DOWN:
-                joypad_set_input(DOWN, false);
-                break;
-            case SDLK_RIGHT:
-                joypad_set_input(RIGHT, false);
-                break;
-            case SDLK_LEFT:
-                joypad_set_input(LEFT, false);
-                break;
-            case SDLK_KP_PERIOD:
-                joypad_set_input(A, false);
-                break;
-            case SDLK_KP_0:
-                joypad_set_input(B, false);
-                break;
-            case SDLK_DELETE:
-                joypad_set_input(SELECT, false);
-                break;
-            case SDLK_END:
-                joypad_set_input(START, false);
-                break;
-        }
+        case SDLK_UP:
+            joypad_set_input(UP, state);
+            break;
+        case SDLK_DOWN:
+            joypad_set_input(DOWN, state);
+            break;
+        case SDLK_RIGHT:
+            joypad_set_input(RIGHT, state);
+            break;
+        case SDLK_LEFT:
+            joypad_set_input(LEFT, state);
+            break;
+        case SDLK_KP_PERIOD:
+            joypad_set_input(A, state);
+            break;
+        case SDLK_KP_0:
+            joypad_set_input(B, state);
+            break;
+        case SDLK_DELETE:
+            joypad_set_input(SELECT, state);
+            break;
+        case SDLK_END:
+            joypad_set_input(START, state);
+            break;
     }
 }
 
@@ -188,13 +156,15 @@ int main(int argc, char *argv[])
 
     while(true)
     {
-        SDL_PollEvent(&event);
-        if (event.type == SDL_QUIT)
-            break;
+        if (SDL_PollEvent(&event))
+        {
+            if (event.type == SDL_QUIT)
+                break;
 
-        // Handle keyboard
-        if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP)
-            handle_keyboard(&event.key);
+            // Handle keyboard
+            if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP)
+                handle_keyboard(&event.key);
+        }
 
         // Run Gameboy emulation
         cpu_exec();
