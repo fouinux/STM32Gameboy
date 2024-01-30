@@ -11,7 +11,6 @@
 #include "gameboy/apu.h"
 #include "gameboy/joypad.h"
 
-
 #define SCALE       2
 
 uint8_t aBootROM[256];
@@ -115,8 +114,8 @@ int main(int argc, char *argv[])
     pWindow = SDL_CreateWindow("STM32 Gameboy",
                                SDL_WINDOWPOS_UNDEFINED,
                                SDL_WINDOWPOS_UNDEFINED,
-                               PPU_SCREEN_W * SCALE,
-                               PPU_SCREEN_H * SCALE,
+                               PPU_BG_W * SCALE,
+                               PPU_BG_H * SCALE,
                                SDL_WINDOW_OPENGL);
     if(NULL == pWindow)
     {
@@ -126,7 +125,7 @@ int main(int argc, char *argv[])
     }
     pRenderer = SDL_CreateRenderer(pWindow, -1, 0);
     pTexture = SDL_CreateTexture(pRenderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING,
-                                 PPU_SCREEN_W, PPU_SCREEN_H);
+                                 PPU_BG_W, PPU_BG_H);
 
     // Load bootrom
     if (load_bootrom("DMG_ROM.bin"))
