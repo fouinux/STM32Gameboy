@@ -92,6 +92,7 @@ struct ppu_t
     uint8_t aScreen[PPU_SCREEN_W][PPU_SCREEN_H];
     struct fifo_t Fifo_BG;
     struct fifo_t Fifo_OAM;
+    uint8_t SCX_lsb; // Save SCX & 0x07 value a the begining of the scanline
 
     // SDL Specific
     uint32_t aColor[4];

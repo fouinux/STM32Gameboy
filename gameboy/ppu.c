@@ -23,6 +23,7 @@
 #define TILE_SIZE                   16
 
 #define get_tile_offset(ID)         (ID * TILE_SIZE)
+#define get_tile_line_offset(ID, LINE)  (get_tile_offset(ID) + 2 * LINE)
 
 struct oam_entry_t
 {
@@ -104,7 +105,6 @@ static inline void exec_pxl_xfer(void)
         return;
     }
 
-
     // FIFO mixer
     if (ppu.Fifo_BG.Size > 8)
     {
@@ -125,20 +125,35 @@ static inline void exec_pxl_xfer(void)
 
             // TODO Sprite
 
+            // Discard SCX & 0x07 first elements
+            if (ppu.SCX_lsb > 0)
+            {
+                ppu.SCX_lsb--;
+                continue;
+            }
+
             ppu.aScreen[ppu.x++][ppu.y] = ppu.aColor[aBGPalette[bg]];
         }
     }
 
-    // Get BG map and data
     uint8_t* pVRAM = mem_get_vram();
-    uint16_t BGTileMapOffset = (ppu.pReg->LCDC_Flags.BGTileMapAddr == 0) ? 0x1800 : 0x1C00;
-    uint16_t BGTileDataOffset = (ppu.pReg->LCDC_Flags.BGWindowTileData == 0) ? 0x0800 : 0x0000;
-    uint8_t* pBGTileMap = pVRAM + BGTileMapOffset;
-    uint8_t* pBGTileData = pVRAM + BGTileDataOffset;
 
     // Fetch BG
-    if (ppu.pReg->LCDC_Flags.WindowEnable == 0)
+    if (ppu.pReg->LCDC_Flags.WindowEnable == 0 && ppu.Fifo_BG.Size <= 8)
     {
+        // Get BG map and data
+        uint16_t BGTileMapOffset = (ppu.pReg->LCDC_Flags.BGTileMapAddr == 0) ? 0x1800 : 0x1C00;
+        uint16_t BGTileDataOffset = (ppu.pReg->LCDC_Flags.BGWindowTileData == 0) ? 0x0800 : 0x0000;
+        uint8_t* pBGTileMap = pVRAM + BGTileMapOffset;
+        uint8_t* pBGTileData = pVRAM + BGTileDataOffset;
+
+        uint8_t tileX = ((ppu.pReg->SCX >> 3) + ppu.x) & 0x1F;
+        uint8_t tileY = (ppu.y >> 3) * 32;
+        uint8_t tileId = *(pBGTileMap + tileX + tileY);
+
+        uint8_t *pTile = pBGTileData + get_tile_offset(tileId);
+
+        // Offset to the correct line
 
     }
 
@@ -212,6 +227,8 @@ void ppu_exec(void)
             {
                 ppu.state_counter = 0;
                 ppu.state = STATE_PXL_XFER;
+                ppu.SCX_lsb = ppu.pReg->SCX & 0x07;
+                ppu.x = 0; // Reset at the begining of the scanline
             }
             break;
 
