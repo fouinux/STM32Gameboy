@@ -78,6 +78,6 @@ struct cpu_t
 extern struct cpu_t cpu;
 
 void cpu_init(void);
-void cpu_exec(void);
+void cpu_exec(bool PrintState);
 
 #endif /* INC_GAMEBOY_CPU_H_ */

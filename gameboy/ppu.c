@@ -10,6 +10,8 @@
 
 #include <SDL2/SDL.h>
 
+#define SCALE                       2
+
 #define STATE_HBLANK_DURATION       51
 #define STATE_VBLANK_DURATION       114
 #define STATE_OAM_SEARCH_DURATION   20
@@ -20,6 +22,7 @@
 
 #define OAM_NB                      40
 
+#define TILE_MAP_SIZE               32
 #define TILE_SIZE                   16
 
 #define get_tile_offset(ID)         (ID * TILE_SIZE)
@@ -62,9 +65,9 @@ static inline void exec_oam_search(void)
         // Search for Sprite on the line
         if (pOam[i].X != 0)
         {
-            if (ppu.y + 0x10 >= pOam[i].Y)
+            if (ppu.pReg->LY + 0x10 >= pOam[i].Y)
             {
-                if (ppu.y + 0x10 < pOam[i].Y + sprite_size)
+                if (ppu.pReg->LY + 0x10 < pOam[i].Y + sprite_size)
                 {
                     // Sprite is visible
                     ppu.aOAM_visible[ppu.OAM_counter++] = i;
@@ -98,10 +101,10 @@ static inline void exec_pxl_xfer(void)
     // BG and Window disabled
     if (ppu.pReg->LCDC_Flags.BGEnable == 0)
     {
-        ppu.aScreen[ppu.x++][ppu.y] = ppu.aColor[0]; // White
-        ppu.aScreen[ppu.x++][ppu.y] = ppu.aColor[0]; // White
-        ppu.aScreen[ppu.x++][ppu.y] = ppu.aColor[0]; // White
-        ppu.aScreen[ppu.x++][ppu.y] = ppu.aColor[0]; // White
+        ppu.aScreen[ppu.x++][ppu.pReg->LY] = ppu.aColor[0]; // White
+        ppu.aScreen[ppu.x++][ppu.pReg->LY] = ppu.aColor[0]; // White
+        ppu.aScreen[ppu.x++][ppu.pReg->LY] = ppu.aColor[0]; // White
+        ppu.aScreen[ppu.x++][ppu.pReg->LY] = ppu.aColor[0]; // White
         return;
     }
 
@@ -132,7 +135,8 @@ static inline void exec_pxl_xfer(void)
                 continue;
             }
 
-            ppu.aScreen[ppu.x++][ppu.y] = ppu.aColor[aBGPalette[bg]];
+            // printf("PPU: Display pixels: %d @ %d\n", bg, ppu.x);
+            ppu.aScreen[ppu.x++][ppu.pReg->LY] = aBGPalette[bg];
         }
     }
 
@@ -147,13 +151,25 @@ static inline void exec_pxl_xfer(void)
         uint8_t* pBGTileMap = pVRAM + BGTileMapOffset;
         uint8_t* pBGTileData = pVRAM + BGTileDataOffset;
 
-        uint8_t tileX = ((ppu.pReg->SCX >> 3) + ppu.x) & 0x1F;
-        uint8_t tileY = (ppu.y >> 3) * 32;
-        uint8_t tileId = *(pBGTileMap + tileX + tileY);
-
-        uint8_t *pTile = pBGTileData + get_tile_offset(tileId);
+        uint8_t tileXId = (ppu.pReg->SCX + ppu.x) >> 3;
+        uint8_t tileYId = (ppu.pReg->SCY + ppu.pReg->LY) >> 3;
+        uint8_t tileId = *(pBGTileMap + tileXId + (tileYId * TILE_MAP_SIZE));
+        uint8_t tileLine = (ppu.pReg->SCY + ppu.pReg->LY) & 0x07;
 
         // Offset to the correct line
+        uint8_t *pTile = pBGTileData + get_tile_line_offset(tileId, tileLine);
+
+        uint8_t upper = pTile[0];
+        uint8_t lower = pTile[1];
+
+        // Extract and put pixels in FIFO
+        for (uint8_t i = 0 ; i < 8 ; i++)
+        {
+            uint8_t colorId = (upper >> 7) | ((lower >> 6) & 0x02);
+            fifo_enqueue(&ppu.Fifo_BG, colorId);
+            upper <<= 1;
+            lower <<= 1;
+        }
 
     }
 
@@ -174,7 +190,7 @@ void ppu_init(void)
     ppu.state_counter = 0;
 
     // Start at y = 0 & x = 0
-    ppu.y = 0;
+    ppu.pReg->LY = 0;
     ppu.x = 0;
 
     // Init FIFO
@@ -187,6 +203,58 @@ void ppu_init(void)
     ppu.aColor[1] = SDL_MapRGBA(pPixelFormat, 0xAA, 0xAA, 0xAA, 0xFF); // Light gray
     ppu.aColor[2] = SDL_MapRGBA(pPixelFormat, 0x55, 0x55, 0x55, 0xFF); // Dark gray
     ppu.aColor[3] = SDL_MapRGBA(pPixelFormat, 0x00, 0x00, 0x00, 0xFF); // Black
+
+    // Create Display Window
+    ppu.pWindow = SDL_CreateWindow("STM32 Gameboy",
+                               SDL_WINDOWPOS_UNDEFINED,
+                               SDL_WINDOWPOS_UNDEFINED,
+                               PPU_SCREEN_W * SCALE,
+                               PPU_SCREEN_H * SCALE,
+                               SDL_WINDOW_OPENGL);
+    if(NULL == ppu.pWindow)
+    {
+        // In the case that the window could not be made...
+        printf("Could not create display window: %s\n", SDL_GetError());
+        return;
+    }
+    ppu.pRenderer = SDL_CreateRenderer(ppu.pWindow, -1, 0);
+    ppu.pTexture = SDL_CreateTexture(ppu.pRenderer, 
+                                SDL_PIXELFORMAT_RGBA8888,
+                                SDL_TEXTUREACCESS_STREAMING,
+                                PPU_SCREEN_W,
+                                PPU_SCREEN_H);
+}
+
+void ppu_destroy(void)
+{
+    // SDL Specific
+
+    SDL_DestroyWindow(ppu.pWindow);
+}
+
+static inline void sdl_render_display(void)
+{
+    uint8_t *pPixels;
+    int pitch;
+    
+    SDL_LockTexture(ppu.pTexture, NULL, (void**) &pPixels, &pitch);
+    
+    // Copy display buffer into SDL window
+    for (int y = 0 ; y < PPU_SCREEN_H ; y++)
+    {
+        uint32_t *p = (uint32_t *)(pPixels + pitch*y);
+        for (int x = 0 ; x < PPU_SCREEN_W ; x++)
+        {
+            *p = ppu.aColor[ppu.aScreen[x][y]];
+            p++;
+        }
+    }
+
+    SDL_UnlockTexture(ppu.pTexture);
+
+    SDL_RenderClear(ppu.pRenderer);
+    SDL_RenderCopy(ppu.pRenderer, ppu.pTexture, NULL, NULL);
+    SDL_RenderPresent(ppu.pRenderer);
 }
 
 void ppu_exec(void)
@@ -194,29 +262,40 @@ void ppu_exec(void)
     if (ppu.pReg->LCDC_Flags.DisplayEnable == 0)
         return;
 
+    // enum ppu_state_t currentState = ppu.state;
+
+    ppu.state_counter++;
+
     switch(ppu.state)
     {
         case STATE_HBLANK:
-            if (ppu.state_counter >= STATE_HBLANK_DURATION)
+            if (ppu.state_counter >= (STATE_HBLANK_DURATION + STATE_PXL_XFER_DURATION))
             {
-                ppu.y++;
+                ppu.pReg->LY++;
                 ppu.state_counter = 0;
-                if (ppu.y >= LINE_VISIBLE_MAX)
+                if (ppu.pReg->LY >= LINE_VISIBLE_MAX)
+                {
                     ppu.state = STATE_VBLANK;
+                    sdl_render_display();
+                }
                 else
+                {
                     ppu.state = STATE_OAM_SEARCH;
+                }
             }
             break;
 
         case STATE_VBLANK:
             if (ppu.state_counter >= STATE_VBLANK_DURATION)
             {
-                ppu.y++;
-                ppu.state_counter = 0;
-                if (ppu.y >= LINE_MAX)
+                ppu.pReg->LY++;
+                if (ppu.pReg->LY >= LINE_MAX)
+                {
+                    ppu.state_counter = 0;
+                    ppu.pReg->LY = 0;
+                    ppu.pReg->LY = 0;
                     ppu.state = STATE_OAM_SEARCH;
-                else
-                    ppu.state = STATE_VBLANK_DURATION;
+                }
             }
             break;
 
@@ -234,13 +313,15 @@ void ppu_exec(void)
 
         case STATE_PXL_XFER:
             exec_pxl_xfer();
-            if (ppu.state_counter >= STATE_PXL_XFER_DURATION)
+            if (ppu.x >= PPU_SCREEN_W)
             {
-                ppu.state_counter = 0;
                 ppu.state = STATE_HBLANK;
             }
             break;
     }
+
+    // if (currentState != ppu.state)
+    //     printf("PPU State %d => %d\n", currentState, ppu.state);
 }
 
 void ppu_print_bg(uint8_t *pPixels, int pitch)
@@ -259,13 +340,13 @@ void ppu_print_bg(uint8_t *pPixels, int pitch)
     uint8_t* pBGTileMap = pVRAM + BGTileMapOffset;
     uint8_t* pBGTileData = pVRAM + BGTileDataOffset;
 
-    // 32 x 32 tiles to render
-    for (int y = 0 ; y < 32 ; y++)
+    // Tile map to render
+    for (int y = 0 ; y < TILE_MAP_SIZE ; y++)
     {
-        for (int x = 0 ; x < 32 ; x++)
+        for (int x = 0 ; x < TILE_MAP_SIZE ; x++)
         {
             // Get BG tile id
-            uint8_t tileId = *(pBGTileMap + x + y * 32);
+            uint8_t tileId = *(pBGTileMap + x + y * TILE_MAP_SIZE);
             uint8_t *pTile = pBGTileData + get_tile_offset(tileId);
 
             // Draw the tile

@@ -80,27 +80,30 @@ struct ppu_t
     enum ppu_state_t state;
     uint8_t state_counter;
 
-    // Current screen rendering location
-    uint8_t y;
-    uint8_t x;
-
     uint8_t OAM_counter;
     uint8_t aOAM_visible[PPU_OAM_VISIBLE_MAX];
     uint8_t OAM_visible_id;
 
-    // Screen
+    // Screen rendering
+    uint8_t x;
     uint8_t aScreen[PPU_SCREEN_W][PPU_SCREEN_H];
     struct fifo_t Fifo_BG;
     struct fifo_t Fifo_OAM;
+
+    // Current scanline related
     uint8_t SCX_lsb; // Save SCX & 0x07 value a the begining of the scanline
 
     // SDL Specific
+    SDL_Texture* pTexture;
+    SDL_Window* pWindow;
+    SDL_Renderer *pRenderer;
     uint32_t aColor[4];
 };
 
 extern struct ppu_t ppu;
 
 void ppu_init(void);
+void ppu_destroy(void);
 void ppu_exec(void);
 
 void ppu_print_bg(uint8_t *pPixels, int pitch);

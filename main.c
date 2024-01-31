@@ -95,13 +95,13 @@ int main(int argc, char *argv[])
 {
     // Common vars
     SDL_Event event;
-    uint8_t *pPixels;
-    int pitch;
+    // uint8_t *pPixels;
+    // int pitch;
 
     // Main window
-    SDL_Texture* pTexture;
-    SDL_Window* pWindow = NULL;
-    SDL_Renderer *pRenderer;
+    // SDL_Texture* pTexture;
+    // SDL_Window* pWindow = NULL;
+    // SDL_Renderer *pRenderer;
 
     // Init SDL
     if (SDL_Init(SDL_INIT_VIDEO) != 0 )
@@ -110,22 +110,22 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    /* Create main window */
-    pWindow = SDL_CreateWindow("STM32 Gameboy",
-                               SDL_WINDOWPOS_UNDEFINED,
-                               SDL_WINDOWPOS_UNDEFINED,
-                               PPU_BG_W * SCALE,
-                               PPU_BG_H * SCALE,
-                               SDL_WINDOW_OPENGL);
-    if(NULL == pWindow)
-    {
-        // In the case that the window could not be made...
-        printf("Could not create window: %s\n", SDL_GetError());
-        return EXIT_FAILURE;
-    }
-    pRenderer = SDL_CreateRenderer(pWindow, -1, 0);
-    pTexture = SDL_CreateTexture(pRenderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING,
-                                 PPU_BG_W, PPU_BG_H);
+    // /* Create main window */
+    // pWindow = SDL_CreateWindow("Background Tile Map",
+    //                            SDL_WINDOWPOS_UNDEFINED,
+    //                            SDL_WINDOWPOS_UNDEFINED,
+    //                            PPU_BG_W * SCALE,
+    //                            PPU_BG_H * SCALE,
+    //                            SDL_WINDOW_OPENGL);
+    // if(NULL == pWindow)
+    // {
+    //     // In the case that the window could not be made...
+    //     printf("Could not create window: %s\n", SDL_GetError());
+    //     return EXIT_FAILURE;
+    // }
+    // pRenderer = SDL_CreateRenderer(pWindow, -1, 0);
+    // pTexture = SDL_CreateTexture(pRenderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING,
+    //                              PPU_BG_W, PPU_BG_H);
 
     // Load bootrom
     if (load_bootrom("DMG_ROM.bin"))
@@ -154,7 +154,14 @@ int main(int argc, char *argv[])
         if (SDL_PollEvent(&event))
         {
             if (event.type == SDL_QUIT)
+            {
+#ifdef debug
+                // Exec 10 more CPU cyles (help debug)
+                for (int i = 0 ; i < 50 ; i++)
+                    cpu_exec(true);
+#endif
                 break;
+            }
 
             // Handle keyboard
             if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP)
@@ -162,24 +169,26 @@ int main(int argc, char *argv[])
         }
 
         // Run Gameboy emulation
-        cpu_exec();
+        cpu_exec(false);
         ppu_exec();
         timer_exec();
 
-        if (cpu.reg.PC == 0x60)
-        {
-            SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
-            ppu_print_bg(pPixels, pitch);
-            SDL_UnlockTexture(pTexture);
+        // if (cpu.reg.PC == 0x60)
+        // {
+        //     SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
+        //     ppu_print_bg(pPixels, pitch);
+        //     SDL_UnlockTexture(pTexture);
 
-            SDL_RenderClear(pRenderer);
-            SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
-            SDL_RenderPresent(pRenderer);
-        }
+        //     SDL_RenderClear(pRenderer);
+        //     SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
+        //     SDL_RenderPresent(pRenderer);
+        // }
     }
 
+    ppu_destroy();
+
     // Close and destroy the window
-    SDL_DestroyWindow(pWindow);
+    // SDL_DestroyWindow(pWindow);
 
     // Clean up
     SDL_Quit();

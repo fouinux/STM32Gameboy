@@ -18,7 +18,6 @@
 // Exported to be use directly
 struct cpu_t cpu;
 
-#ifdef DEBUG
 static void cpu_print_state(uint8_t Opcode)
 {
     if (true == cpu.prefix_cb)
@@ -48,7 +47,6 @@ static void cpu_print_state(uint8_t Opcode)
     else
         printf("-\n");
 }
-#endif
 
 void cpu_init(void)
 {
@@ -65,7 +63,7 @@ void cpu_init(void)
     cpu.cycle_counter = 1;
 }
 
-void cpu_exec(void)
+void cpu_exec(bool PrintState)
 {
     cpu.cycle_counter--;
 
@@ -80,22 +78,18 @@ void cpu_exec(void)
             // Execute opcode
             if (cpu.prefix_cb)
             {
-#ifdef DEBUG
-                if (cpu.reg.PC > 0x0a)
+                if (PrintState)
                     cpu_print_state(opcode);
-#endif
+                    
                 cpu.prefix_cb = false;
                 cpu.cycle_counter = opcodeCbList[opcode].func();
                 cpu.reg.PC++; //  All CB opcode have a size of 1
             }
             else
             {
-#ifdef DEBUG
-                if (cpu.reg.PC > 0x0a && opcode != 0xCB)
+                if (PrintState && opcode != 0xCB)
                     cpu_print_state(opcode);
-                if (cpu.reg.PC == 0xa7)
-                    mem_hexdump(0x8000, 64);
-#endif
+                    
                 cpu.cycle_counter = opcodeList[opcode].func();
 
                 if (opcodeList[opcode].update_pc) // Update Program Counter
