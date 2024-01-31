@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
+#include <time.h>
 
 #include "gameboy/cpu.h"
 #include "gameboy/irq.h"
@@ -10,13 +11,14 @@
 #include "gameboy/timer.h"
 #include "gameboy/apu.h"
 #include "gameboy/joypad.h"
+#include "gameboy/debug.h"
 
 #define SCALE       2
 
 uint8_t aBootROM[256];
 uint8_t aGameROM[32 * 1024];
 
-static int load_bootrom(const char *pFilename)
+static inline int load_bootrom(const char *pFilename)
 {
     FILE *pBootROM = fopen(pFilename, "rb");
     if (NULL == pBootROM)
@@ -36,7 +38,7 @@ static int load_bootrom(const char *pFilename)
 
 }
 
-static int load_gamerom(const char *pFilename)
+static inline int load_gamerom(const char *pFilename)
 {
     FILE *pGameROM = fopen(pFilename, "rb");
     if (NULL == pGameROM)
@@ -55,7 +57,7 @@ static int load_gamerom(const char *pFilename)
     return EXIT_SUCCESS;
 }
 
-static void handle_keyboard(SDL_KeyboardEvent *pEvent)
+static inline void handle_keyboard(SDL_KeyboardEvent *pEvent)
 {
     if (NULL == pEvent)
         return;
@@ -97,7 +99,7 @@ int main(int argc, char *argv[])
     SDL_Event event;
     // uint8_t *pPixels;
     // int pitch;
-
+    struct timespec timeStart, timeStop;
     // Main window
     // SDL_Texture* pTexture;
     // SDL_Window* pWindow = NULL;
@@ -169,9 +171,31 @@ int main(int argc, char *argv[])
         }
 
         // Run Gameboy emulation
-        cpu_exec(false);
-        ppu_exec();
-        timer_exec();
+        // if (ppu.pReg->LCDC_Flags.DisplayEnable == 0)
+        // {
+            cpu_exec(false);
+            ppu_exec();
+            timer_exec();
+        // }
+        // else
+        // {
+        //     clock_gettime(CLOCK_MONOTONIC, &timeStart);
+        //     cpu_exec(false);
+        //     clock_gettime(CLOCK_MONOTONIC, &timeStop);
+        //     debug_print_clock_diff("CPU", &timeStart, &timeStop);
+
+        //     clock_gettime(CLOCK_MONOTONIC, &timeStart);
+        //     ppu_exec();
+        //     clock_gettime(CLOCK_MONOTONIC, &timeStop);
+        //     debug_print_clock_diff("PPU", &timeStart, &timeStop);
+
+            
+        //     clock_gettime(CLOCK_MONOTONIC, &timeStart);
+        //     timer_exec();
+        //     clock_gettime(CLOCK_MONOTONIC, &timeStop);
+        //     debug_print_clock_diff("TIMER", &timeStart, &timeStop);
+        // }
+
 
         // if (cpu.reg.PC == 0x60)
         // {

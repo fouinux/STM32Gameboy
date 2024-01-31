@@ -98,6 +98,9 @@ struct ppu_t
     SDL_Window* pWindow;
     SDL_Renderer *pRenderer;
     uint32_t aColor[4];
+
+    // Debug
+    struct timespec timeStart, timeStop;
 };
 
 extern struct ppu_t ppu;

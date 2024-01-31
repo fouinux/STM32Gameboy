@@ -7,6 +7,7 @@
 
 #include "ppu.h"
 #include "mem.h"
+#include "debug.h"
 
 #include <SDL2/SDL.h>
 
@@ -314,9 +315,7 @@ void ppu_exec(void)
         case STATE_PXL_XFER:
             exec_pxl_xfer();
             if (ppu.x >= PPU_SCREEN_W)
-            {
                 ppu.state = STATE_HBLANK;
-            }
             break;
     }
 
