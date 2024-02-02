@@ -23,7 +23,7 @@
 
 struct memory_map_t
 {
-    uint8_t *pBootReg; // BOOT register 0xFF50
+    bool BootROMEnabled;
     uint8_t *pBootROM; // BootROM
 
     // Array of pointers on cartridge ROM Banks
@@ -44,7 +44,7 @@ struct memory_map_t
 
 
 // IO Ports map
-bool aIOPortsMap[MEM_IO_PORTS_SIZE] =
+static const bool aIOPortsMap[MEM_IO_PORTS_SIZE] =
 {
   //   00     01     02     03     04     05     06     07     08     09     0A     0B     0C     0D     0E     0F
      true,  true,  true, false,  true,  true,  true,  true, false, false, false, false, false, false, false,  true, // 0xFF00
@@ -58,7 +58,7 @@ bool aIOPortsMap[MEM_IO_PORTS_SIZE] =
 };
 
 // IO Ports action on Write
-bool aIOPortsActionOnWrMap[MEM_IO_PORTS_SIZE] =
+static const bool aIOPortsActionOnWrMap[MEM_IO_PORTS_SIZE] =
 {
   //   00     01     02     03     04     05     06     07     08     09     0A     0B     0C     0D     0E     0F
      true, false, false, false,  true, false, false, false, false, false, false, false, false, false, false, false, // 0xFF00
@@ -66,7 +66,7 @@ bool aIOPortsActionOnWrMap[MEM_IO_PORTS_SIZE] =
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF20
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF30
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF40
-    false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF50
+     true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF50
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF60
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF70
 };
@@ -74,7 +74,7 @@ bool aIOPortsActionOnWrMap[MEM_IO_PORTS_SIZE] =
 
 static void* mem_translation(uint16_t Addr)
 {
-    if ((Addr < 0x100) && ((*mem.pBootReg & 0x01) == 0))
+    if ((Addr < 0x100) && mem.BootROMEnabled)
     {
         return &mem.pBootROM[Addr];
     }
@@ -133,6 +133,11 @@ static void action_on_w8(uint16_t Addr, uint8_t Value, uint8_t *pU8)
         case 0xFF04: // Reset DIV
             *pU8 = 0;
             break;
+
+        case 0xFF50: // Disable boot ROM
+            mem.BootROMEnabled = false;
+            break;
+
     }
 }
 
@@ -140,7 +145,7 @@ void mem_init()
 {
     // Init BootROM location
     mem.pBootROM = (uint8_t *) 0x08100000;
-    mem.pBootReg = mem_get_register(BOOT);
+    mem.BootROMEnabled = true;
 
     // Init Cartridge ROM banks location
     memset(mem.aCartridgeROMBank, 0, MEM_CARTRIDGE_ROM_BANK_MAX * sizeof(uint8_t *));
