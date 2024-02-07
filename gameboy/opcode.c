@@ -1364,7 +1364,7 @@ struct opcode_t opcodeList[256] =
         {RET_NZ,        "RET NZ",       1,      false},     // 0xC0
         {POP_BC,        "POP BC",       1,      true},      // 0xC1
         {JP_NZ_a16,     "JP NZ,a16",    3,      false},     // 0xC2
-        {JP_a16,        "JP a16",       3,      true},      // 0xC3
+        {JP_a16,        "JP a16",       3,      false},     // 0xC3
         {CALL_NZ_a16,   "CALL NZ,a16",  3,      false},     // 0xC4
         {PUSH_BC,       "PUSH BC",      1,      true},      // 0xC5
         {ADD_A_d8,      "ADD A,d8",     2,      true},      // 0xC6
