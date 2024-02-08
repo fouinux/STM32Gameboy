@@ -98,6 +98,7 @@ static inline void exec_oam_search(void)
     }
 }
 
+// This table helps to convert raw tiles into 8 pixels by inverting bits order and add zero between each bits
 static const uint16_t aTileConvertHelper[256] = {
     0x0000, 0x4000, 0x1000, 0x5000, 0x0400, 0x4400, 0x1400, 0x5400, 0x0100, 0x4100, 0x1100, 0x5100, 0x0500, 0x4500, 0x1500, 0x5500,
     0x0040, 0x4040, 0x1040, 0x5040, 0x0440, 0x4440, 0x1440, 0x5440, 0x0140, 0x4140, 0x1140, 0x5140, 0x0540, 0x4540, 0x1540, 0x5540,
@@ -297,7 +298,6 @@ void ppu_exec(void)
                 if (ppu.pReg->LY >= LINE_VISIBLE_MAX)
                 {
                     ppu.state = STATE_VBLANK;
-                    sdl_render_display();
                     irq.pIF->Flags.VBlank = 1; // VBlank Interrupt
                 }
                 else
@@ -313,8 +313,8 @@ void ppu_exec(void)
                 ppu.pReg->LY++;
                 if (ppu.pReg->LY >= LINE_MAX)
                 {
+                    sdl_render_display();
                     ppu.state_counter = 0;
-                    ppu.pReg->LY = 0;
                     ppu.pReg->LY = 0;
                     ppu.state = STATE_OAM_SEARCH;
                 }
