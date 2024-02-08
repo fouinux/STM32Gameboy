@@ -1145,7 +1145,7 @@ static uint8_t RET_##name(void) \
     } \
     else \
     { \
-        cpu.reg.PC += 2; /* Next opcode */ \
+        cpu.reg.PC += 1; /* Next opcode */ \
         return 2; \
     } \
 }
