@@ -94,15 +94,11 @@ void joypad_update(void)
     if (joypad.pReg->SelectButtons == 0)
         nibble |= joypad.Buttons;
 
-    // IRQ Detection
-    if (irq.ime && irq.pIE->Flags.P10_P13)
+    // IRQ: Falling edge detection on P10-P13
+    uint8_t last = (~joypad.pReg->P1) & 0x0F;
+    if (last & nibble)
     {
-        // Falling edge detection on P10-P13
-        uint8_t last = (~joypad.pReg->P1) & 0x0F;
-        if (last & nibble)
-        {
-            irq.pIF->Flags.P10_P13 = 1;
-        }
+        irq.pIF->Flags.P10_P13 = 1;
     }
 
     nibble ^= 0x0F; // Invert bits
