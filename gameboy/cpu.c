@@ -18,12 +18,17 @@
 // Exported to be use directly
 struct cpu_t cpu;
 
-static void cpu_print_state(uint8_t Opcode)
+static void cpu_print_opcode(uint8_t Opcode)
 {
     if (true == cpu.prefix_cb)
         printf("%04X: %s\n", cpu.reg.PC - 1, opcodeCbList[Opcode].pFuncName);
     else
         printf("%04X: %s\n", cpu.reg.PC, opcodeList[Opcode].pFuncName);
+
+}
+
+static void cpu_print_regs(void)
+{
     printf("\tA = 0x%02X\tF = 0x%02X\tAF = 0x%04X\n", cpu.reg.A, cpu.reg.F, cpu.reg.AF);
     printf("\tB = 0x%02X\tC = 0x%02X\tBC = 0x%04X\n", cpu.reg.B, cpu.reg.C, cpu.reg.BC);
     printf("\tD = 0x%02X\tE = 0x%02X\tDE = 0x%04X\n", cpu.reg.D, cpu.reg.E, cpu.reg.DE);
@@ -79,21 +84,27 @@ void cpu_exec(bool PrintState)
             if (cpu.prefix_cb)
             {
                 if (PrintState)
-                    cpu_print_state(opcode);
-                    
+                    cpu_print_opcode(opcode);
+
                 cpu.prefix_cb = false;
                 cpu.cycle_counter = opcodeCbList[opcode].func();
                 cpu.reg.PC++; //  All CB opcode have a size of 1
+
+                if (PrintState)
+                    cpu_print_regs();
             }
             else
             {
                 if (PrintState && opcode != 0xCB)
-                    cpu_print_state(opcode);
-                    
+                    cpu_print_opcode(opcode);
+
                 cpu.cycle_counter = opcodeList[opcode].func();
 
                 if (opcodeList[opcode].update_pc) // Update Program Counter
                     cpu.reg.PC += opcodeList[opcode].length;
+
+                if (PrintState && opcode != 0xCB)
+                    cpu_print_regs();
             }
 
         }

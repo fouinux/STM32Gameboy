@@ -100,6 +100,8 @@ int main(int argc, char *argv[])
     // uint8_t *pPixels;
     // int pitch;
     struct timespec timeStart, timeStop;
+    bool cpuDebug = false;
+
     // Main window
     // SDL_Texture* pTexture;
     // SDL_Window* pWindow = NULL;
@@ -157,7 +159,7 @@ int main(int argc, char *argv[])
         {
             if (event.type == SDL_QUIT)
             {
-#ifdef debug
+#ifdef DEBUG
                 // Exec 10 more CPU cyles (help debug)
                 for (int i = 0 ; i < 50 ; i++)
                     cpu_exec(true);
@@ -170,31 +172,31 @@ int main(int argc, char *argv[])
                 handle_keyboard(&event.key);
         }
 
+        // if (cpu.reg.PC == 0x2F8)
+        // {
+        //     printf("GAME_STATUS\n");
+        //     cpuDebug = true;
+        // }
+
+        // if (cpu.reg.PC == 0x100)
+        //     cpuDebug = true;
+
+        // if (cpu.reg.PC == 0x0293)
+        // {
+        //     mem_hexdump(0xFF80, 128);
+        //     cpuDebug = true;
+        // }
+
+        // if (cpu.reg.PC == 0x02A0)
+        // {
+        //     mem_hexdump(0xFF80, 128);
+        //     return 0;
+        // }
+
         // Run Gameboy emulation
-        // if (ppu.pReg->LCDC_Flags.DisplayEnable == 0)
-        // {
-            cpu_exec(false);
-            ppu_exec();
-            timer_exec();
-        // }
-        // else
-        // {
-        //     clock_gettime(CLOCK_MONOTONIC, &timeStart);
-        //     cpu_exec(false);
-        //     clock_gettime(CLOCK_MONOTONIC, &timeStop);
-        //     debug_print_clock_diff("CPU", &timeStart, &timeStop);
-
-        //     clock_gettime(CLOCK_MONOTONIC, &timeStart);
-        //     ppu_exec();
-        //     clock_gettime(CLOCK_MONOTONIC, &timeStop);
-        //     debug_print_clock_diff("PPU", &timeStart, &timeStop);
-
-            
-        //     clock_gettime(CLOCK_MONOTONIC, &timeStart);
-        //     timer_exec();
-        //     clock_gettime(CLOCK_MONOTONIC, &timeStop);
-        //     debug_print_clock_diff("TIMER", &timeStart, &timeStop);
-        // }
+        cpu_exec(cpuDebug);
+        ppu_exec();
+        timer_exec();
 
 
         // if (cpu.reg.PC == 0x60)
