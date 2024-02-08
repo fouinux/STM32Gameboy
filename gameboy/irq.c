@@ -26,7 +26,7 @@
 // Exported to be use directly
 struct irq_t irq;
 
-inline static void switch_context(uint8_t Addr)
+inline static void switch_context(uint16_t Addr)
 {
     mem_write_u16(cpu.reg.SP - 2, cpu.reg.PC);
     cpu.reg.SP -= 2;

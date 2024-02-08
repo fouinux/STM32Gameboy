@@ -220,7 +220,7 @@ uint8_t* mem_get_register(enum IOPorts_reg reg)
         case IF:
             return &mem.IOPorts[0x0F];
         case IE:
-            return &mem.IOPorts[0xFF];
+            return &mem.HRAM[0xFF];
         case BOOT:
             return &mem.IOPorts[0x50];
         default:
