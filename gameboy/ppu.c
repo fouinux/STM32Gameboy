@@ -7,6 +7,7 @@
 
 #include "ppu.h"
 #include "mem.h"
+#include "irq.h"
 #include "debug.h"
 
 #include <SDL2/SDL.h>
@@ -215,6 +216,8 @@ void ppu_init(void)
     fifo_init(&ppu.Fifo_BG);
     fifo_init(&ppu.Fifo_OAM);
 
+    ppu.STAT_Irq = false;
+
     // SDL Specific
     SDL_PixelFormat *pPixelFormat = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
     ppu.aColor[0] = SDL_MapRGBA(pPixelFormat, 0xFF, 0xFF, 0xFF, 0xFF); // White
@@ -295,6 +298,7 @@ void ppu_exec(void)
                 {
                     ppu.state = STATE_VBLANK;
                     sdl_render_display();
+                    irq.pIF->Flags.VBlank = 1; // VBlank Interrupt
                 }
                 else
                 {
@@ -336,8 +340,26 @@ void ppu_exec(void)
             break;
     }
 
-    // if (currentState != ppu.state)
-    //     printf("PPU State %d => %d\n", currentState, ppu.state);
+    // LYC = LY
+    ppu.pReg->STAT_Flags.LYCeqLY_Flag = (ppu.pReg->LY == ppu.pReg->LYC);
+
+    // Handling PPU interrupts
+    bool STAT_Irq = false;
+    // LYC = LY
+    if (ppu.pReg->STAT_Flags.LYCeqLY && ppu.pReg->STAT_Flags.LYCeqLY)
+        STAT_Irq = true;
+    // mode 0-2 interrupts
+    if (ppu.pReg->STAT_Flags.Mode0_HBlank && ppu.state == STATE_HBLANK)
+        STAT_Irq = true;
+    if (ppu.pReg->STAT_Flags.Mode1_VBlank && ppu.state == STATE_VBLANK)
+        STAT_Irq = true;
+    if (ppu.pReg->STAT_Flags.Mode2_OAM && ppu.state == STATE_OAM_SEARCH)
+        STAT_Irq = true;
+
+    if (!ppu.STAT_Irq && STAT_Irq)
+        irq.pIF->Flags.LCDC = 1;
+
+    ppu.STAT_Irq = STAT_Irq;
 }
 
 void ppu_print_bg(uint8_t *pPixels, int pitch)

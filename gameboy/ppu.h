@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include "fifo.h"
 
+#include <stdbool.h>
 #include <SDL2/SDL.h>
 
 #define PPU_SCREEN_W    160
@@ -57,7 +58,7 @@ struct ppu_reg_t
             uint8_t Mode0_HBlank : 1;
             uint8_t Mode1_VBlank : 1;
             uint8_t Mode2_OAM : 1;
-            uint8_t LYCeqLY : 1;
+            uint8_t LYCeqLY : 1; // LYC = LY interrupt
             uint8_t : 1;
         } STAT_Flags;
     };
@@ -92,6 +93,8 @@ struct ppu_t
 
     // Current scanline related
     uint8_t SCX_lsb; // Save SCX & 0x07 value a the begining of the scanline
+
+    bool STAT_Irq;
 
     // SDL Specific
     SDL_Texture* pTexture;
