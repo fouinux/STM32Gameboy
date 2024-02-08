@@ -1223,7 +1223,7 @@ struct opcode_t opcodeList[256] =
         {INC_SP,        "INC SP",       1,      true},      // 0x33
         {INC_pHL,       "INC (HL)",     1,      true},      // 0x34
         {DEC_pHL,       "DEC (HL)",     1,      true},      // 0x35
-        {LD_HL_d8,      "LD (HL),d8",   1,      true},      // 0x36
+        {LD_HL_d8,      "LD (HL),d8",   2,      true},      // 0x36
         {SCF,           "SCF",          1,      true},      // 0x37
         {JR_C_r8,       "JR C,r8",      2,      false},     // 0x38
         {ADD_HL_SP,     "ADD HL,SP",    1,      true},      // 0x39
@@ -1395,7 +1395,7 @@ struct opcode_t opcodeList[256] =
         {RST_18H,       "RST 18H",      1,      false},     // 0xDF
         {LDH_a8_A,      "LDH (a8),A",   2,      true},      // 0xE0
         {POP_HL,        "POP HL",       1,      true},      // 0xE1
-        {LD_pC_A,       "LD (C),A",     2,      true},      // 0xE2
+        {LD_pC_A,       "LD (C),A",     1,      true},      // 0xE2
         {NULL,          "",             0,      false},     // 0xE3
         {NULL,          "",             0,      false},     // 0xE4
         {PUSH_HL,       "PUSH HL",      1,      true},      // 0xE5
@@ -1411,7 +1411,7 @@ struct opcode_t opcodeList[256] =
         {RST_28H,       "RST 28H",      1,      false},     // 0xEF
         {LDH_A_a8,      "LDH A,(a8)",   2,      true},      // 0xF0
         {POP_AF,        "POP AF",       1,      true},      // 0xF1
-        {LD_A_pC,       "LD A,(C)",     2,      true},      // 0xF2
+        {LD_A_pC,       "LD A,(C)",     1,      true},      // 0xF2
         {DI,            "DI",           1,      true},      // 0xF3
         {NULL,          "",             0,      false},     // 0xF4
         {PUSH_AF,       "PUSH AF",      1,      true},      // 0xF5
