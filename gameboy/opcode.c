@@ -991,10 +991,10 @@ static uint8_t JP_a16(void)
     return 4;
 }
 
-// JP (HL)
+// JP HL
 static uint8_t JP_HL(void)
 {
-    cpu.reg.PC = mem_read_u16(cpu.reg.HL);
+    cpu.reg.PC = cpu.reg.HL;
     return 1;
 }
 
@@ -1103,7 +1103,7 @@ static uint8_t CALL_a16(void) \
 #define MACRO_RST_nnH(nn) \
 static uint8_t RST_##nn##H(void) \
 { \
-    mem_write_u16(cpu.reg.SP - 2, cpu.reg.PC); \
+    mem_write_u16(cpu.reg.SP - 2, cpu.reg.PC + 1); \
     cpu.reg.SP -= 2; \
     cpu.reg.PC = 0x##nn; \
     return 4; \
@@ -1402,7 +1402,7 @@ struct opcode_t opcodeList[256] =
         {AND_A_d8,      "AND A,d8",     2,      true},      // 0xE6
         {RST_20H,       "RST 20H",      1,      false},     // 0xE7
         {ADD_SP_r8,     "ADD SP,r8",    2,      true},      // 0xE8
-        {JP_HL,         "JP (HL)",      1,      false},     // 0xE9
+        {JP_HL,         "JP HL",        1,      false},     // 0xE9
         {LD_a16_A,      "LD (a16),A",   3,      true},      // 0xEA
         {NULL,          "",             0,      false},     // 0xEB
         {NULL,          "",             0,      false},     // 0xEC
