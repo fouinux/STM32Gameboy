@@ -97,15 +97,7 @@ int main(int argc, char *argv[])
 {
     // Common vars
     SDL_Event event;
-    // uint8_t *pPixels;
-    // int pitch;
-    struct timespec timeStart, timeStop;
     bool cpuDebug = false;
-
-    // Main window
-    // SDL_Texture* pTexture;
-    // SDL_Window* pWindow = NULL;
-    // SDL_Renderer *pRenderer;
 
     // Init SDL
     if (SDL_Init(SDL_INIT_VIDEO) != 0 )
@@ -114,29 +106,13 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    // /* Create main window */
-    // pWindow = SDL_CreateWindow("Background Tile Map",
-    //                            SDL_WINDOWPOS_UNDEFINED,
-    //                            SDL_WINDOWPOS_UNDEFINED,
-    //                            PPU_BG_W * SCALE,
-    //                            PPU_BG_H * SCALE,
-    //                            SDL_WINDOW_OPENGL);
-    // if(NULL == pWindow)
-    // {
-    //     // In the case that the window could not be made...
-    //     printf("Could not create window: %s\n", SDL_GetError());
-    //     return EXIT_FAILURE;
-    // }
-    // pRenderer = SDL_CreateRenderer(pWindow, -1, 0);
-    // pTexture = SDL_CreateTexture(pRenderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING,
-    //                              PPU_BG_W, PPU_BG_H);
-
     // Load bootrom
     if (load_bootrom("DMG_ROM.bin"))
         return EXIT_FAILURE;
 
     // Load gamerom
     if (load_gamerom("Tetris.bin"))
+    // if (load_gamerom("Super Mario Land.gb"))
         return EXIT_FAILURE;
 
     // Init gameboy emulator
@@ -198,23 +174,10 @@ int main(int argc, char *argv[])
         ppu_exec();
         timer_exec();
 
-
-        // if (cpu.reg.PC == 0x60)
-        // {
-        //     SDL_LockTexture(pTexture, NULL, (void**) &pPixels, &pitch);
-        //     ppu_print_bg(pPixels, pitch);
-        //     SDL_UnlockTexture(pTexture);
-
-        //     SDL_RenderClear(pRenderer);
-        //     SDL_RenderCopy(pRenderer, pTexture, NULL, NULL);
-        //     SDL_RenderPresent(pRenderer);
-        // }
     }
 
+    // Clean SDL stuff
     ppu_destroy();
-
-    // Close and destroy the window
-    // SDL_DestroyWindow(pWindow);
 
     // Clean up
     SDL_Quit();
