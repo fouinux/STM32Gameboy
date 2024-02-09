@@ -21,6 +21,8 @@
 #define MEM_HRAM_SIZE                   128
 #define MEM_IO_PORTS_SIZE               128
 
+#define MEM_DMA_SIZE                    160
+
 struct memory_map_t
 {
     bool BootROMEnabled;
@@ -39,6 +41,8 @@ struct memory_map_t
     uint8_t OAM_RAM[MEM_OAM_RAM_SIZE];
     uint8_t HRAM[MEM_HRAM_SIZE];
     uint8_t IOPorts[MEM_IO_PORTS_SIZE];
+
+    bool dma_ongoing;
 
 } mem;
 
@@ -65,7 +69,7 @@ static const bool aIOPortsActionOnWrMap[MEM_IO_PORTS_SIZE] =
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF10
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF20
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF30
-    false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF40
+    false, false, false, false, false, false,  true, false, false, false, false, false, false, false, false, false, // 0xFF40
      true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF50
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF60
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF70
@@ -121,6 +125,13 @@ static void* mem_translation(uint16_t Addr)
 	return &mem.HRAM[Addr - 0xFF80];
 }
 
+static void start_dma(uint8_t Value)
+{
+    uint8_t *pSrc = mem_translation((uint16_t)Value << 8);
+    memcpy(pSrc, mem.OAM_RAM, MEM_DMA_SIZE);
+    mem.dma_ongoing = true;
+}
+
 static void action_on_w8(uint16_t Addr, uint8_t Value, uint8_t *pU8)
 {
     switch (Addr)
@@ -132,6 +143,11 @@ static void action_on_w8(uint16_t Addr, uint8_t Value, uint8_t *pU8)
 
         case 0xFF04: // Reset DIV
             *pU8 = 0;
+            break;
+
+        case 0xFF46: // DMA
+            *pU8 = Value;
+            start_dma(Value);
             break;
 
         case 0xFF50: // Disable boot ROM
