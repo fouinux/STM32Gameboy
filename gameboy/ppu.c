@@ -94,8 +94,18 @@ static inline void exec_oam_search(void)
                 ppu.aOAM_visible[i] = ppu.aOAM_visible[i+1];
                 ppu.aOAM_visible[i+1] = temp;
             }
+
+            // The last one is sorted, get it's position
+            ppu.aOAM_visible_x[PPU_OAM_VISIBLE_MAX - round] = pOam[ppu.aOAM_visible_x[PPU_OAM_VISIBLE_MAX - round]].X;
         }
     }
+
+    ppu.OAM_visible_id = 0;
+}
+
+static inline void fetch_sprite(uint8_t Sprite_id)
+{
+
 }
 
 // This table helps to convert raw tiles into 8 pixels by inverting bits order and add zero between each bits
@@ -130,7 +140,7 @@ static inline void exec_pxl_xfer(void)
         return;
     }
 
-    // FIFO mixer
+    // Pixels mixing
     if (ppu.Fifo_BG.Size > 8)
     {
         // Mapping BG colors
@@ -145,6 +155,12 @@ static inline void exec_pxl_xfer(void)
             // Can out a pixel only if fifo has more than 8 pixels
             if (ppu.Fifo_BG.Size <= 8)
                 break;
+
+            // Sprite ?
+            if (ppu.aOAM_visible_x[ppu.OAM_visible_id] == ppu.x_draw++)
+            {
+                // Fetch Sprite
+            }
 
             uint8_t bg = fifo_dequeue(&ppu.Fifo_BG);
 
@@ -295,6 +311,9 @@ void ppu_exec(void)
         return;
 
     ppu.state_counter++;
+
+    // Update Mode Flag
+    ppu.pReg->STAT_Flags.ModeFlag = ppu.state;
 
     switch(ppu.state)
     {

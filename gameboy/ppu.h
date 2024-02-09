@@ -83,6 +83,7 @@ struct ppu_t
 
     uint8_t OAM_counter;
     uint8_t aOAM_visible[PPU_OAM_VISIBLE_MAX];
+    uint8_t aOAM_visible_x[PPU_OAM_VISIBLE_MAX];
     uint8_t OAM_visible_id;
 
     // Screen rendering
