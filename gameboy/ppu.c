@@ -123,10 +123,10 @@ static inline void exec_pxl_xfer(void)
     // BG and Window disabled
     if (ppu.pReg->LCDC_Flags.BGEnable == 0)
     {
-        ppu.aScreen[ppu.x++][ppu.pReg->LY] = ppu.aColor[0]; // White
-        ppu.aScreen[ppu.x++][ppu.pReg->LY] = ppu.aColor[0]; // White
-        ppu.aScreen[ppu.x++][ppu.pReg->LY] = ppu.aColor[0]; // White
-        ppu.aScreen[ppu.x++][ppu.pReg->LY] = ppu.aColor[0]; // White
+        ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = ppu.aColor[0]; // White
+        ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = ppu.aColor[0]; // White
+        ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = ppu.aColor[0]; // White
+        ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = ppu.aColor[0]; // White
         return;
     }
 
@@ -157,8 +157,7 @@ static inline void exec_pxl_xfer(void)
                 continue;
             }
 
-            // printf("PPU: Display pixels: %d @ %d\n", bg, ppu.x);
-            ppu.aScreen[ppu.x++][ppu.pReg->LY] = aBGPalette[bg];
+            ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = aBGPalette[bg];
         }
     }
 
@@ -173,7 +172,7 @@ static inline void exec_pxl_xfer(void)
         uint8_t* pBGTileMap = pVRAM + BGTileMapOffset;
         uint8_t* pBGTileData = pVRAM + BGTileDataOffset;
 
-        uint8_t tileXId = (ppu.pReg->SCX + ppu.x) >> 3;
+        uint8_t tileXId = (ppu.pReg->SCX + ppu.x_fetch) >> 3;
         uint8_t tileYId = (ppu.pReg->SCY + ppu.pReg->LY) >> 3;
         uint8_t tileId = *(pBGTileMap + tileXId + (tileYId * TILE_MAP_SIZE));
         uint8_t tileLine = (ppu.pReg->SCY + ppu.pReg->LY) & 0x07;
@@ -191,6 +190,7 @@ static inline void exec_pxl_xfer(void)
             result >>= 2;
         }
 
+        ppu.x_fetch += 8;
     }
 
     //  Fetch OBJ
@@ -202,6 +202,16 @@ static inline void exec_pxl_xfer(void)
 
 }
 
+static inline void ppu_print_reg(void)
+{
+    printf("PPU registers:\n");
+    printf("\tLCDC = 0x%02X\tSTAT = 0x%02X\n", ppu.pReg->LCDC, ppu.pReg->STAT);
+    printf("\tSCY = 0x%02X\tSCX = 0x%02X\n", ppu.pReg->SCY, ppu.pReg->SCX);
+    printf("\tLY  = 0x%02X\tLYC = 0x%02X\n", ppu.pReg->LY, ppu.pReg->LYC);
+    printf("\tBGP = 0x%02X\tOBP0 = 0x%02X\tOBP1 = 0x%02X\n", ppu.pReg->BGP, ppu.pReg->OBP0, ppu.pReg->OBP1);
+    printf("\tWY  = 0x%02X\tWX  = 0x%02X\n\n", ppu.pReg->WY, ppu.pReg->WX);
+}
+
 void ppu_init(void)
 {
     ppu.pReg = (struct ppu_reg_t *) mem_get_register(PPU);
@@ -211,7 +221,8 @@ void ppu_init(void)
 
     // Start at y = 0 & x = 0
     ppu.pReg->LY = 0;
-    ppu.x = 0;
+    ppu.x_draw = 0;
+    ppu.x_fetch = 0;
 
     // Init FIFO
     fifo_init(&ppu.Fifo_BG);
@@ -239,7 +250,7 @@ void ppu_init(void)
         printf("Could not create display window: %s\n", SDL_GetError());
         return;
     }
-    ppu.pRenderer = SDL_CreateRenderer(ppu.pWindow, -1, 0);
+    ppu.pRenderer = SDL_CreateRenderer(ppu.pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     ppu.pTexture = SDL_CreateTexture(ppu.pRenderer,
                                 SDL_PIXELFORMAT_RGBA8888,
                                 SDL_TEXTUREACCESS_STREAMING,
@@ -264,11 +275,10 @@ static inline void sdl_render_display(void)
     // Copy display buffer into SDL window
     for (int y = 0 ; y < PPU_SCREEN_H ; y++)
     {
-        uint32_t *p = (uint32_t *)(pPixels + pitch*y);
+        uint32_t *pRow = (uint32_t *)(pPixels + pitch*y);
         for (int x = 0 ; x < PPU_SCREEN_W ; x++)
         {
-            *p = ppu.aColor[ppu.aScreen[x][y]];
-            p++;
+            pRow[x] = ppu.aColor[ppu.aScreen[x][y]];
         }
     }
 
@@ -283,8 +293,6 @@ void ppu_exec(void)
 {
     if (ppu.pReg->LCDC_Flags.DisplayEnable == 0)
         return;
-
-    // enum ppu_state_t currentState = ppu.state;
 
     ppu.state_counter++;
 
@@ -322,20 +330,28 @@ void ppu_exec(void)
             break;
 
         case STATE_OAM_SEARCH:
-            if (ppu.state_counter == 0)
+            // if (ppu.state_counter == 1 && ppu.pReg->LY == 0)
+            //     ppu_print_reg();
+
+            if (ppu.state_counter == 1)
                 exec_oam_search();
             if (ppu.state_counter >= STATE_OAM_SEARCH_DURATION)
             {
                 ppu.state_counter = 0;
                 ppu.state = STATE_PXL_XFER;
                 ppu.SCX_lsb = ppu.pReg->SCX & 0x07;
-                ppu.x = 0; // Reset at the begining of the scanline
+                ppu.x_draw = 0; // Reset at the begining of the scanline
+                ppu.x_fetch = 0;
+
+                // Flush pixesl FIFO
+                fifo_flush(&ppu.Fifo_BG);
+                fifo_flush(&ppu.Fifo_OAM);
             }
             break;
 
         case STATE_PXL_XFER:
             exec_pxl_xfer();
-            if (ppu.x >= PPU_SCREEN_W)
+            if (ppu.x_draw >= PPU_SCREEN_W)
                 ppu.state = STATE_HBLANK;
             break;
     }

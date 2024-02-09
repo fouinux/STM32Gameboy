@@ -86,7 +86,8 @@ struct ppu_t
     uint8_t OAM_visible_id;
 
     // Screen rendering
-    uint8_t x;
+    uint8_t x_draw;
+    uint8_t x_fetch;
     uint8_t aScreen[PPU_SCREEN_W][PPU_SCREEN_H];
     struct fifo_t Fifo_BG;
     struct fifo_t Fifo_OAM;
@@ -101,9 +102,6 @@ struct ppu_t
     SDL_Window* pWindow;
     SDL_Renderer *pRenderer;
     uint32_t aColor[4];
-
-    // Debug
-    struct timespec timeStart, timeStop;
 };
 
 extern struct ppu_t ppu;
