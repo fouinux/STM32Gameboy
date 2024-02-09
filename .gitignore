@@ -1,6 +1,7 @@
 Debug/
 Release/
 *.bin
+*.gb
 *.gch
 *.o
 STM32Gameboy
