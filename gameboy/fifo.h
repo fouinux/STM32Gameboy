@@ -23,5 +23,6 @@ struct fifo_t
 void fifo_init(struct fifo_t *pFifo);
 void fifo_enqueue(struct fifo_t *pFifo, uint8_t Data);
 uint8_t fifo_dequeue(struct fifo_t *pFifo);
+void fifo_flush(struct fifo_t *pFifo);
 
 #endif /* INC_GAMEBOY_FIFO_H_ */

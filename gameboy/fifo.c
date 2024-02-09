@@ -50,3 +50,14 @@ uint8_t fifo_dequeue(struct fifo_t *pFifo)
     }
     return data;
 }
+
+void fifo_flush(struct fifo_t *pFifo)
+{
+    if (pFifo != NULL)
+    {
+        pFifo->Read = 0;
+        pFifo->Write = 0;
+        pFifo->Size = 0;
+
+    }
+}
