@@ -30,6 +30,21 @@ enum ppu_state_t
     STATE_PXL_XFER,
 };
 
+struct ppu_palette_t
+{
+    union 
+    {
+        struct
+        {
+            uint8_t ID0 : 2;
+            uint8_t ID1 : 2;
+            uint8_t ID2 : 2;
+            uint8_t ID3 : 2;
+        };
+        uint8_t Value;
+    };
+};
+
 struct ppu_reg_t
 {
     union
@@ -68,9 +83,9 @@ struct ppu_reg_t
     uint8_t LY;     // LCDC Y-Coordinate
     uint8_t LYC;    // LY Compare
     uint8_t DMA;    // DMA Transfer and Start
-    uint8_t BGP;    // BG Palette
-    uint8_t OBP0;   // Object Palette 0
-    uint8_t OBP1;   // Object Palette 1
+    struct ppu_palette_t BGP;    // BG Palette
+    struct ppu_palette_t OBP0;   // Object Palette 0
+    struct ppu_palette_t OBP1;   // Object Palette 1
     uint8_t WY;     // Window Y Position
     uint8_t WX;     // Window X Position
 };
@@ -85,6 +100,11 @@ struct ppu_t
     uint8_t aOAM_visible[PPU_OAM_VISIBLE_MAX];
     int16_t aOAM_visible_x[PPU_OAM_VISIBLE_MAX];
     uint8_t OAM_visible_id;
+
+    // Palettes
+    uint8_t aBGP[4];
+    uint8_t aOBP0[4];
+    uint8_t aOBP1[4];
 
     // Screen rendering
     uint8_t x_draw;
@@ -110,6 +130,10 @@ extern struct ppu_t ppu;
 void ppu_init(void);
 void ppu_destroy(void);
 void ppu_exec(void);
+
+void ppu_update_bgp(void);
+void ppu_update_obp0(void);
+void ppu_update_obp1(void);
 
 void ppu_print_bg(uint8_t *pPixels, int pitch);
 

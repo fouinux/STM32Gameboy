@@ -69,7 +69,7 @@ static const bool aIOPortsActionOnWrMap[MEM_IO_PORTS_SIZE] =
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF10
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF20
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF30
-    false, false, false, false, false, false,  true, false, false, false, false, false, false, false, false, false, // 0xFF40
+    false, false, false, false, false, false,  true,  true,  true,  true, false, false, false, false, false, false, // 0xFF40
      true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF50
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF60
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF70
@@ -169,6 +169,21 @@ static void action_on_w8(uint16_t Addr, uint8_t Value, uint8_t *pU8)
         case 0xFF46: // DMA
             *pU8 = Value;
             start_dma(Value);
+            break;
+
+        case 0xFF47: // BGP
+            *pU8 = Value;
+            ppu_update_bgp();
+            break;
+
+        case 0xFF48: // OBP0
+            *pU8 = Value;
+            ppu_update_obp0();
+            break;
+
+        case 0xFF49: // OBP1
+            *pU8 = Value;
+            ppu_update_obp1();
             break;
 
         case 0xFF50: // Disable boot ROM
@@ -273,6 +288,21 @@ uint8_t* mem_get_oam_ram(void)
 uint8_t* mem_get_vram(void)
 {
     return &mem.VRAM[0];
+}
+
+uint8_t* mem_get_bg_map(void)
+{
+    return &mem.VRAM[(ppu.pReg->LCDC_Flags.BGTileMapAddr == 0) ? 0x1800 : 0x1C00];
+}
+
+uint8_t* mem_get_win_map(void)
+{
+    return &mem.VRAM[(ppu.pReg->LCDC_Flags.WindowTileMapAddr == 0) ? 0x1800 : 0x1C00];
+}
+
+uint8_t* mem_get_bg_win_data(void)
+{
+    return &mem.VRAM[(ppu.pReg->LCDC_Flags.BGWindowTileData == 0) ? 0x0800 : 0x0000];
 }
 
 void mem_set_bootrom(uint8_t *pBootROM)

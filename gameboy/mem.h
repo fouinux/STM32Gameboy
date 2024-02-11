@@ -35,6 +35,10 @@ uint8_t* mem_get_register(enum IOPorts_reg reg);
 uint8_t* mem_get_oam_ram(void);
 uint8_t* mem_get_vram(void);
 
+uint8_t* mem_get_bg_map(void);
+uint8_t* mem_get_win_map(void);
+uint8_t* mem_get_bg_win_data(void);
+
 void mem_set_bootrom(uint8_t *pBootROM);
 void mem_set_gamerom(uint8_t *pGameROM, uint8_t index);
 

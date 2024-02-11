@@ -159,6 +159,30 @@ static const uint16_t aTileConvertMirrorHelper[256] = {
     0x5500, 0x5501, 0x5504, 0x5505, 0x5510, 0x5511, 0x5514, 0x5515, 0x5540, 0x5541, 0x5544, 0x5545, 0x5550, 0x5551, 0x5554, 0x5555
 };
 
+static inline void fetch_bg_win_tile(uint8_t *pTileMap)
+{
+    uint8_t tile_x = (ppu.pReg->SCX + ppu.x_fetch) >> 3;
+    uint8_t tile_y = (ppu.pReg->SCY + ppu.pReg->LY) >> 3;
+    uint16_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
+
+    uint16_t tile_id = pTileMap[tile_map_id];
+    struct tile_t *pTile = &((struct tile_t *) mem_get_bg_win_data())[tile_id];
+
+    uint8_t line = (ppu.pReg->SCY + ppu.pReg->LY) & 0x07;
+
+    uint8_t upper = pTile->Line[line].Upper;
+    uint8_t lower = pTile->Line[line].Lower;
+
+    uint16_t result = aTileConvertHelper[upper] | (aTileConvertHelper[lower] << 1);
+    
+    // Extract and put pixels in FIFO
+    for (uint8_t i = 0 ; i < 8 ; i++)
+    {
+        fifo_enqueue(&ppu.Fifo_BG, result & 0x03);
+        result >>= 2;
+    }
+}
+
 static inline void fetch_sprite(uint8_t id)
 {
     struct oam_entry_t *pSprite = &((struct oam_entry_t *) mem_get_oam_ram())[id];
@@ -208,13 +232,6 @@ static inline void exec_pxl_xfer(void)
     // Pixels mixing
     if (ppu.Fifo_BG.Size > 8)
     {
-        // Mapping BG colors
-        uint8_t aBGPalette[4];
-        aBGPalette[0] = ppu.pReg->BGP >> 0 & 0x03;
-        aBGPalette[1] = ppu.pReg->BGP >> 2 & 0x03;
-        aBGPalette[2] = ppu.pReg->BGP >> 4 & 0x03;
-        aBGPalette[3] = ppu.pReg->BGP >> 6 & 0x03;
-
         for (int i = 0 ; i < 4 ; i++)
         {
             // Can out a pixel only if fifo has more than 8 pixels
@@ -235,12 +252,15 @@ static inline void exec_pxl_xfer(void)
                 }
             }
 
-            uint8_t pixel = aBGPalette[fifo_dequeue(&ppu.Fifo_BG)];
+            // Get BG pixel with palette
+            uint8_t pxl = ppu.aBGP[fifo_dequeue(&ppu.Fifo_BG)];
 
-            // Overwrite by sprite pixel
+            // Sprite pixel available
             if (ppu.Fifo_OAM.Size > 0)
             {
-                pixel = aBGPalette[fifo_dequeue(&ppu.Fifo_OAM)];
+                uint8_t sprite_pxl = fifo_dequeue(&ppu.Fifo_OAM);
+                if (sprite_pxl != 0) //  If not transparent, overwrite pixel
+                    pxl = ppu.aOBP0[sprite_pxl];
             }
 
             // Discard SCX & 0x07 first elements
@@ -250,48 +270,19 @@ static inline void exec_pxl_xfer(void)
                 continue;
             }
 
-            ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = pixel;
+            ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = pxl;
         }
     }
 
-    uint8_t* pVRAM = mem_get_vram();
-
-    // Fetch BG
-    if (ppu.pReg->LCDC_Flags.WindowEnable == 0 && ppu.Fifo_BG.Size <= 8)
+    // Fetch BG or Window
+    if (ppu.Fifo_BG.Size <= 8)
     {
-        // Get BG map and data
-        uint16_t BGTileMapOffset = (ppu.pReg->LCDC_Flags.BGTileMapAddr == 0) ? 0x1800 : 0x1C00;
-        uint16_t BGTileDataOffset = (ppu.pReg->LCDC_Flags.BGWindowTileData == 0) ? 0x0800 : 0x0000;
-        uint8_t* pBGTileMap = pVRAM + BGTileMapOffset;
-        uint8_t* pBGTileData = pVRAM + BGTileDataOffset;
+        uint8_t *pTileMap = mem_get_bg_map();
 
-        uint8_t tileXId = (ppu.pReg->SCX + ppu.x_fetch) >> 3;
-        uint8_t tileYId = (ppu.pReg->SCY + ppu.pReg->LY) >> 3;
-        uint8_t tileId = *(pBGTileMap + tileXId + (tileYId * TILE_MAP_SIZE));
-        uint8_t tileLine = (ppu.pReg->SCY + ppu.pReg->LY) & 0x07;
-
-        // Offset to the correct line
-        uint8_t *pTile = pBGTileData + get_tile_line_offset(tileId, tileLine);
-
-        // Mix and convert BG tile
-        uint16_t result = aTileConvertHelper[pTile[0]] | (aTileConvertHelper[pTile[1]] << 1);
-
-        // Extract and put pixels in FIFO
-        for (uint8_t i = 0 ; i < 8 ; i++)
-        {
-            fifo_enqueue(&ppu.Fifo_BG, result & 0x03);
-            result >>= 2;
-        }
+        fetch_bg_win_tile(pTileMap);
 
         ppu.x_fetch += 8;
     }
-
-    //  Fetch OBJ
-    if (ppu.pReg->LCDC_Flags.OBJEnable)
-    {
-
-    }
-
 
 }
 
@@ -301,7 +292,7 @@ static inline void ppu_print_reg(void)
     printf("\tLCDC = 0x%02X\tSTAT = 0x%02X\n", ppu.pReg->LCDC, ppu.pReg->STAT);
     printf("\tSCY = 0x%02X\tSCX = 0x%02X\n", ppu.pReg->SCY, ppu.pReg->SCX);
     printf("\tLY  = 0x%02X\tLYC = 0x%02X\n", ppu.pReg->LY, ppu.pReg->LYC);
-    printf("\tBGP = 0x%02X\tOBP0 = 0x%02X\tOBP1 = 0x%02X\n", ppu.pReg->BGP, ppu.pReg->OBP0, ppu.pReg->OBP1);
+    printf("\tBGP = 0x%02X\tOBP0 = 0x%02X\tOBP1 = 0x%02X\n", ppu.pReg->BGP.Value, ppu.pReg->OBP0.Value, ppu.pReg->OBP1.Value);
     printf("\tWY  = 0x%02X\tWX  = 0x%02X\n\n", ppu.pReg->WY, ppu.pReg->WX);
 }
 
@@ -316,6 +307,11 @@ void ppu_init(void)
     ppu.pReg->LY = 0;
     ppu.x_draw = 0;
     ppu.x_fetch = 0;
+
+    // Palettes
+    ppu_update_bgp();
+    ppu_update_obp0();
+    ppu_update_obp1();
 
     // Init FIFO
     fifo_init(&ppu.Fifo_BG);
@@ -354,7 +350,6 @@ void ppu_init(void)
 void ppu_destroy(void)
 {
     // SDL Specific
-
     SDL_DestroyWindow(ppu.pWindow);
 }
 
@@ -474,15 +469,32 @@ void ppu_exec(void)
     ppu.STAT_Irq = STAT_Irq;
 }
 
+void ppu_update_bgp(void)
+{
+    ppu.aBGP[0] = ppu.pReg->BGP.ID0;
+    ppu.aBGP[1] = ppu.pReg->BGP.ID1;
+    ppu.aBGP[2] = ppu.pReg->BGP.ID2;
+    ppu.aBGP[3] = ppu.pReg->BGP.ID3;
+}
+
+void ppu_update_obp0(void)
+{
+    ppu.aOBP0[0] = ppu.pReg->OBP0.ID0;
+    ppu.aOBP0[1] = ppu.pReg->OBP0.ID1;
+    ppu.aOBP0[2] = ppu.pReg->OBP0.ID2;
+    ppu.aOBP0[3] = ppu.pReg->OBP0.ID3;
+}
+
+void ppu_update_obp1(void)
+{
+    ppu.aOBP1[0] = ppu.pReg->OBP1.ID0;
+    ppu.aOBP1[1] = ppu.pReg->OBP1.ID1;
+    ppu.aOBP1[2] = ppu.pReg->OBP1.ID2;
+    ppu.aOBP1[3] = ppu.pReg->OBP1.ID3;
+}
+
 void ppu_print_bg(uint8_t *pPixels, int pitch)
 {
-    // Mapping BG colors
-    uint8_t aBGPalette[4];
-    aBGPalette[0] = ppu.pReg->BGP >> 0 & 0x03;
-    aBGPalette[1] = ppu.pReg->BGP >> 2 & 0x03;
-    aBGPalette[2] = ppu.pReg->BGP >> 4 & 0x03;
-    aBGPalette[3] = ppu.pReg->BGP >> 6 & 0x03;
-
     // Get BG map and data
     uint8_t* pVRAM = mem_get_vram();
     uint16_t BGTileMapOffset = (ppu.pReg->LCDC_Flags.BGTileMapAddr == 0) ? 0x1800 : 0x1C00;
@@ -513,7 +525,7 @@ void ppu_print_bg(uint8_t *pPixels, int pitch)
                 {
                     // Print pixel
                     uint8_t colorId = (upper >> (7-pixel) & 0x01) + ((lower >> (7-pixel) & 0x01) << 1);
-                    *p = ppu.aColor[aBGPalette[colorId]];
+                    *p = ppu.aColor[ppu.aBGP[colorId]];
                     p++;
                 }
             }
