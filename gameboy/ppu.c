@@ -49,6 +49,15 @@ struct oam_entry_t
     };
 };
 
+struct tile_t
+{
+    struct
+    {
+        uint8_t Upper;
+        uint8_t Lower;
+    } Line[8];
+};
+
 struct ppu_t ppu;
 
 /**
@@ -84,28 +93,28 @@ static inline void exec_oam_search(void)
     }
 
     // TODO Improve sort ?
-    for (int round = 0 ; round < PPU_OAM_VISIBLE_MAX ; round++)
+    if (ppu.OAM_counter > 1)
     {
-        for (int i = 0 ; i < (PPU_OAM_VISIBLE_MAX - round - 1) ; i++)
+        for (int round = 0 ; round < ppu.OAM_counter ; round++)
         {
-            if (ppu.aOAM_visible[i] > ppu.aOAM_visible[i+1])
+            for (int i = 0 ; i < (ppu.OAM_counter - round - 1) ; i++)
             {
-                uint8_t temp = ppu.aOAM_visible[i];
-                ppu.aOAM_visible[i] = ppu.aOAM_visible[i+1];
-                ppu.aOAM_visible[i+1] = temp;
-            }
+                if (ppu.aOAM_visible[i] > ppu.aOAM_visible[i+1])
+                {
+                    uint8_t temp = ppu.aOAM_visible[i];
+                    ppu.aOAM_visible[i] = ppu.aOAM_visible[i+1];
+                    ppu.aOAM_visible[i+1] = temp;
+                }
 
-            // The last one is sorted, get it's position
-            ppu.aOAM_visible_x[PPU_OAM_VISIBLE_MAX - round] = pOam[ppu.aOAM_visible_x[PPU_OAM_VISIBLE_MAX - round]].X;
+                // The last one is sorted, get it's position
+                ppu.aOAM_visible_x[ppu.OAM_counter - round] = pOam[ppu.aOAM_visible[ppu.OAM_counter - round]].X - 8;
+            }
         }
     }
+    else if (ppu.OAM_counter > 0)
+        ppu.aOAM_visible_x[0] = pOam[ppu.aOAM_visible[0]].X - 8;
 
     ppu.OAM_visible_id = 0;
-}
-
-static inline void fetch_sprite(uint8_t Sprite_id)
-{
-
 }
 
 // This table helps to convert raw tiles into 8 pixels by inverting bits order and add zero between each bits
@@ -127,6 +136,58 @@ static const uint16_t aTileConvertHelper[256] = {
     0x0015, 0x4015, 0x1015, 0x5015, 0x0415, 0x4415, 0x1415, 0x5415, 0x0115, 0x4115, 0x1115, 0x5115, 0x0515, 0x4515, 0x1515, 0x5515,
     0x0055, 0x4055, 0x1055, 0x5055, 0x0455, 0x4455, 0x1455, 0x5455, 0x0155, 0x4155, 0x1155, 0x5155, 0x0555, 0x4555, 0x1555, 0x5555
 };
+
+// This table helps to convert mirrored tiles into 8 pixels by inverting bits order and add zero between each bits
+static const uint16_t aTileConvertMirrorHelper[256] = {
+    0x0000, 0x0001, 0x0004, 0x0005, 0x0010, 0x0011, 0x0014, 0x0015, 0x0040, 0x0041, 0x0044, 0x0045, 0x0050, 0x0051, 0x0054, 0x0055, 
+    0x0100, 0x0101, 0x0104, 0x0105, 0x0110, 0x0111, 0x0114, 0x0115, 0x0140, 0x0141, 0x0144, 0x0145, 0x0150, 0x0151, 0x0154, 0x0155, 
+    0x0400, 0x0401, 0x0404, 0x0405, 0x0410, 0x0411, 0x0414, 0x0415, 0x0440, 0x0441, 0x0444, 0x0445, 0x0450, 0x0451, 0x0454, 0x0455, 
+    0x0500, 0x0501, 0x0504, 0x0505, 0x0510, 0x0511, 0x0514, 0x0515, 0x0540, 0x0541, 0x0544, 0x0545, 0x0550, 0x0551, 0x0554, 0x0555, 
+    0x1000, 0x1001, 0x1004, 0x1005, 0x1010, 0x1011, 0x1014, 0x1015, 0x1040, 0x1041, 0x1044, 0x1045, 0x1050, 0x1051, 0x1054, 0x1055, 
+    0x1100, 0x1101, 0x1104, 0x1105, 0x1110, 0x1111, 0x1114, 0x1115, 0x1140, 0x1141, 0x1144, 0x1145, 0x1150, 0x1151, 0x1154, 0x1155, 
+    0x1400, 0x1401, 0x1404, 0x1405, 0x1410, 0x1411, 0x1414, 0x1415, 0x1440, 0x1441, 0x1444, 0x1445, 0x1450, 0x1451, 0x1454, 0x1455, 
+    0x1500, 0x1501, 0x1504, 0x1505, 0x1510, 0x1511, 0x1514, 0x1515, 0x1540, 0x1541, 0x1544, 0x1545, 0x1550, 0x1551, 0x1554, 0x1555, 
+    0x4000, 0x4001, 0x4004, 0x4005, 0x4010, 0x4011, 0x4014, 0x4015, 0x4040, 0x4041, 0x4044, 0x4045, 0x4050, 0x4051, 0x4054, 0x4055, 
+    0x4100, 0x4101, 0x4104, 0x4105, 0x4110, 0x4111, 0x4114, 0x4115, 0x4140, 0x4141, 0x4144, 0x4145, 0x4150, 0x4151, 0x4154, 0x4155, 
+    0x4400, 0x4401, 0x4404, 0x4405, 0x4410, 0x4411, 0x4414, 0x4415, 0x4440, 0x4441, 0x4444, 0x4445, 0x4450, 0x4451, 0x4454, 0x4455, 
+    0x4500, 0x4501, 0x4504, 0x4505, 0x4510, 0x4511, 0x4514, 0x4515, 0x4540, 0x4541, 0x4544, 0x4545, 0x4550, 0x4551, 0x4554, 0x4555, 
+    0x5000, 0x5001, 0x5004, 0x5005, 0x5010, 0x5011, 0x5014, 0x5015, 0x5040, 0x5041, 0x5044, 0x5045, 0x5050, 0x5051, 0x5054, 0x5055, 
+    0x5100, 0x5101, 0x5104, 0x5105, 0x5110, 0x5111, 0x5114, 0x5115, 0x5140, 0x5141, 0x5144, 0x5145, 0x5150, 0x5151, 0x5154, 0x5155, 
+    0x5400, 0x5401, 0x5404, 0x5405, 0x5410, 0x5411, 0x5414, 0x5415, 0x5440, 0x5441, 0x5444, 0x5445, 0x5450, 0x5451, 0x5454, 0x5455, 
+    0x5500, 0x5501, 0x5504, 0x5505, 0x5510, 0x5511, 0x5514, 0x5515, 0x5540, 0x5541, 0x5544, 0x5545, 0x5550, 0x5551, 0x5554, 0x5555
+};
+
+static inline void fetch_sprite(uint8_t id)
+{
+    struct oam_entry_t *pSprite = &((struct oam_entry_t *) mem_get_oam_ram())[id];
+    struct tile_t *pTile = &((struct tile_t *) mem_get_vram())[pSprite->TileId];
+
+    uint8_t line = ppu.pReg->LY - (pSprite->Y - 0x10);
+    if (pSprite->Attributes_Flags.Y_Flip == 1)
+    {
+        if (ppu.pReg->LCDC_Flags.OBJSize == 0) // 8x8
+            line = 8 - line;
+        else // 8x16
+            line = 16 - line;
+    }
+
+    // Use overflow to make it work perfectly for 8x8 and 8x16
+    uint8_t upper = pTile->Line[line].Upper;
+    uint8_t lower = pTile->Line[line].Lower;
+
+    uint16_t result;
+    if (pSprite->Attributes_Flags.X_Flip == 0)
+        result = aTileConvertHelper[upper] | (aTileConvertHelper[lower] << 1);
+    else
+        result = aTileConvertMirrorHelper[upper] | (aTileConvertMirrorHelper[lower] << 1);
+    
+    // Extract and put pixels in FIFO
+    for (uint8_t i = 0 ; i < 8 ; i++)
+    {
+        fifo_enqueue(&ppu.Fifo_OAM, result & 0x03);
+        result >>= 2;
+    }
+}
 
 static inline void exec_pxl_xfer(void)
 {
@@ -157,14 +218,26 @@ static inline void exec_pxl_xfer(void)
                 break;
 
             // Sprite ?
-            if (ppu.aOAM_visible_x[ppu.OAM_visible_id] == ppu.x_draw++)
+            if (ppu.pReg->LCDC_Flags.OBJEnable == 1 && ppu.OAM_counter > 0)
             {
-                // Fetch Sprite
+                if (ppu.aOAM_visible_x[ppu.OAM_visible_id] == ppu.x_draw)
+                {
+                    // Fetch Sprite
+                    fetch_sprite(ppu.aOAM_visible[ppu.OAM_visible_id]);
+                    ppu.OAM_visible_id++;
+                    ppu.OAM_counter--;
+
+                    // TODO Multiple sprite at same x
+                }
             }
 
-            uint8_t bg = fifo_dequeue(&ppu.Fifo_BG);
+            uint8_t pixel = aBGPalette[fifo_dequeue(&ppu.Fifo_BG)];
 
-            // TODO Sprite
+            // Overwrite by sprite pixel
+            if (ppu.Fifo_OAM.Size > 0)
+            {
+                pixel = aBGPalette[fifo_dequeue(&ppu.Fifo_OAM)];
+            }
 
             // Discard SCX & 0x07 first elements
             if (ppu.SCX_lsb > 0)
@@ -173,7 +246,7 @@ static inline void exec_pxl_xfer(void)
                 continue;
             }
 
-            ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = aBGPalette[bg];
+            ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = pixel;
         }
     }
 

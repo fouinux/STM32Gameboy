@@ -125,10 +125,71 @@ static void* mem_translation(uint16_t Addr)
 	return &mem.HRAM[Addr - 0xFF80];
 }
 
+static void* mem_translation_ppu(uint16_t Addr)
+{
+    switch (Addr & 0xF000)
+    {
+        case 0x0000: // ROM Bank #0
+            if ((Addr < 0x100) && mem.BootROMEnabled)
+                return &mem.pBootROM[Addr];
+        case 0x1000:
+        case 0x2000:
+        case 0x3000:
+            return &mem.aCartridgeROMBank[0][Addr];
+        case 0x4000: // Mapped ROM Bank
+        case 0x5000:
+        case 0x6000:
+        case 0x7000:
+            return &mem.aCartridgeROMBank[mem.ROMIndex][Addr - 0x4000];
+        case 0x8000: // VRAM
+        case 0x9000:
+            return &mem.VRAM[Addr - 0x8000];
+        case 0xA000:
+        case 0xB000:
+            return NULL; // TODO External RAM
+        case 0xC000: // WRAM
+        case 0xD000:
+            return &mem.SRAM[Addr - 0xC000]; 
+        case 0xE000: //  Echo of WRAM
+            return &mem.SRAM[Addr - 0xE000]; 
+        case 0xF000:
+            switch (Addr & 0xFF00)
+            {
+                case 0xF000:
+                case 0xF100:
+                case 0xF200:
+                case 0xF300:
+                case 0xF400:
+                case 0xF500:
+                case 0xF600:
+                case 0xF700:
+                case 0xF800:
+                case 0xF900:
+                case 0xFA00:
+                case 0xFB00:
+                case 0xFC00:
+                case 0xFD00:
+                    return &mem.SRAM[Addr - 0xE000]; 
+                case 0xFE00:
+                    if (Addr < 0xFEA0) // OAM RAM
+                        return &mem.OAM_RAM[Addr - 0xFE00];
+                    else
+                        return NULL; // Empty
+                case 0xFF00:
+                    if (Addr < 0xFF80) // IO Ports
+                        return &mem.IOPorts[Addr - 0xFF00];
+                    else
+                        return &mem.HRAM[Addr - 0xFF80];
+            }
+    }
+
+    return NULL;
+}
+
 static void start_dma(uint8_t Value)
 {
     uint8_t *pSrc = mem_translation((uint16_t)Value << 8);
-    memcpy(pSrc, mem.OAM_RAM, MEM_DMA_SIZE);
+    memcpy(mem.OAM_RAM, pSrc, MEM_DMA_SIZE);
     mem.dma_ongoing = true;
 }
 
@@ -270,10 +331,11 @@ void mem_hexdump(const uint16_t Addr, const size_t Size)
     printf("-----------------------------------------------------------\n");
     for (int a = Addr ; a < Addr + Size ; a += 16)
     {
+        uint8_t *pMem = (uint8_t *)mem_translation_ppu(a);
         printf("%08X  | ", a);
         for (int i = 0 ; i < 16 ; i++)
         {
-            printf("%02X ", mem_read_u8(a + i));
+            printf("%02X ", pMem[i]);
         }
         printf("\n");
     }
