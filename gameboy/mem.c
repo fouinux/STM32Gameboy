@@ -75,57 +75,7 @@ static const bool aIOPortsActionOnWrMap[MEM_IO_PORTS_SIZE] =
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF70
 };
 
-
-static void* mem_translation(uint16_t Addr)
-{
-    if ((Addr < 0x100) && mem.BootROMEnabled)
-    {
-        return &mem.pBootROM[Addr];
-    }
-
-	if (Addr < 0x4000) // ROM Bank #0
-		return &mem.aCartridgeROMBank[0][Addr];
-
-	if (Addr < 0x8000) // Mapped ROM Bank
-		return &mem.aCartridgeROMBank[mem.ROMIndex][Addr - 0x4000];
-
-	if (Addr < 0xA000) // VRAM
-    {
-        if (ppu.pReg->STAT_Flags.ModeFlag != STATE_PXL_XFER)
-		    return &mem.VRAM[Addr - 0x8000];
-        return NULL; // Not accessible during Pixel Transfer
-    }
-
-	if (Addr < 0xC000) // Mapped RAM Bank
-		return NULL; //&mem.pMappedRAMBank[Addr - 0xA000];
-
-	if (Addr < 0xE000) // SRAM
-		return &mem.SRAM[Addr - 0xC000];
-
-	if (Addr < 0xFE00) // Echo of SRAM
-		return &mem.SRAM[Addr - 0xE000];
-
-	if (Addr < 0xFEA0) // OAM RAM
-    {
-        if (ppu.pReg->STAT_Flags.ModeFlag < STATE_OAM_SEARCH)
-		    return &mem.OAM_RAM[Addr - 0xFE00];
-        return NULL; // Not accessible during OAM Seach and Pixel Transfer
-    }
-
-	if (Addr < 0xFF00) // Empty
-		return NULL;
-
-	if (Addr < 0xFF80) // IO Ports
-	{
-	    if (aIOPortsMap[Addr -  0xFF00] == true)
-            return &mem.IOPorts[Addr - 0xFF00];
-	    return NULL;
-	}
-
-	return &mem.HRAM[Addr - 0xFF80];
-}
-
-static void* mem_translation_ppu(uint16_t Addr)
+static void* mem_translation(uint16_t Addr, bool Override)
 {
     switch (Addr & 0xF000)
     {
@@ -143,7 +93,9 @@ static void* mem_translation_ppu(uint16_t Addr)
             return &mem.aCartridgeROMBank[mem.ROMIndex][Addr - 0x4000];
         case 0x8000: // VRAM
         case 0x9000:
-            return &mem.VRAM[Addr - 0x8000];
+            if (Override || ppu.pReg->STAT_Flags.ModeFlag != STATE_PXL_XFER)
+                return &mem.VRAM[Addr - 0x8000];
+            return NULL; // Not accessible during Pixel Transfer
         case 0xA000:
         case 0xB000:
             return NULL; // TODO External RAM
@@ -172,12 +124,20 @@ static void* mem_translation_ppu(uint16_t Addr)
                     return &mem.SRAM[Addr - 0xE000]; 
                 case 0xFE00:
                     if (Addr < 0xFEA0) // OAM RAM
-                        return &mem.OAM_RAM[Addr - 0xFE00];
+                    {
+                        if (Override || ppu.pReg->STAT_Flags.ModeFlag < STATE_OAM_SEARCH)
+                            return &mem.OAM_RAM[Addr - 0xFE00];
+                        return NULL; // Not accessible during OAM Seach and Pixel Transfer
+                    }
                     else
                         return NULL; // Empty
                 case 0xFF00:
                     if (Addr < 0xFF80) // IO Ports
-                        return &mem.IOPorts[Addr - 0xFF00];
+                    {
+                        if (Override || aIOPortsMap[Addr -  0xFF00] == true)
+                            return &mem.IOPorts[Addr - 0xFF00];
+                        return NULL;
+                    }
                     else
                         return &mem.HRAM[Addr - 0xFF80];
             }
@@ -188,7 +148,7 @@ static void* mem_translation_ppu(uint16_t Addr)
 
 static void start_dma(uint8_t Value)
 {
-    uint8_t *pSrc = mem_translation((uint16_t)Value << 8);
+    uint8_t *pSrc = mem_translation((uint16_t)Value << 8, true);
     memcpy(mem.OAM_RAM, pSrc, MEM_DMA_SIZE);
     mem.dma_ongoing = true;
 }
@@ -236,7 +196,7 @@ void mem_init()
 
 uint8_t mem_read_u8(uint16_t Addr)
 {
-    uint8_t *pU8 = (uint8_t *) mem_translation(Addr);
+    uint8_t *pU8 = (uint8_t *) mem_translation(Addr, false);
     if (NULL == pU8)
         return 0xFF;
     else
@@ -245,7 +205,7 @@ uint8_t mem_read_u8(uint16_t Addr)
 
 int8_t mem_read_s8(uint16_t Addr)
 {
-    int8_t *pS8 = (int8_t *) mem_translation(Addr);
+    int8_t *pS8 = (int8_t *) mem_translation(Addr, false);
     if (NULL == pS8)
         return 0xFF;
     else
@@ -254,7 +214,7 @@ int8_t mem_read_s8(uint16_t Addr)
 
 uint16_t mem_read_u16(uint16_t Addr)
 {
-    uint16_t *pU16 = (uint16_t *) mem_translation(Addr);
+    uint16_t *pU16 = (uint16_t *) mem_translation(Addr, false);
     if (NULL == pU16)
         return 0xFFFF;
     else
@@ -263,7 +223,7 @@ uint16_t mem_read_u16(uint16_t Addr)
 
 void mem_write_u8(uint16_t Addr, uint8_t Value)
 {
-    uint8_t *pU8 = (uint8_t *) mem_translation(Addr);
+    uint8_t *pU8 = (uint8_t *) mem_translation(Addr, false);
     if (NULL != pU8)
     {
         if (Addr >= 0xFF00 && Addr <= 0xFF7F && aIOPortsActionOnWrMap[Addr -  0xFF00] == true)
@@ -275,7 +235,7 @@ void mem_write_u8(uint16_t Addr, uint8_t Value)
 
 void mem_write_u16(uint16_t Addr, uint16_t Value)
 {
-    uint16_t *pU16 = (uint16_t *) mem_translation(Addr);
+    uint16_t *pU16 = (uint16_t *) mem_translation(Addr, false);
     if (NULL != pU16)
         *pU16 = Value;
 }
@@ -331,7 +291,7 @@ void mem_hexdump(const uint16_t Addr, const size_t Size)
     printf("-----------------------------------------------------------\n");
     for (int a = Addr ; a < Addr + Size ; a += 16)
     {
-        uint8_t *pMem = (uint8_t *)mem_translation_ppu(a);
+        uint8_t *pMem = (uint8_t *)mem_translation(a, true);
         printf("%08X  | ", a);
         for (int i = 0 ; i < 16 ; i++)
         {
