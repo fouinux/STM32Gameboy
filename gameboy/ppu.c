@@ -92,26 +92,28 @@ static inline void exec_oam_search(void)
         }
     }
 
-    // TODO Improve sort ?
+    // Sort coordinates
     if (ppu.OAM_counter > 1)
     {
         for (int round = 0 ; round < ppu.OAM_counter ; round++)
         {
             for (int i = 0 ; i < (ppu.OAM_counter - round - 1) ; i++)
             {
-                if (ppu.aOAM_visible[i] > ppu.aOAM_visible[i+1])
+                if (pOam[ppu.aOAM_visible[i]].X > pOam[ppu.aOAM_visible[i+1]].X)
                 {
                     uint8_t temp = ppu.aOAM_visible[i];
                     ppu.aOAM_visible[i] = ppu.aOAM_visible[i+1];
                     ppu.aOAM_visible[i+1] = temp;
                 }
 
-                // The last one is sorted, get it's position
-                ppu.aOAM_visible_x[ppu.OAM_counter - round] = pOam[ppu.aOAM_visible[ppu.OAM_counter - round]].X - 8;
+                // The last one is sorted, get it's position corrected by the offset
+                ppu.aOAM_visible_x[ppu.OAM_counter - round - 1] = pOam[ppu.aOAM_visible[ppu.OAM_counter - round - 1]].X - 8;
             }
         }
     }
-    else if (ppu.OAM_counter > 0)
+    
+    // Set the first one coordinates
+    if (ppu.OAM_counter > 0)
         ppu.aOAM_visible_x[0] = pOam[ppu.aOAM_visible[0]].X - 8;
 
     ppu.OAM_visible_id = 0;
@@ -184,7 +186,9 @@ static inline void fetch_sprite(uint8_t id)
     // Extract and put pixels in FIFO
     for (uint8_t i = 0 ; i < 8 ; i++)
     {
-        fifo_enqueue(&ppu.Fifo_OAM, result & 0x03);
+        // Enqueue only if visible
+        if (pSprite->X - 8 + i >= 0)
+            fifo_enqueue(&ppu.Fifo_OAM, result & 0x03);
         result >>= 2;
     }
 }
@@ -220,7 +224,7 @@ static inline void exec_pxl_xfer(void)
             // Sprite ?
             if (ppu.pReg->LCDC_Flags.OBJEnable == 1 && ppu.OAM_counter > 0)
             {
-                if (ppu.aOAM_visible_x[ppu.OAM_visible_id] == ppu.x_draw)
+                if (ppu.aOAM_visible_x[ppu.OAM_visible_id] <= ppu.x_draw)
                 {
                     // Fetch Sprite
                     fetch_sprite(ppu.aOAM_visible[ppu.OAM_visible_id]);
