@@ -277,7 +277,20 @@ static inline void exec_pxl_xfer(void)
     // Fetch BG or Window
     if (ppu.Fifo_BG.Size <= 8)
     {
-        uint8_t *pTileMap = mem_get_bg_map();
+        uint8_t *pTileMap = mem_get_bg_map(); // BG by default
+        
+        if (ppu.pReg->LCDC_Flags.WindowEnable == 1)
+        {
+            if (ppu.pReg->LY >= ppu.pReg->WY)
+            {
+                if (ppu.x_draw >= ppu.pReg->WX)
+                {
+                    if (ppu.x_draw == ppu.pReg->WX)
+                        fifo_flush(&ppu.Fifo_BG);
+                    pTileMap =  mem_get_win_map();
+                }
+            }
+        }
 
         fetch_bg_win_tile(pTileMap);
 
