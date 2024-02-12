@@ -30,6 +30,34 @@
 #define get_tile_offset(ID)         (ID * TILE_SIZE)
 #define get_tile_line_offset(ID, LINE)  (get_tile_offset(ID) + 2 * LINE)
 
+struct tile_t
+{
+    struct
+    {
+        uint8_t Upper;
+        uint8_t Lower;
+    } Line[8];
+};
+
+struct oam_entry_t
+{
+    uint8_t Y;
+    uint8_t X;
+    uint8_t TileId;
+    union
+    {
+        uint8_t Attributes;
+        struct
+        {
+            uint8_t : 4;
+            uint8_t Palette : 1;
+            uint8_t X_Flip : 1;
+            uint8_t Y_Flip : 1;
+            uint8_t Priority : 1;
+        } Attributes_Flags;
+    };
+};
+
 struct ppu_t ppu;
 
 /**
@@ -37,7 +65,7 @@ struct ppu_t ppu;
  */
 static inline void exec_oam_search(void)
 {
-    struct ppu_oam_entry_t *pOam = ppu.pOam;
+    struct oam_entry_t *pOam = (struct oam_entry_t*) ppu.pOAMTileMap;
     uint8_t sprite_size = ppu.pReg->LCDC_Flags.OBJSize ? 16 : 8;
 
     // Reset OAM counter
@@ -138,7 +166,7 @@ static inline void fetch_bg_win_tile(uint8_t *pTileMap)
     uint16_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
 
     uint16_t tile_id = pTileMap[tile_map_id];
-    struct ppu_tile_t *pTile = &ppu.pBGWinTileData[tile_id];
+    struct tile_t *pTile = &((struct tile_t*) ppu.pBGWinTileData)[tile_id];
 
     uint8_t line = (ppu.pReg->SCY + ppu.pReg->LY) & 0x07;
 
@@ -157,8 +185,8 @@ static inline void fetch_bg_win_tile(uint8_t *pTileMap)
 
 static inline void fetch_sprite(uint8_t id)
 {
-    struct ppu_oam_entry_t *pSprite = &ppu.pOam[id];
-    struct ppu_tile_t *pTile = &ppu.pOamTileData[pSprite->TileId];
+    struct oam_entry_t *pSprite = &((struct oam_entry_t*) ppu.pOAMTileMap)[id];
+    struct tile_t *pTile = &((struct tile_t*)ppu.pOAMTileData)[pSprite->TileId];
 
     uint8_t line = ppu.pReg->LY - (pSprite->Y - 0x10);
     if (pSprite->Attributes_Flags.Y_Flip == 1)
@@ -295,8 +323,8 @@ void ppu_init(void)
 
     // Tile maps and data
     ppu_update_lcdc();
-    ppu.pOamTileData = (struct ppu_tile_t*) mem_get_vram();
-    ppu.pOam = (struct ppu_oam_entry_t*) mem_get_oam_ram();
+    ppu.pOAMTileMap = mem_get_oam_ram();
+    ppu.pOAMTileData = mem_get_vram();
 
     // Palettes
     ppu_update_bgp();
@@ -464,7 +492,7 @@ void ppu_update_lcdc(void)
     uint8_t *pVRAM = mem_get_vram();
     ppu.pBGTileMap = &pVRAM[(ppu.pReg->LCDC_Flags.BGTileMapAddr == 0) ? 0x1800 : 0x1C00];
     ppu.pWinTileMap = &pVRAM[(ppu.pReg->LCDC_Flags.WindowTileMapAddr == 0) ? 0x1800 : 0x1C00];
-    ppu.pBGWinTileData = (struct ppu_tile_t*) &pVRAM[(ppu.pReg->LCDC_Flags.BGWindowTileData == 0) ? 0x0800 : 0x0000];
+    ppu.pBGWinTileData = &pVRAM[(ppu.pReg->LCDC_Flags.BGWindowTileData == 0) ? 0x0800 : 0x0000];
 }
 
 void ppu_update_bgp(void)

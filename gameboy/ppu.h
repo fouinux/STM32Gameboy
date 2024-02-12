@@ -90,34 +90,6 @@ struct ppu_reg_t
     uint8_t WX;     // Window X Position
 };
 
-struct ppu_tile_t
-{
-    struct
-    {
-        uint8_t Upper;
-        uint8_t Lower;
-    } Line[8];
-};
-
-struct ppu_oam_entry_t
-{
-    uint8_t Y;
-    uint8_t X;
-    uint8_t TileId;
-    union
-    {
-        uint8_t Attributes;
-        struct
-        {
-            uint8_t : 4;
-            uint8_t Palette : 1;
-            uint8_t X_Flip : 1;
-            uint8_t Y_Flip : 1;
-            uint8_t Priority : 1;
-        } Attributes_Flags;
-    };
-};
-
 struct ppu_t
 {
     struct ppu_reg_t *pReg;
@@ -132,9 +104,9 @@ struct ppu_t
     // Tile maps and data
     uint8_t *pBGTileMap;
     uint8_t *pWinTileMap;
-    struct ppu_tile_t *pBGWinTileData;
-    struct ppu_tile_t *pOamTileData;
-    struct ppu_oam_entry_t *pOam;
+    uint8_t *pBGWinTileData;
+    uint8_t *pOAMTileMap;
+    uint8_t *pOAMTileData;
 
     // Palettes
     uint8_t aBGP[4];
