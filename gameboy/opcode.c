@@ -322,9 +322,15 @@ static uint8_t POP_##r1(void) \
 MACRO_POP_r1(BC);     // POP BC
 MACRO_POP_r1(DE);     // POP DE
 MACRO_POP_r1(HL);     // POP HL
-MACRO_POP_r1(AF);     // POP AF
 
 #undef MACRO_POP_r1
+
+static uint8_t POP_AF(void)
+{
+    cpu.reg.AF = mem_read_u16(cpu.reg.SP) & 0xFFF0; // 4 LSB always zero
+    cpu.reg.SP += 2;
+    return 3;
+}
 
 //////////////////////
 // Arithmetic 8-bit //
@@ -335,8 +341,8 @@ MACRO_POP_r1(AF);     // POP AF
 static uint8_t ADD_A_##r1(void) \
 { \
     uint16_t t = cpu.reg.A + cpu.reg.r1; \
-    cpu.reg.F = 0; \
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);\
+    cpu.reg.Flags.N = 0; \
     cpu.reg.Flags.H = ((cpu.reg.A & 0xF) + (cpu.reg.r1 & 0xF) > 0xF); \
     cpu.reg.Flags.C = (t > 0xFF); \
     cpu.reg.A = t & 0xFF; \
@@ -358,8 +364,8 @@ static uint8_t ADD_A_HL(void)
 {
     uint8_t reg = mem_read_u8(cpu.reg.HL);
     uint16_t t = cpu.reg.A + reg;
-    cpu.reg.F = 0;
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
+    cpu.reg.Flags.N = 0;
     cpu.reg.Flags.H = ((cpu.reg.A & 0xF) + (reg & 0xF) > 0xF);
     cpu.reg.Flags.C = (t > 0xFF);
     cpu.reg.A = t & 0xFF;
@@ -371,8 +377,8 @@ static uint8_t ADD_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(cpu.reg.PC + 1);
     uint16_t t = cpu.reg.A + d8;
-    cpu.reg.F = 0;
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
+    cpu.reg.Flags.N = 0;
     cpu.reg.Flags.H = ((cpu.reg.A & 0xF) + (d8 & 0xF) > 0xF);
     cpu.reg.Flags.C = (t > 0xFF);
     cpu.reg.A = t & 0xFF;
@@ -384,8 +390,8 @@ static uint8_t ADD_A_d8(void)
 static uint8_t ADC_A_##r1(void) \
 { \
     uint16_t t = cpu.reg.A + cpu.reg.r1 + cpu.reg.Flags.C; \
-    cpu.reg.F = 0; \
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);\
+    cpu.reg.Flags.N = 0; \
     cpu.reg.Flags.H = ((cpu.reg.A & 0xF) + (cpu.reg.r1 & 0xF) > 0xF); \
     cpu.reg.Flags.C = (t > 0xFF); \
     cpu.reg.A = t & 0xFF; \
@@ -407,8 +413,8 @@ static uint8_t ADC_A_HL(void)
 {
     uint8_t reg = mem_read_u8(cpu.reg.HL);
     uint16_t t = cpu.reg.A + reg +  cpu.reg.Flags.C;
-    cpu.reg.F = 0;
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
+    cpu.reg.Flags.N = 0;
     cpu.reg.Flags.H = ((cpu.reg.A & 0xF) + (reg & 0xF) > 0xF);
     cpu.reg.Flags.C = (t > 0xFF);
     cpu.reg.A = t & 0xFF;
@@ -420,8 +426,8 @@ static uint8_t ADC_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(cpu.reg.PC + 1);
     uint16_t t = cpu.reg.A + d8 +  cpu.reg.Flags.C;
-    cpu.reg.F = 0;
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
+    cpu.reg.Flags.N = 0;
     cpu.reg.Flags.H = ((cpu.reg.A & 0xF) + (d8 & 0xF) > 0xF);
     cpu.reg.Flags.C = (t > 0xFF);
     cpu.reg.A = t & 0xFF;
@@ -433,8 +439,8 @@ static uint8_t ADC_A_d8(void)
 static uint8_t SUB_A_##r1(void) \
 { \
     int16_t t = cpu.reg.A - cpu.reg.r1; \
-    cpu.reg.F = 0x40; \
-    cpu.reg.Flags.Z = ((t & 0xFF) == 0);\
+    cpu.reg.Flags.Z = ((t & 0xFF) == 0); \
+    cpu.reg.Flags.N = 1; \
     cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) cpu.reg.r1 & 0xF) < 0); \
     cpu.reg.Flags.C = (t < 0); \
     cpu.reg.A = t & 0xFF; \
@@ -456,8 +462,8 @@ static uint8_t SUB_A_HL(void)
 {
     uint8_t reg = mem_read_u8(cpu.reg.HL);
     int16_t t = cpu.reg.A - reg;
-    cpu.reg.F = 0x40;
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
+    cpu.reg.Flags.N = 1;
     cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) reg & 0xF) < 0);
     cpu.reg.Flags.C = (t < 0);
     cpu.reg.A = t & 0xFF;
@@ -469,8 +475,8 @@ static uint8_t SUB_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(cpu.reg.PC + 1);
     int16_t t = cpu.reg.A - d8;
-    cpu.reg.F = 0x40;
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
+    cpu.reg.Flags.N = 1;
     cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) d8 & 0xF) < 0);
     cpu.reg.Flags.C = (t < 0);
     cpu.reg.A = t & 0xFF;
@@ -483,8 +489,8 @@ static uint8_t SUB_A_d8(void)
 static uint8_t SBC_A_##r1(void) \
 { \
     int16_t t = cpu.reg.A - cpu.reg.r1 - cpu.reg.Flags.C; \
-    cpu.reg.F = 0x40; \
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);\
+    cpu.reg.Flags.N = 1; \
     cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) cpu.reg.r1 & 0xF) < 0); \
     cpu.reg.Flags.C = (t < 0); \
     cpu.reg.A = t & 0xFF; \
@@ -506,8 +512,8 @@ static uint8_t SBC_A_HL(void)
 {
     uint8_t reg = mem_read_u8(cpu.reg.HL);
     int16_t t = cpu.reg.A - reg - cpu.reg.Flags.C;
-    cpu.reg.F = 0x40;
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
+    cpu.reg.Flags.N = 1;
     cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) reg & 0xF) < 0);
     cpu.reg.Flags.C = (t < 0);
     cpu.reg.A = t & 0xFF;
@@ -519,8 +525,8 @@ static uint8_t SBC_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(cpu.reg.PC + 1);
     int16_t t = cpu.reg.A - d8 - cpu.reg.Flags.C;
-    cpu.reg.F = 0x40;
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
+    cpu.reg.Flags.N = 1;
     cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) d8 & 0xF) < 0);
     cpu.reg.Flags.C = (t < 0);
     cpu.reg.A = t & 0xFF;
@@ -653,8 +659,8 @@ static uint8_t OR_A_d8(void)
 static uint8_t CP_A_##r1(void) \
 { \
     int16_t t = cpu.reg.A - cpu.reg.r1; \
-    cpu.reg.F = 0x40; /* N = 1 */ \
     cpu.reg.Flags.Z = ((t & 0xFF) == 0); \
+    cpu.reg.Flags.N = 1; \
     cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) cpu.reg.r1 & 0xF) < 0); \
     cpu.reg.Flags.C = (t < 0); \
     return 1; \
@@ -675,8 +681,8 @@ static uint8_t CP_A_HL(void)
 {
     uint8_t reg = mem_read_u8(cpu.reg.HL);
     int16_t t = cpu.reg.A - reg;
-    cpu.reg.F = 0x40; /* N = 1 */
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
+    cpu.reg.Flags.N = 1;
     cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) reg & 0xF) < 0);
     cpu.reg.Flags.C = (t < 0);
     return 2;
@@ -687,8 +693,8 @@ static uint8_t CP_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(cpu.reg.PC + 1);
     int16_t t = cpu.reg.A - d8;
-    cpu.reg.F = 0x40; /* N = 1 */
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
+    cpu.reg.Flags.N = 1;
     cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) d8 & 0xF) < 0);
     cpu.reg.Flags.C = (t < 0);
     return 2;
@@ -809,6 +815,8 @@ static uint8_t ADD_HL_##r1(void) \
  \
     if ((cpu.reg.HL & 0xFFF) + (cpu.reg.r1 & 0xFFF) > 0xFFF) \
         cpu.reg.Flags.H = 1; \
+    else \
+        cpu.reg.Flags.H = 0; \
  \
     cpu.reg.HL = result & 0xFFFF; \
     return 2; \
@@ -844,7 +852,7 @@ static uint8_t ADD_SP_r8(void)
 // Decimal adjust A register - DAA
 static uint8_t DAA(void)
 {
-    if (cpu.reg.Flags.N)
+    if (cpu.reg.Flags.N == 0)
     {
         if (cpu.reg.Flags.C || cpu.reg.A > 0x99)
         {
@@ -872,7 +880,7 @@ static uint8_t DAA(void)
 // Complement A register - CPL
 static uint8_t CPL(void)
 {
-    cpu.reg.F |= 0x90; // Set N & H
+    cpu.reg.F |= 0x60; // Set N & H
     cpu.reg.A ^= 0xFF;
     return 1;
 }
@@ -965,7 +973,6 @@ static uint8_t RRCA(void)
 {
     cpu.reg.F = 0x00;
     cpu.reg.Flags.C = cpu.reg.A & 0x01;
-    cpu.reg.Flags.Z = (cpu.reg.A == 0);
     cpu.reg.A = (cpu.reg.A >> 1) | (cpu.reg.A << 7);
     return 1;
 }
