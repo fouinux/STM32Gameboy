@@ -5,6 +5,7 @@
  *      Author: Guillaume Fouilleul
  */
 
+#include "cpu.h"
 #include "mem.h"
 #include "ppu.h"
 #include "joypad.h"
@@ -69,7 +70,7 @@ static const bool aIOPortsActionOnWrMap[MEM_IO_PORTS_SIZE] =
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF10
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF20
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF30
-    false, false, false, false, false, false,  true,  true,  true,  true, false, false, false, false, false, false, // 0xFF40
+     true, false, false, false, false, false,  true,  true,  true,  true, false, false, false, false, false, false, // 0xFF40
      true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF50
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF60
     false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, // 0xFF70
@@ -101,9 +102,9 @@ static void* mem_translation(uint16_t Addr, bool Override)
             return NULL; // TODO External RAM
         case 0xC000: // WRAM
         case 0xD000:
-            return &mem.SRAM[Addr - 0xC000]; 
+            return &mem.SRAM[Addr - 0xC000];
         case 0xE000: //  Echo of WRAM
-            return &mem.SRAM[Addr - 0xE000]; 
+            return &mem.SRAM[Addr - 0xE000];
         case 0xF000:
             switch (Addr & 0xFF00)
             {
@@ -121,7 +122,7 @@ static void* mem_translation(uint16_t Addr, bool Override)
                 case 0xFB00:
                 case 0xFC00:
                 case 0xFD00:
-                    return &mem.SRAM[Addr - 0xE000]; 
+                    return &mem.SRAM[Addr - 0xE000];
                 case 0xFE00:
                     if (Addr < 0xFEA0) // OAM RAM
                     {
@@ -164,6 +165,11 @@ static void action_on_w8(uint16_t Addr, uint8_t Value, uint8_t *pU8)
 
         case 0xFF04: // Reset DIV
             *pU8 = 0;
+            break;
+
+        case 0xFF40: // LCDC
+            *pU8 = Value;
+            ppu_update_lcdc();
             break;
 
         case 0xFF46: // DMA
@@ -246,6 +252,11 @@ void mem_write_u8(uint16_t Addr, uint8_t Value)
         else
             *pU8 = Value;
     }
+
+    if (Addr == 0xFFE1) // GAME_STATUS
+    {
+        printf("GS = %02x (from %04X)\n", Value, cpu.reg.PC);
+    }
 }
 
 void mem_write_u16(uint16_t Addr, uint16_t Value)
@@ -288,21 +299,6 @@ uint8_t* mem_get_oam_ram(void)
 uint8_t* mem_get_vram(void)
 {
     return &mem.VRAM[0];
-}
-
-uint8_t* mem_get_bg_map(void)
-{
-    return &mem.VRAM[(ppu.pReg->LCDC_Flags.BGTileMapAddr == 0) ? 0x1800 : 0x1C00];
-}
-
-uint8_t* mem_get_win_map(void)
-{
-    return &mem.VRAM[(ppu.pReg->LCDC_Flags.WindowTileMapAddr == 0) ? 0x1800 : 0x1C00];
-}
-
-uint8_t* mem_get_bg_win_data(void)
-{
-    return &mem.VRAM[(ppu.pReg->LCDC_Flags.BGWindowTileData == 0) ? 0x0800 : 0x0000];
 }
 
 void mem_set_bootrom(uint8_t *pBootROM)
