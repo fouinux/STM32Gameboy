@@ -12,6 +12,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define MEM_CARTRIDGE_ROM_BANK_SIZE     16384 // 16kiB
+#define MEM_CARTRIDGE_ROM_BANK_MAX      128   // 128 * 16 kiB = 2MiB
+#define MEM_CARTRIDGE_RAM_BANK_MAX      16    // 16 * 8 kiB = 128kiB
+
 enum IOPorts_reg
 {
     JOYPAD,

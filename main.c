@@ -16,7 +16,7 @@
 #define SCALE       2
 
 uint8_t aBootROM[256];
-uint8_t aGameROM[32 * 1024];
+
 
 static inline int load_bootrom(const char *pFilename)
 {
@@ -38,22 +38,40 @@ static inline int load_bootrom(const char *pFilename)
 
 }
 
-static inline int load_gamerom(const char *pFilename)
+static inline int load_gamerom(const char *pFilename, uint8_t **pGameROM, uint8_t *pBankROM)
 {
-    FILE *pGameROM = fopen(pFilename, "rb");
+    FILE *pFile = fopen(pFilename, "rb");
     if (NULL == pGameROM)
     {
         printf("Cannot open GameROM file: %s\n", pFilename);
         return EXIT_FAILURE;
     }
 
-    size_t size_read = fread(&aGameROM[0], sizeof(uint8_t), 32 * 1024, pGameROM);
-    if (size_read != 32 * 1024)
+    // Get the size of the game
+    fseek(pFile, 0L, SEEK_END);
+    size_t game_size = ftell(pFile);
+    rewind(pFile);
+
+    // Allocate Game memory
+    *pGameROM = (uint8_t*) malloc(game_size);
+    if (NULL == *pGameROM)
     {
-        printf("Error loading GameROM: %d\n", (int) size_read);
+        printf("Cannot allocate memory for GameROM (%lu B)\n", game_size);
         return EXIT_FAILURE;
     }
-    fclose(pGameROM);
+
+    // Load Game
+    size_t read_size = fread(*pGameROM, sizeof(uint8_t), game_size, pFile);
+    if (read_size != game_size)
+    {
+        printf("Error loading GameROM: %d\n", (int) read_size);
+        return EXIT_FAILURE;
+    }
+    fclose(pFile);
+
+    // Return game size in ROM banks
+    *pBankROM = game_size / MEM_CARTRIDGE_ROM_BANK_SIZE;
+
     return EXIT_SUCCESS;
 }
 
@@ -99,6 +117,10 @@ int main(int argc, char *argv[])
     SDL_Event event;
     bool cpuDebug = false;
 
+    // Boot & Game ROMs
+    uint8_t gameROMBanks = 0;
+    uint8_t *pGameROM;
+
     // Init SDL
     if (SDL_Init(SDL_INIT_VIDEO) != 0 )
     {
@@ -111,8 +133,12 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
 
     // Load gamerom
-    if (load_gamerom("Tetris.bin"))
-    // if (load_gamerom("Super Mario Land.gb"))
+    if (argc < 2)
+    {
+        printf("Missing game rom filename\n");
+        return EXIT_FAILURE;
+    }
+    if (load_gamerom(argv[1], &pGameROM, &gameROMBanks))
         return EXIT_FAILURE;
 
     // Init gameboy emulator
@@ -126,8 +152,8 @@ int main(int argc, char *argv[])
 
     // Overwrite mem values
     mem_set_bootrom(&aBootROM[0]);
-    mem_set_gamerom(&aGameROM[0], 0);
-    mem_set_gamerom(&aGameROM[1024 * 16], 1);
+    for (int i = 0 ; i < gameROMBanks ; i++)
+        mem_set_gamerom(&pGameROM[i*MEM_CARTRIDGE_ROM_BANK_SIZE], i);
 
     while(true)
     {
@@ -175,6 +201,8 @@ int main(int argc, char *argv[])
         timer_exec();
 
     }
+
+    free(pGameROM);
 
     // Clean SDL stuff
     ppu_destroy();

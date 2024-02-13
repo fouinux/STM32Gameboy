@@ -13,9 +13,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define MEM_CARTRIDGE_ROM_BANK_MAX      128 // 128 * 16 kiB = 2MiB
-#define MEM_CARTRIDGE_RAM_BANK_MAX      16  // 16 * 8 kiB = 128kiB
-
 #define MEM_SRAM_SIZE                   8192 // 8 kiB
 #define MEM_VRAM_SIZE                   8192 // 8 kiB
 #define MEM_OAM_RAM_SIZE                160  // 40 Spites
