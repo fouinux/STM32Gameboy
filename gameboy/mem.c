@@ -241,26 +241,37 @@ uint16_t mem_read_u16(uint16_t Addr)
 
 void mem_write_u8(uint16_t Addr, uint8_t Value)
 {
-    uint8_t *pU8 = (uint8_t *) mem_translation(Addr, false);
-    if (NULL != pU8)
+    if (Addr >= 0x8000) // Protect ROM sections
     {
-        if (Addr >= 0xFF00 && Addr <= 0xFF7F && aIOPortsActionOnWrMap[Addr -  0xFF00] == true)
-            action_on_w8(Addr, Value, pU8);
-        else
-            *pU8 = Value;
+        uint8_t *pU8 = (uint8_t *) mem_translation(Addr, false);
+        if (NULL != pU8)
+        {
+            if (Addr >= 0xFF00 && Addr <= 0xFF7F && aIOPortsActionOnWrMap[Addr -  0xFF00] == true)
+                action_on_w8(Addr, Value, pU8);
+            else
+            {
+                *pU8 = Value;
+            }
+        }
     }
-
-    if (Addr == 0xFFE1) // GAME_STATUS
+    else
     {
-        printf("GS = %02x (from %04X)\n", Value, cpu.reg.PC);
+        // TODO: Implement MBC
     }
 }
 
 void mem_write_u16(uint16_t Addr, uint16_t Value)
 {
-    uint16_t *pU16 = (uint16_t *) mem_translation(Addr, false);
-    if (NULL != pU16)
-        *pU16 = Value;
+    if (Addr >= 0x8000) // Protect ROM sections
+    {
+        uint16_t *pU16 = (uint16_t *) mem_translation(Addr, false);
+        if (NULL != pU16)
+            *pU16 = Value;
+    }
+    else
+    {
+        // TODO: Implement MBC
+    }
 }
 
 uint8_t* mem_get_register(enum IOPorts_reg reg)
