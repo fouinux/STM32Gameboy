@@ -11,6 +11,7 @@
 #include "gameboy/timer.h"
 #include "gameboy/apu.h"
 #include "gameboy/joypad.h"
+#include "gameboy/serial.h"
 #include "gameboy/debug.h"
 
 #define SCALE       2
@@ -149,6 +150,7 @@ int main(int argc, char *argv[])
     timer_init();
     apu_init();
     joypad_init();
+    serial_init();
 
     // Overwrite mem values
     mem_set_bootrom(&aBootROM[0]);
@@ -199,6 +201,7 @@ int main(int argc, char *argv[])
         cpu_exec(cpuDebug);
         ppu_exec();
         timer_exec();
+        serial_exec();
 
     }
 
