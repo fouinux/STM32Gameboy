@@ -1073,7 +1073,7 @@ static uint8_t CALL_##name##_a16(void) \
     uint16_t a16 = mem_read_u16(cpu.reg.PC + 1); \
     if (cpu.reg.Flags.bit == state) \
     { \
-        mem_write_u16(cpu.reg.SP - 2, cpu.reg.PC); /* Save PC */ \
+        mem_write_u16(cpu.reg.SP - 2, cpu.reg.PC + 3); /* Save PC */ \
         cpu.reg.PC = a16; /* Jump */ \
         cpu.reg.SP -= 2; \
         return 6; \
