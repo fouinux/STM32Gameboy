@@ -47,5 +47,7 @@ void timer_exec(void)
                 timer.pReg->TIMA++;
             }
         }
+
+        timer.lastBit = currentBit;
     }
 }
