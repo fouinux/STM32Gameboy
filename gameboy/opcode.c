@@ -1425,7 +1425,7 @@ struct opcode_t opcodeList[256] =
         {OR_A_d8,       "OR A,d8",      2,      true},      // 0xF6
         {RST_30H,       "RST 30H",      1,      false},     // 0xF7
         {LD_HL_SP_r8,   "LD HL,SP+r8",  2,      true},      // 0xF8
-        {LD_SP_HL,      "LD SP,HL",     1,      false},     // 0xF9
+        {LD_SP_HL,      "LD SP,HL",     1,      true},     // 0xF9
         {LD_A_a16,      "LD A,(a16)",   3,      true},      // 0xFA
         {EI,            "EI",           1,      true},      // 0xFB
         {NULL,          "",             0,      false},     // 0xFC
