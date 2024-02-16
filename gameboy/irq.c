@@ -52,8 +52,6 @@ bool irq_check(void)
             // Disable IRQ
             irq.ime = false;
 
-            // TODO HALT
-
             // Search for active IRQ according to priorities
             if (mask & IRQ_MASK_VBLANK) // V-Blank
             {
@@ -99,4 +97,11 @@ bool irq_check(void)
     }
     else
         return false;
+}
+
+bool irq_pending(void)
+{
+    if ((irq.pIE->Value & irq.pIF->Value) != 0x00)
+        return true;
+    return false;
 }

@@ -39,5 +39,6 @@ extern struct irq_t irq;
 
 void irq_init(void);
 bool irq_check(void);
+bool irq_pending(void);
 
 #endif /* INC_GAMEBOY_IRQ_H_ */

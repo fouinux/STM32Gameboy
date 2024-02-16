@@ -425,7 +425,7 @@ static uint8_t ADC_A_HL(void)
 static uint8_t ADC_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(cpu.reg.PC + 1);
-    uint16_t t = cpu.reg.A + d8 +  cpu.reg.Flags.C;
+    uint16_t t = cpu.reg.A + d8 + cpu.reg.Flags.C;
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
     cpu.reg.Flags.N = 0;
     cpu.reg.Flags.H = ((cpu.reg.A & 0xF) + (d8 & 0xF) > 0xF);
@@ -911,7 +911,7 @@ static uint8_t NOP(void)
 // HALT
 static uint8_t HALT(void)
 {
-    // TODO Halt
+    cpu.halted = true;
     return 1;
 }
 
