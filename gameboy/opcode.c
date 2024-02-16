@@ -392,7 +392,7 @@ static uint8_t ADC_A_##r1(void) \
     uint16_t t = cpu.reg.A + cpu.reg.r1 + cpu.reg.Flags.C; \
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);\
     cpu.reg.Flags.N = 0; \
-    cpu.reg.Flags.H = ((cpu.reg.A & 0xF) + (cpu.reg.r1 & 0xF) > 0xF); \
+    cpu.reg.Flags.H = ((cpu.reg.A & 0xF) + (cpu.reg.r1 & 0xF) + cpu.reg.Flags.C > 0xF); \
     cpu.reg.Flags.C = (t > 0xFF); \
     cpu.reg.A = t & 0xFF; \
     return 1; \
@@ -415,7 +415,7 @@ static uint8_t ADC_A_HL(void)
     uint16_t t = cpu.reg.A + reg +  cpu.reg.Flags.C;
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
     cpu.reg.Flags.N = 0;
-    cpu.reg.Flags.H = ((cpu.reg.A & 0xF) + (reg & 0xF) > 0xF);
+    cpu.reg.Flags.H = ((cpu.reg.A & 0xF) + (reg & 0xF) + cpu.reg.Flags.C > 0xF);
     cpu.reg.Flags.C = (t > 0xFF);
     cpu.reg.A = t & 0xFF;
     return 2;
@@ -425,10 +425,10 @@ static uint8_t ADC_A_HL(void)
 static uint8_t ADC_A_d8(void)
 {
     uint8_t d8 = mem_read_u8(cpu.reg.PC + 1);
-    uint16_t t = cpu.reg.A + d8 +  cpu.reg.Flags.C;
+    uint16_t t = cpu.reg.A + d8 + cpu.reg.Flags.C;
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
     cpu.reg.Flags.N = 0;
-    cpu.reg.Flags.H = ((cpu.reg.A & 0xF) + (d8 & 0xF) > 0xF);
+    cpu.reg.Flags.H = ((cpu.reg.A & 0xF) + (d8 & 0xF) + cpu.reg.Flags.C > 0xF);
     cpu.reg.Flags.C = (t > 0xFF);
     cpu.reg.A = t & 0xFF;
     return 2;
@@ -491,7 +491,7 @@ static uint8_t SBC_A_##r1(void) \
     int16_t t = cpu.reg.A - cpu.reg.r1 - cpu.reg.Flags.C; \
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);\
     cpu.reg.Flags.N = 1; \
-    cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) cpu.reg.r1 & 0xF) < 0); \
+    cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) cpu.reg.r1 & 0xF) - cpu.reg.Flags.C < 0); \
     cpu.reg.Flags.C = (t < 0); \
     cpu.reg.A = t & 0xFF; \
     return 1; \
@@ -514,7 +514,7 @@ static uint8_t SBC_A_HL(void)
     int16_t t = cpu.reg.A - reg - cpu.reg.Flags.C;
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
     cpu.reg.Flags.N = 1;
-    cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) reg & 0xF) < 0);
+    cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) reg & 0xF) - cpu.reg.Flags.C < 0);
     cpu.reg.Flags.C = (t < 0);
     cpu.reg.A = t & 0xFF;
     return 2;
@@ -527,7 +527,7 @@ static uint8_t SBC_A_d8(void)
     int16_t t = cpu.reg.A - d8 - cpu.reg.Flags.C;
     cpu.reg.Flags.Z = ((t & 0xFF) == 0);
     cpu.reg.Flags.N = 1;
-    cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) d8 & 0xF) < 0);
+    cpu.reg.Flags.H = (((int8_t) cpu.reg.A & 0xF) - ((int8_t) d8 & 0xF) - cpu.reg.Flags.C < 0);
     cpu.reg.Flags.C = (t < 0);
     cpu.reg.A = t & 0xFF;
     return 2;
@@ -911,7 +911,7 @@ static uint8_t NOP(void)
 // HALT
 static uint8_t HALT(void)
 {
-    // TODO Halt
+    cpu.halted = true;
     return 1;
 }
 
@@ -1073,7 +1073,7 @@ static uint8_t CALL_##name##_a16(void) \
     uint16_t a16 = mem_read_u16(cpu.reg.PC + 1); \
     if (cpu.reg.Flags.bit == state) \
     { \
-        mem_write_u16(cpu.reg.SP - 2, cpu.reg.PC); /* Save PC */ \
+        mem_write_u16(cpu.reg.SP - 2, cpu.reg.PC + 3); /* Save PC */ \
         cpu.reg.PC = a16; /* Jump */ \
         cpu.reg.SP -= 2; \
         return 6; \
@@ -1425,7 +1425,7 @@ struct opcode_t opcodeList[256] =
         {OR_A_d8,       "OR A,d8",      2,      true},      // 0xF6
         {RST_30H,       "RST 30H",      1,      false},     // 0xF7
         {LD_HL_SP_r8,   "LD HL,SP+r8",  2,      true},      // 0xF8
-        {LD_SP_HL,      "LD SP,HL",     1,      false},     // 0xF9
+        {LD_SP_HL,      "LD SP,HL",     1,      true},      // 0xF9
         {LD_A_a16,      "LD A,(a16)",   3,      true},      // 0xFA
         {EI,            "EI",           1,      true},      // 0xFB
         {NULL,          "",             0,      false},     // 0xFC

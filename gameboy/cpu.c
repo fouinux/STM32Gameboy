@@ -70,43 +70,49 @@ void cpu_init(void)
 
 void cpu_exec(bool PrintState)
 {
-    cpu.cycle_counter--;
-
-    if (0 == cpu.cycle_counter)
+    if (cpu.halted == false || irq_pending())
     {
-        // Check for interrupt
-        if (false == irq_check())
+        // Clean HALT status
+        cpu.halted = false;
+
+        cpu.cycle_counter--;
+
+        if (0 == cpu.cycle_counter)
         {
-            // Read opcode
-            uint8_t opcode = mem_read_u8(cpu.reg.PC);
-
-            // Execute opcode
-            if (cpu.prefix_cb)
+            // Check for interrupt
+            if (false == irq_check())
             {
-                if (PrintState)
-                    cpu_print_opcode(opcode);
+                // Read opcode
+                uint8_t opcode = mem_read_u8(cpu.reg.PC);
 
-                cpu.prefix_cb = false;
-                cpu.cycle_counter = opcodeCbList[opcode].func();
-                cpu.reg.PC++; //  All CB opcode have a size of 1
+                // Execute opcode
+                if (cpu.prefix_cb)
+                {
+                    if (PrintState)
+                        cpu_print_opcode(opcode);
 
-                if (PrintState)
-                    cpu_print_regs();
+                    cpu.prefix_cb = false;
+                    cpu.cycle_counter = opcodeCbList[opcode].func();
+                    cpu.reg.PC++; //  All CB opcode have a size of 1
+
+                    if (PrintState)
+                        cpu_print_regs();
+                }
+                else
+                {
+                    if (PrintState && opcode != 0xCB)
+                        cpu_print_opcode(opcode);
+
+                    cpu.cycle_counter = opcodeList[opcode].func();
+
+                    if (opcodeList[opcode].update_pc) // Update Program Counter
+                        cpu.reg.PC += opcodeList[opcode].length;
+
+                    if (PrintState && opcode != 0xCB)
+                        cpu_print_regs();
+                }
+
             }
-            else
-            {
-                if (PrintState && opcode != 0xCB)
-                    cpu_print_opcode(opcode);
-
-                cpu.cycle_counter = opcodeList[opcode].func();
-
-                if (opcodeList[opcode].update_pc) // Update Program Counter
-                    cpu.reg.PC += opcodeList[opcode].length;
-
-                if (PrintState && opcode != 0xCB)
-                    cpu_print_regs();
-            }
-
         }
     }
 }
