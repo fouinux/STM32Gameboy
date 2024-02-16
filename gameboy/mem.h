@@ -12,9 +12,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define MEM_CARTRIDGE_ROM_BANK_SIZE     16384 // 16kiB
-#define MEM_CARTRIDGE_ROM_BANK_MAX      128   // 128 * 16 kiB = 2MiB
-#define MEM_CARTRIDGE_RAM_BANK_MAX      16    // 16 * 8 kiB = 128kiB
+#define MEM_CARTRIDGE_ROM_BANK_SIZE     16384 // 16 KiB
+#define MEM_CARTRIDGE_ROM_BANK_MAX      512   // 512 * 16 KiB = 8 MiB
+#define MEM_CARTRIDGE_RAM_BANK_SIZE     8192  // 8 KiB
+#define MEM_CARTRIDGE_RAM_BANK_MAX      16    // 16 * 8 KiB = 128 KiB
 
 enum IOPorts_reg
 {
@@ -40,7 +41,7 @@ uint8_t* mem_get_oam_ram(void);
 uint8_t* mem_get_vram(void);
 
 void mem_set_bootrom(uint8_t *pBootROM);
-void mem_set_gamerom(uint8_t *pGameROM, uint8_t index);
+void mem_load_gamerom(uint8_t *pGameROM);
 
 void mem_hexdump(const uint16_t Addr, const size_t Size);
 

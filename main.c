@@ -152,10 +152,9 @@ int main(int argc, char *argv[])
     joypad_init();
     serial_init();
 
-    // Overwrite mem values
+    // Load Boot ROM and game ROM
     mem_set_bootrom(&aBootROM[0]);
-    for (int i = 0 ; i < gameROMBanks ; i++)
-        mem_set_gamerom(&pGameROM[i*MEM_CARTRIDGE_ROM_BANK_SIZE], i);
+    mem_load_gamerom(pGameROM);
 
     while(true)
     {
@@ -201,7 +200,7 @@ int main(int argc, char *argv[])
         cpu_exec(cpuDebug);
         ppu_exec();
         timer_exec();
-        serial_exec();
+        // serial_exec();
 
     }
 

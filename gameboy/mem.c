@@ -21,13 +21,32 @@
 
 #define MEM_DMA_SIZE                    160
 
+struct cartridge_header_t
+{
+    uint8_t aEntryPoint[4];
+    uint8_t aNintendoLogo[48];
+    char aTitle[16];
+    char aNewLicenseeCode[2];
+    uint8_t SGB_Flag;
+    uint8_t CartridgeType;
+    uint8_t ROM_Size;
+    uint8_t RAM_Size;
+    uint8_t DestinationCode;
+    uint8_t OldLicenseeCode;
+    uint8_t MaskROMVersionNumber;
+    uint8_t HeaderChecksum;
+    uint8_t aGlobalChecksum[2];
+};
+
 struct memory_map_t
 {
     bool BootROMEnabled;
     uint8_t *pBootROM; // BootROM
+    uint8_t *pCartridgeRAM;
 
     // Array of pointers on cartridge ROM Banks
     uint8_t *aCartridgeROMBank[MEM_CARTRIDGE_ROM_BANK_MAX];
+    uint8_t *aCartridgeRAMBank[MEM_CARTRIDGE_RAM_BANK_MAX];
 
     // Mapped Banks
     uint8_t ROMIndex; // [0x4000 - 0x8000]
@@ -94,9 +113,9 @@ static void* mem_translation(uint16_t Addr, bool Override)
             if (Override || ppu.pReg->STAT_Flags.ModeFlag != STATE_PXL_XFER)
                 return &mem.VRAM[Addr - 0x8000];
             return NULL; // Not accessible during Pixel Transfer
-        case 0xA000:
+        case 0xA000: // Cartridge RAM
         case 0xB000:
-            return NULL; // TODO External RAM
+            return NULL;// &mem.aCartridgeRAMBank[mem.RAMIndex][Addr - 0xA000];
         case 0xC000: // WRAM
         case 0xD000:
             return &mem.SRAM[Addr - 0xC000];
@@ -207,6 +226,10 @@ void mem_init()
     mem.aCartridgeROMBank[0] = (uint8_t *) 0x08110000;
     mem.aCartridgeROMBank[1] = (uint8_t *) 0x08118000;
 
+    // Init Cartridge RAM
+    mem.pCartridgeRAM = NULL;
+    memset(mem.aCartridgeRAMBank, 0, MEM_CARTRIDGE_RAM_BANK_MAX * sizeof(uint8_t *));
+
     // Map memory
     mem.ROMIndex = 1;
     mem.RAMIndex = 0;
@@ -314,9 +337,80 @@ void mem_set_bootrom(uint8_t *pBootROM)
     mem.pBootROM = pBootROM;
 }
 
-void mem_set_gamerom(uint8_t *pGameROM, uint8_t index)
+static inline uint16_t get_romsize(uint8_t code)
 {
-    mem.aCartridgeROMBank[index] = pGameROM;
+    switch (code)
+    {
+        case 0x00: // 32 KiB
+            return 2;
+        case 0x01: // 64 KiB
+            return 4;
+        case 0x02: // 128 KiB
+            return 8;
+        case 0x03: // 256 KiB
+            return 16;
+        case 0x04: // 512 KiB
+            return 32;
+        case 0x05: // 1 MiB
+            return 64;
+        case 0x06: // 2 MiB
+            return 128;
+        case 0x07: // 4 MiB
+            return 256;
+        case 0x08: // 8 MiB
+            return 512;
+        default:
+            printf("Unknown ROM size : %02x\n", code);
+            return 0;
+    }
+}
+
+static inline uint8_t get_ramsize(uint8_t code)
+{
+    switch (code)
+    {
+        case 0x00: // No RAM
+            return 0;
+        case 0x02: // 8 KiB
+            return 1;
+        case 0x03: // 32 KiB
+            return 4;
+        case 0x04: // 128 KiB
+            return 16;
+        case 0x05: // 64 KiB
+            return 8;
+        default:
+            printf("Unknown RAM size : %02x\n", code);
+            return 0;
+    }
+}
+
+void mem_load_gamerom(uint8_t *pGameROM)
+{
+    struct cartridge_header_t *pHeader = (struct cartridge_header_t*) &pGameROM[0x100];
+    uint16_t rom_bank = get_romsize(pHeader->ROM_Size);
+    uint8_t ram_bank = get_ramsize(pHeader->RAM_Size);
+
+    printf("Title : %.16s\n", pHeader->aTitle);
+    printf("MBC type: %02x\n", pHeader->CartridgeType);
+    printf("ROM Size : %d (%02x)\n", rom_bank, pHeader->ROM_Size);
+    printf("RAM Size : %d (%02x)\n", ram_bank, pHeader->RAM_Size);
+
+    for (int bank = 0 ; bank < rom_bank ; bank++)
+    {
+        mem.aCartridgeROMBank[bank] = &pGameROM[MEM_CARTRIDGE_ROM_BANK_SIZE * bank];
+    }
+
+    // Alloc Cartridge RAM
+    if (ram_bank > 0)
+    {
+        mem.pCartridgeRAM = (uint8_t*) malloc(ram_bank * MEM_CARTRIDGE_RAM_BANK_SIZE);
+
+        for (int bank = 0 ; bank < rom_bank ; bank++)
+        {
+            mem.aCartridgeRAMBank[bank] = &mem.pCartridgeRAM[MEM_CARTRIDGE_RAM_BANK_SIZE * bank];
+        }
+    }
 }
 
 void mem_hexdump(const uint16_t Addr, const size_t Size)
