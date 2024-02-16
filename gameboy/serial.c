@@ -31,9 +31,10 @@ void serial_exec(void)
             // Output buffer
             serial.output_buffer <<= 1;
             if (serial.pReg->SB & 0x80)
-                serial.output_buffer++;
+                serial.output_buffer |= 1;
 
             serial.pReg->SB <<= 1;
+            serial.pReg->SB |= 0x01; // Disconnected
             serial.xfer_cnt++;
             if (serial.xfer_cnt == 8)
             {
@@ -41,8 +42,8 @@ void serial_exec(void)
                 serial.xfer_cnt = 0;
                 irq.pIF->Flags.Serial = 1;
 
-                printf("%c\n", serial.output_buffer);
-                // putchar(serial.output_buffer);
+                putchar(serial.output_buffer);
+                fflush(stdout);
             }
         }
     }
