@@ -116,7 +116,7 @@ struct ppu_t
     // Screen rendering
     uint8_t x_draw;
     uint8_t x_fetch;
-    uint8_t aScreen[PPU_SCREEN_W][PPU_SCREEN_H];
+    uint32_t aScreen[PPU_SCREEN_W][PPU_SCREEN_H];
     struct fifo_t Fifo_BG;
     struct fifo_t Fifo_OAM;
 

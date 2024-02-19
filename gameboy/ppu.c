@@ -270,7 +270,7 @@ static inline void exec_pxl_xfer(void)
                 continue;
             }
 
-            ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = pxl;
+            ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = ppu.aColor[pxl];
         }
     }
 
@@ -384,7 +384,7 @@ static inline void sdl_render_display(void)
         uint32_t *pRow = (uint32_t *)(pPixels + pitch*y);
         for (int x = 0 ; x < PPU_SCREEN_W ; x++)
         {
-            pRow[x] = ppu.aColor[ppu.aScreen[x][y]];
+            pRow[x] = ppu.aScreen[x][y];
         }
     }
 
