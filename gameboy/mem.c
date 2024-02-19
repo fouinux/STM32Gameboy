@@ -240,7 +240,7 @@ static void mbc1_write(uint16_t Addr, uint8_t Value)
     switch (Addr & 0x6000) // Look only bits 13 & 14
     {
         case 0x0000: // RAM Enable
-            mem.MBC1.RAM_Enabled = (Value == 0x0A);
+            mem.MBC1.RAM_Enabled = ((Value & 0x0F) == 0x0A);
             break;
         case 0x2000: // ROM Bank Number
             mem.MBC1.ROMIndex1_LSB = Value & 0x1F;
