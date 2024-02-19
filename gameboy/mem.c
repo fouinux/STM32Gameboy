@@ -38,19 +38,30 @@ struct cartridge_header_t
     uint8_t aGlobalChecksum[2];
 };
 
+// MBC1 specific
+struct mbc1_t
+{
+    bool RAM_Enabled;
+    uint8_t ROMIndex1_LSB;
+    uint8_t ROMIndex1_MSB;
+    bool BankingMode; // 0 : simple; 1 : advanced
+};
+
 struct memory_map_t
 {
     bool BootROMEnabled;
     uint8_t *pBootROM; // BootROM
     uint8_t *pCartridgeRAM;
+    bool CartridgeRAM_Enabled;
 
     // Array of pointers on cartridge ROM Banks
     uint8_t *aCartridgeROMBank[MEM_CARTRIDGE_ROM_BANK_MAX];
     uint8_t *aCartridgeRAMBank[MEM_CARTRIDGE_RAM_BANK_MAX];
 
     // Mapped Banks
-    uint8_t ROMIndex; // [0x4000 - 0x8000]
-    uint8_t RAMIndex; // [0xA000 - 0xC000]
+    uint8_t ROMIndex0; // [0x0000 - 0x3FFF]
+    uint8_t ROMIndex1; // [0x4000 - 0x7FFF]
+    uint8_t RAMIndex;  // [0xA000 - 0xBFFF]
 
     // On board RAM
     uint8_t SRAM[MEM_SRAM_SIZE];
@@ -60,6 +71,13 @@ struct memory_map_t
     uint8_t IOPorts[MEM_IO_PORTS_SIZE];
 
     bool dma_ongoing;
+
+    // Cartidge specs
+    uint8_t ROMSize;
+    uint8_t RAMSize;
+
+    // MBCx
+    struct mbc1_t MBC1;
 
 } mem;
 
@@ -102,12 +120,12 @@ static void* mem_translation(uint16_t Addr, bool Override)
         case 0x1000:
         case 0x2000:
         case 0x3000:
-            return &mem.aCartridgeROMBank[0][Addr];
+            return &mem.aCartridgeROMBank[mem.ROMIndex0][Addr];
         case 0x4000: // Mapped ROM Bank
         case 0x5000:
         case 0x6000:
         case 0x7000:
-            return &mem.aCartridgeROMBank[mem.ROMIndex][Addr - 0x4000];
+            return &mem.aCartridgeROMBank[mem.ROMIndex1][Addr - 0x4000];
         case 0x8000: // VRAM
         case 0x9000:
             if (Override || ppu.pReg->STAT_Flags.ModeFlag != STATE_PXL_XFER)
@@ -115,7 +133,9 @@ static void* mem_translation(uint16_t Addr, bool Override)
             return NULL; // Not accessible during Pixel Transfer
         case 0xA000: // Cartridge RAM
         case 0xB000:
-            return NULL;// &mem.aCartridgeRAMBank[mem.RAMIndex][Addr - 0xA000];
+            if (mem.CartridgeRAM_Enabled)
+                return &mem.aCartridgeRAMBank[mem.RAMIndex][Addr - 0xA000];
+            return NULL;
         case 0xC000: // WRAM
         case 0xD000:
             return &mem.SRAM[Addr - 0xC000];
@@ -215,6 +235,38 @@ static void action_on_w8(uint16_t Addr, uint8_t Value, uint8_t *pU8)
     }
 }
 
+static void mbc1_write(uint16_t Addr, uint8_t Value)
+{
+    switch (Addr & 0x6000) // Look only bits 13 & 14
+    {
+        case 0x0000: // RAM Enable
+            mem.MBC1.RAM_Enabled = (Value == 0x0A);
+            break;
+        case 0x2000: // ROM Bank Number
+            mem.MBC1.ROMIndex1_LSB = Value & 0x1F;
+            break;
+        case 0x4000: // RAM Bank Number
+            mem.MBC1.ROMIndex1_MSB = Value & 0x03;
+            break;
+        case 0x6000: // Banking Mode Select
+            mem.MBC1.BankingMode = Value & 0x01;
+            break;
+    }
+
+    if (mem.MBC1.BankingMode == 0)
+    {
+        mem.ROMIndex0 = 0;
+        mem.RAMIndex = 0;
+    }
+    else
+    {
+        mem.ROMIndex0 = (mem.MBC1.ROMIndex1_MSB << 5);
+        mem.RAMIndex = mem.MBC1.ROMIndex1_MSB;
+    }
+
+    mem.ROMIndex1 = (mem.MBC1.ROMIndex1_LSB == 0) ? 1 : mem.MBC1.ROMIndex1_LSB;
+}
+
 void mem_init()
 {
     // Init BootROM location
@@ -231,8 +283,14 @@ void mem_init()
     memset(mem.aCartridgeRAMBank, 0, MEM_CARTRIDGE_RAM_BANK_MAX * sizeof(uint8_t *));
 
     // Map memory
-    mem.ROMIndex = 1;
+    mem.ROMIndex0 = 0;
+    mem.ROMIndex1 = 1;
     mem.RAMIndex = 0;
+
+    // Cartridge
+    mem.CartridgeRAM_Enabled = false;
+    mem.ROMSize = 0;
+    mem.RAMSize = 0;
 }
 
 uint8_t mem_read_u8(uint16_t Addr)
@@ -279,7 +337,7 @@ void mem_write_u8(uint16_t Addr, uint8_t Value)
     }
     else
     {
-        // TODO: Implement MBC
+        mbc1_write(Addr, Value);
     }
 }
 
@@ -339,30 +397,12 @@ void mem_set_bootrom(uint8_t *pBootROM)
 
 static inline uint16_t get_romsize(uint8_t code)
 {
-    switch (code)
+    if (code > 0x08)
     {
-        case 0x00: // 32 KiB
-            return 2;
-        case 0x01: // 64 KiB
-            return 4;
-        case 0x02: // 128 KiB
-            return 8;
-        case 0x03: // 256 KiB
-            return 16;
-        case 0x04: // 512 KiB
-            return 32;
-        case 0x05: // 1 MiB
-            return 64;
-        case 0x06: // 2 MiB
-            return 128;
-        case 0x07: // 4 MiB
-            return 256;
-        case 0x08: // 8 MiB
-            return 512;
-        default:
-            printf("Unknown ROM size : %02x\n", code);
-            return 0;
+        printf("Unknown ROM size : %02x\n", code);
+        return 0;
     }
+    return 0x02 << code;
 }
 
 static inline uint8_t get_ramsize(uint8_t code)
@@ -388,8 +428,12 @@ static inline uint8_t get_ramsize(uint8_t code)
 void mem_load_gamerom(uint8_t *pGameROM)
 {
     struct cartridge_header_t *pHeader = (struct cartridge_header_t*) &pGameROM[0x100];
-    uint16_t rom_bank = get_romsize(pHeader->ROM_Size);
-    uint8_t ram_bank = get_ramsize(pHeader->RAM_Size);
+
+    mem.ROMSize = pHeader->ROM_Size;
+    mem.RAMSize = pHeader->RAM_Size;
+
+    uint16_t rom_bank = get_romsize(mem.ROMSize);
+    uint8_t ram_bank = get_ramsize(mem.RAMSize);
 
     printf("Title : %.16s\n", pHeader->aTitle);
     printf("MBC type: %02x\n", pHeader->CartridgeType);
@@ -406,7 +450,7 @@ void mem_load_gamerom(uint8_t *pGameROM)
     {
         mem.pCartridgeRAM = (uint8_t*) malloc(ram_bank * MEM_CARTRIDGE_RAM_BANK_SIZE);
 
-        for (int bank = 0 ; bank < rom_bank ; bank++)
+        for (int bank = 0 ; bank < ram_bank ; bank++)
         {
             mem.aCartridgeRAMBank[bank] = &mem.pCartridgeRAM[MEM_CARTRIDGE_RAM_BANK_SIZE * bank];
         }
