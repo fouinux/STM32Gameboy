@@ -159,13 +159,37 @@ static const uint16_t aTileConvertMirrorHelper[256] = {
     0x5500, 0x5501, 0x5504, 0x5505, 0x5510, 0x5511, 0x5514, 0x5515, 0x5540, 0x5541, 0x5544, 0x5545, 0x5550, 0x5551, 0x5554, 0x5555
 };
 
-static inline void fetch_bg_win_tile(uint8_t *pTileMap)
+static inline void fetch_bg_tile(void)
 {
     uint8_t tile_x = (ppu.pReg->SCX + ppu.x_fetch) >> 3;
     uint8_t tile_y = (ppu.pReg->SCY + ppu.pReg->LY) >> 3;
     uint16_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
 
-    uint16_t tile_id = pTileMap[tile_map_id];
+    uint16_t tile_id = ppu.pBGTileMap[tile_map_id];
+    struct tile_t *pTile = &((struct tile_t*) ppu.pBGWinTileData)[tile_id];
+
+    uint8_t line = (ppu.pReg->SCY + ppu.pReg->LY) & 0x07;
+
+    uint8_t upper = pTile->Line[line].Upper;
+    uint8_t lower = pTile->Line[line].Lower;
+
+    uint16_t result = aTileConvertHelper[upper] | (aTileConvertHelper[lower] << 1);
+
+    // Extract and put pixels in FIFO
+    for (uint8_t i = 0 ; i < 8 ; i++)
+    {
+        fifo_enqueue(&ppu.Fifo_BG, result & 0x03);
+        result >>= 2;
+    }
+}
+
+static inline void fetch_win_tile(void)
+{
+    uint8_t tile_x = (ppu.x_fetch - ppu.pReg->WX + 7) >> 3;
+    uint8_t tile_y = (ppu.pReg->LY - ppu.pReg->WY) >> 3;
+    uint16_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
+
+    uint16_t tile_id = ppu.pWinTileMap[tile_map_id];
     struct tile_t *pTile = &((struct tile_t*) ppu.pBGWinTileData)[tile_id];
 
     uint8_t line = (ppu.pReg->SCY + ppu.pReg->LY) & 0x07;
@@ -269,28 +293,32 @@ static inline void exec_pxl_xfer(void)
             }
 
             ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = ppu.aColor[pxl];
+
+            // Start of window
+            if (ppu.pReg->LCDC_Flags.WindowEnable && (ppu.pReg->LY >= ppu.pReg->WY))
+            {
+                if (ppu.x_draw + 7 == ppu.pReg->WX)
+                {
+                    fifo_flush(&ppu.Fifo_BG);
+                    ppu.x_fetch = 0; // Reset to start drawing window
+                    break;
+                }
+            }
         }
     }
 
     // Fetch BG or Window
     if (ppu.Fifo_BG.Size <= 8)
     {
-        uint8_t *pTileMap = ppu.pBGTileMap; // BG by default
-
-        if (ppu.pReg->LCDC_Flags.WindowEnable == 1)
+        if (ppu.pReg->LCDC_Flags.WindowEnable && (ppu.pReg->LY >= ppu.pReg->WY))
         {
-            if (ppu.pReg->LY >= ppu.pReg->WY)
-            {
-                if (ppu.x_draw >= ppu.pReg->WX)
-                {
-                    if (ppu.x_draw == ppu.pReg->WX)
-                        fifo_flush(&ppu.Fifo_BG);
-                    pTileMap =  ppu.pWinTileMap;
-                }
-            }
+            if (ppu.x_draw + 7 >= ppu.pReg->WX)
+                fetch_win_tile();
+            else
+                fetch_bg_tile();
         }
-
-        fetch_bg_win_tile(pTileMap);
+        else
+            fetch_bg_tile();
 
         ppu.x_fetch += 8;
     }
