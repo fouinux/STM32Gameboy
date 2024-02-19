@@ -222,17 +222,15 @@ static inline void exec_pxl_xfer(void)
     // BG and Window disabled
     if (ppu.pReg->LCDC_Flags.BGEnable == 0)
     {
-        ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = ppu.aColor[0]; // White
-        ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = ppu.aColor[0]; // White
-        ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = ppu.aColor[0]; // White
-        ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = ppu.aColor[0]; // White
+        for (int i = 0 ; i < 4 && ppu.x_draw < PPU_SCREEN_W  ; i++)
+            ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = ppu.aColor[0]; // White
         return;
     }
 
     // Pixels mixing
     if (ppu.Fifo_BG.Size > 8)
     {
-        for (int i = 0 ; i < 4 ; i++)
+        for (int i = 0 ; i < 4 && ppu.x_draw < PPU_SCREEN_W  ; i++)
         {
             // Can out a pixel only if fifo has more than 8 pixels
             if (ppu.Fifo_BG.Size <= 8)
