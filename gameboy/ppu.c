@@ -26,6 +26,7 @@
 
 #define TILE_MAP_SIZE               32
 #define TILE_SIZE                   16
+#define TILE_LINE                   8
 
 #define get_tile_offset(ID)         (ID * TILE_SIZE)
 #define get_tile_line_offset(ID, LINE)  (get_tile_offset(ID) + 2 * LINE)
@@ -67,6 +68,14 @@ struct palette_t
 } __attribute__ ((__packed__));
 
 struct ppu_t ppu;
+
+static inline struct tile_t* get_tile(uint8_t tile_id)
+{
+    if (ppu.pReg->LCDC_Flags.BGWindowTileData == 0) // 0x8800-0x97FF
+        tile_id -= 128;
+
+    return &((struct tile_t*) ppu.pBGWinTileData)[tile_id];
+}
 
 /**
  * Search of 10 visible sprites
@@ -173,8 +182,8 @@ static inline void fetch_bg_tile(void)
     uint8_t tile_y = (ppu.pReg->SCY + ppu.pReg->LY) >> 3;
     uint16_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
 
-    uint16_t tile_id = ppu.pBGTileMap[tile_map_id];
-    struct tile_t *pTile = &((struct tile_t*) ppu.pBGWinTileData)[tile_id];
+    uint8_t tile_id = ppu.pBGTileMap[tile_map_id];
+    struct tile_t *pTile = get_tile(tile_id);
 
     uint8_t line = (ppu.pReg->SCY + ppu.pReg->LY) & 0x07;
 
@@ -195,10 +204,10 @@ static inline void fetch_win_tile(void)
 {
     uint8_t tile_x = (ppu.x_fetch - ppu.pReg->WX + 7) >> 3;
     uint8_t tile_y = (ppu.pReg->LY - ppu.pReg->WY) >> 3;
-    uint16_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
+    uint8_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
 
     uint16_t tile_id = ppu.pWinTileMap[tile_map_id];
-    struct tile_t *pTile = &((struct tile_t*) ppu.pBGWinTileData)[tile_id];
+    struct tile_t *pTile = get_tile(tile_id);
 
     uint8_t line = (ppu.pReg->SCY + ppu.pReg->LY) & 0x07;
 
@@ -397,6 +406,25 @@ void ppu_init(void)
                                 SDL_TEXTUREACCESS_STREAMING,
                                 PPU_SCREEN_W,
                                 PPU_SCREEN_H);
+
+    // ppu.pDebugWindow = SDL_CreateWindow("VRAM",
+    //                            SDL_WINDOWPOS_UNDEFINED,
+    //                            SDL_WINDOWPOS_UNDEFINED,
+    //                            PPU_BG_W * SCALE,
+    //                            PPU_BG_H * SCALE,
+    //                            SDL_WINDOW_OPENGL);
+    // if(NULL == ppu.pDebugWindow)
+    // {
+    //     // In the case that the window could not be made...
+    //     printf("Could not create debug window: %s\n", SDL_GetError());
+    //     return;
+    // }
+    // ppu.pDebugRenderer = SDL_CreateRenderer(ppu.pDebugWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    // ppu.pDebugTexture = SDL_CreateTexture(ppu.pDebugRenderer,
+    //                             SDL_PIXELFORMAT_RGBA8888,
+    //                             SDL_TEXTUREACCESS_STREAMING,
+    //                             PPU_BG_W,
+    //                             PPU_BG_H);
 }
 
 void ppu_destroy(void)
@@ -474,7 +502,10 @@ void ppu_exec(void)
 
         case STATE_OAM_SEARCH:
             // if (ppu.state_counter == 1 && ppu.pReg->LY == 0)
-            //     ppu_print_reg();
+            // {
+            //     //     ppu_print_reg();
+            //     ppu_print_bg();
+            // }
 
             if (ppu.state_counter == 1)
                 exec_oam_search();
@@ -561,14 +592,55 @@ void ppu_update_obp1(void)
     ppu.aOBP1[3] = pOBP1->ID3;
 }
 
-void ppu_print_bg(uint8_t *pPixels, int pitch)
+void ppu_print_tiles(void)
 {
-    // Get BG map and data
     uint8_t* pVRAM = mem_get_vram();
-    uint16_t BGTileMapOffset = (ppu.pReg->LCDC_Flags.BGTileMapAddr == 0) ? 0x1800 : 0x1C00;
-    uint16_t BGTileDataOffset = (ppu.pReg->LCDC_Flags.BGWindowTileData == 0) ? 0x0800 : 0x0000;
-    uint8_t* pBGTileMap = pVRAM + BGTileMapOffset;
-    uint8_t* pBGTileData = pVRAM + BGTileDataOffset;
+    uint8_t *pPixels;
+    int pitch;
+
+    SDL_LockTexture(ppu.pDebugTexture, NULL, (void**) &pPixels, &pitch);
+
+    // For all tiles
+    for (int y = 0 ; y < 24 ; y++)
+    {
+        for (int x = 0 ; x < 16 ; x++)
+        {
+            // Get BG tile id
+            uint16_t tile_id = x + y * 16;
+            struct tile_t *pTile = &((struct tile_t *) pVRAM)[tile_id];
+
+            // Draw the tile
+            for (int line = 0 ; line < TILE_LINE ; line++)
+            {
+                uint8_t upper = pTile->Line[line].Upper;
+                uint8_t lower = pTile->Line[line].Lower;
+
+                uint16_t result =  aTileConvertHelper[upper] | (aTileConvertHelper[lower] << 1);
+
+                // Get the line
+                uint32_t *pRow = (uint32_t *)(pPixels + pitch*(y*8+line));
+                for (int pixel = 0 ; pixel < 8 ; pixel++)
+                {
+                    pRow[pixel + x * 8] = ppu.aColor[ppu.aBGP[result & 0x03]];
+                    result >>= 2;
+                }
+            }
+        }
+    }
+
+    SDL_UnlockTexture(ppu.pDebugTexture);
+
+    SDL_RenderClear(ppu.pDebugRenderer);
+    SDL_RenderCopy(ppu.pDebugRenderer, ppu.pDebugTexture, NULL, NULL);
+    SDL_RenderPresent(ppu.pDebugRenderer);
+}
+
+void ppu_print_bg(void)
+{
+    uint8_t *pPixels;
+    int pitch;
+
+    SDL_LockTexture(ppu.pDebugTexture, NULL, (void**) &pPixels, &pitch);
 
     // Tile map to render
     for (int y = 0 ; y < TILE_MAP_SIZE ; y++)
@@ -576,27 +648,32 @@ void ppu_print_bg(uint8_t *pPixels, int pitch)
         for (int x = 0 ; x < TILE_MAP_SIZE ; x++)
         {
             // Get BG tile id
-            uint8_t tileId = *(pBGTileMap + x + y * TILE_MAP_SIZE);
-            uint8_t *pTile = pBGTileData + get_tile_offset(tileId);
+            uint16_t tile_map_id = x + y * TILE_MAP_SIZE;
+            uint8_t tile_id = ppu.pBGTileMap[tile_map_id];
+            struct tile_t *pTile = get_tile(tile_id);
 
             // Draw the tile
-            for (int i = 0 ; i < TILE_SIZE ; i+=2)
+            for (int line = 0 ; line < TILE_LINE ; line++)
             {
-                uint8_t upper = pTile[i];
-                uint8_t lower = pTile[i+1];
+                uint8_t upper = pTile->Line[line].Upper;
+                uint8_t lower = pTile->Line[line].Lower;
+
+                uint16_t result =  aTileConvertHelper[upper] | (aTileConvertHelper[lower] << 1);
 
                 // Get the line
-                uint32_t *p = (uint32_t *)(pPixels + pitch*(y*8+i/2));
-                p += 8 * x; // correct the x
-
+                uint32_t *pRow = (uint32_t *)(pPixels + pitch*(y*8+line));
                 for (int pixel = 0 ; pixel < 8 ; pixel++)
                 {
-                    // Print pixel
-                    uint8_t colorId = (upper >> (7-pixel) & 0x01) + ((lower >> (7-pixel) & 0x01) << 1);
-                    *p = ppu.aColor[ppu.aBGP[colorId]];
-                    p++;
+                    pRow[pixel + x * 8] = ppu.aColor[ppu.aBGP[result & 0x03]];
+                    result >>= 2;
                 }
             }
         }
     }
+
+    SDL_UnlockTexture(ppu.pDebugTexture);
+
+    SDL_RenderClear(ppu.pDebugRenderer);
+    SDL_RenderCopy(ppu.pDebugRenderer, ppu.pDebugTexture, NULL, NULL);
+    SDL_RenderPresent(ppu.pDebugRenderer);
 }

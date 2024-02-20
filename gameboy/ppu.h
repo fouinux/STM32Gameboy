@@ -115,6 +115,11 @@ struct ppu_t
     SDL_Window* pWindow;
     SDL_Renderer *pRenderer;
     uint32_t aColor[4];
+
+    // Debug
+    SDL_Texture* pDebugTexture;
+    SDL_Window* pDebugWindow;
+    SDL_Renderer *pDebugRenderer;
 };
 
 extern struct ppu_t ppu;
@@ -128,6 +133,7 @@ void ppu_update_bgp(void);
 void ppu_update_obp0(void);
 void ppu_update_obp1(void);
 
-void ppu_print_bg(uint8_t *pPixels, int pitch);
+void ppu_print_tiles(void);
+void ppu_print_bg(void);
 
 #endif /* INC_PPU_H_ */
