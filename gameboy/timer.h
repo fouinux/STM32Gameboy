@@ -28,7 +28,7 @@ struct timer_reg_t
         } TAC_Flags;
     };
 
-};
+} __attribute__ ((__packed__));
 
 struct timer_t
 {

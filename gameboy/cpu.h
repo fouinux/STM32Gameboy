@@ -65,7 +65,7 @@ struct cpu_reg_t
 	};
 	uint16_t SP; // Stack Pointer
 	uint16_t PC; // Program Counter
-};
+} __attribute__((__packed__));
 
 struct cpu_t
 {

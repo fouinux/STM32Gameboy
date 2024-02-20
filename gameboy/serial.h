@@ -23,7 +23,7 @@ struct serial_reg_t
             uint8_t TransferEnable : 1;
         } SC_Flags;
     };
-};
+} __attribute__ ((__packed__));
 
 struct serial_t
 {

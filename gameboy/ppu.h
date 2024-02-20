@@ -30,21 +30,6 @@ enum ppu_state_t
     STATE_PXL_XFER,
 };
 
-struct ppu_palette_t
-{
-    union
-    {
-        struct
-        {
-            uint8_t ID0 : 2;
-            uint8_t ID1 : 2;
-            uint8_t ID2 : 2;
-            uint8_t ID3 : 2;
-        };
-        uint8_t Value;
-    };
-};
-
 struct ppu_reg_t
 {
     union
@@ -83,12 +68,12 @@ struct ppu_reg_t
     uint8_t LY;     // LCDC Y-Coordinate
     uint8_t LYC;    // LY Compare
     uint8_t DMA;    // DMA Transfer and Start
-    struct ppu_palette_t BGP;    // BG Palette
-    struct ppu_palette_t OBP0;   // Object Palette 0
-    struct ppu_palette_t OBP1;   // Object Palette 1
+    uint8_t BGP;    // BG Palette
+    uint8_t OBP0;   // Object Palette 0
+    uint8_t OBP1;   // Object Palette 1
     uint8_t WY;     // Window Y Position
     uint8_t WX;     // Window X Position
-};
+} __attribute__ ((__packed__));
 
 struct ppu_t
 {

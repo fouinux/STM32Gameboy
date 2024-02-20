@@ -26,7 +26,7 @@ struct irq_reg_t
             uint8_t : 3;
         } Flags;
     };
-};
+} __attribute__ ((__packed__));
 
 struct irq_t
 {

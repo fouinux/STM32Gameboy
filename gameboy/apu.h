@@ -237,7 +237,7 @@ struct apu_reg_t
         uint8_t Lower: 4;
         uint8_t Upper: 4;
     } Wave[16]; // 0xFF30 - 0xFF3F : Wave pattern RAM
-};
+} __attribute__ ((__packed__));
 
 struct apu_t
 {

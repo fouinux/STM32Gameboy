@@ -42,7 +42,7 @@ struct joypad_reg_t
             };
         };
     };
-};
+} __attribute__ ((__packed__));
 
 struct joypad_t
 {

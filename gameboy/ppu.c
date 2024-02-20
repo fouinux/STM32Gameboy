@@ -37,7 +37,7 @@ struct tile_t
         uint8_t Upper;
         uint8_t Lower;
     } Line[8];
-};
+} __attribute__ ((__packed__));
 
 struct oam_entry_t
 {
@@ -56,7 +56,15 @@ struct oam_entry_t
             uint8_t Priority : 1;
         } Attributes_Flags;
     };
-};
+} __attribute__ ((__packed__));
+
+struct palette_t
+{
+    uint8_t ID0 : 2;
+    uint8_t ID1 : 2;
+    uint8_t ID2 : 2;
+    uint8_t ID3 : 2;
+} __attribute__ ((__packed__));
 
 struct ppu_t ppu;
 
@@ -331,7 +339,7 @@ static inline void ppu_print_reg(void)
     printf("\tLCDC = 0x%02X\tSTAT = 0x%02X\n", ppu.pReg->LCDC, ppu.pReg->STAT);
     printf("\tSCY = 0x%02X\tSCX = 0x%02X\n", ppu.pReg->SCY, ppu.pReg->SCX);
     printf("\tLY  = 0x%02X\tLYC = 0x%02X\n", ppu.pReg->LY, ppu.pReg->LYC);
-    printf("\tBGP = 0x%02X\tOBP0 = 0x%02X\tOBP1 = 0x%02X\n", ppu.pReg->BGP.Value, ppu.pReg->OBP0.Value, ppu.pReg->OBP1.Value);
+    printf("\tBGP = 0x%02X\tOBP0 = 0x%02X\tOBP1 = 0x%02X\n", ppu.pReg->BGP, ppu.pReg->OBP0, ppu.pReg->OBP1);
     printf("\tWY  = 0x%02X\tWX  = 0x%02X\n\n", ppu.pReg->WY, ppu.pReg->WX);
 }
 
@@ -519,30 +527,38 @@ void ppu_update_lcdc(void)
     ppu.pBGTileMap = &pVRAM[(ppu.pReg->LCDC_Flags.BGTileMapAddr == 0) ? 0x1800 : 0x1C00];
     ppu.pWinTileMap = &pVRAM[(ppu.pReg->LCDC_Flags.WindowTileMapAddr == 0) ? 0x1800 : 0x1C00];
     ppu.pBGWinTileData = &pVRAM[(ppu.pReg->LCDC_Flags.BGWindowTileData == 0) ? 0x0800 : 0x0000];
+
+    // printf("LCDC: %02x\n", ppu.pReg->LCDC);
+    // printf("pBGTileMap = %04lx\n", ppu.pBGTileMap - pVRAM);
+    // printf("pWinTileMap = %04lx\n", ppu.pWinTileMap - pVRAM);
+    // printf("pBGWinTileData = %04lx\n", ppu.pBGWinTileData - pVRAM);
 }
 
 void ppu_update_bgp(void)
 {
-    ppu.aBGP[0] = ppu.pReg->BGP.ID0;
-    ppu.aBGP[1] = ppu.pReg->BGP.ID1;
-    ppu.aBGP[2] = ppu.pReg->BGP.ID2;
-    ppu.aBGP[3] = ppu.pReg->BGP.ID3;
+    struct palette_t *pBGP = (struct palette_t*) &ppu.pReg->BGP;
+    ppu.aBGP[0] = pBGP->ID0;
+    ppu.aBGP[1] = pBGP->ID1;
+    ppu.aBGP[2] = pBGP->ID2;
+    ppu.aBGP[3] = pBGP->ID3;
 }
 
 void ppu_update_obp0(void)
 {
-    ppu.aOBP0[0] = ppu.pReg->OBP0.ID0;
-    ppu.aOBP0[1] = ppu.pReg->OBP0.ID1;
-    ppu.aOBP0[2] = ppu.pReg->OBP0.ID2;
-    ppu.aOBP0[3] = ppu.pReg->OBP0.ID3;
+    struct palette_t *pOBP0 = (struct palette_t*) &ppu.pReg->OBP0;
+    ppu.aOBP0[0] = pOBP0->ID0;
+    ppu.aOBP0[1] = pOBP0->ID1;
+    ppu.aOBP0[2] = pOBP0->ID2;
+    ppu.aOBP0[3] = pOBP0->ID3;
 }
 
 void ppu_update_obp1(void)
 {
-    ppu.aOBP1[0] = ppu.pReg->OBP1.ID0;
-    ppu.aOBP1[1] = ppu.pReg->OBP1.ID1;
-    ppu.aOBP1[2] = ppu.pReg->OBP1.ID2;
-    ppu.aOBP1[3] = ppu.pReg->OBP1.ID3;
+    struct palette_t *pOBP1 = (struct palette_t*) &ppu.pReg->OBP1;
+    ppu.aOBP1[0] = pOBP1->ID0;
+    ppu.aOBP1[1] = pOBP1->ID1;
+    ppu.aOBP1[2] = pOBP1->ID2;
+    ppu.aOBP1[3] = pOBP1->ID3;
 }
 
 void ppu_print_bg(uint8_t *pPixels, int pitch)
