@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <SDL2/SDL.h>
 #include <time.h>
 
 #include "gameboy/cpu.h"
@@ -13,8 +12,7 @@
 #include "gameboy/joypad.h"
 #include "gameboy/serial.h"
 #include "gameboy/debug.h"
-
-#define SCALE       2
+#include "gameboy/msdl.h"
 
 uint8_t aBootROM[256];
 
@@ -76,58 +74,15 @@ static inline int load_gamerom(const char *pFilename, uint8_t **pGameROM, uint8_
     return EXIT_SUCCESS;
 }
 
-static inline void handle_keyboard(SDL_KeyboardEvent *pEvent)
-{
-    if (NULL == pEvent)
-        return;
-
-    bool state = (SDL_KEYDOWN == pEvent->type) ? true : false;
-
-    switch (pEvent->keysym.sym)
-    {
-        case SDLK_UP:
-            joypad_set_input(UP, state);
-            break;
-        case SDLK_DOWN:
-            joypad_set_input(DOWN, state);
-            break;
-        case SDLK_RIGHT:
-            joypad_set_input(RIGHT, state);
-            break;
-        case SDLK_LEFT:
-            joypad_set_input(LEFT, state);
-            break;
-        case SDLK_KP_PERIOD:
-            joypad_set_input(A, state);
-            break;
-        case SDLK_KP_0:
-            joypad_set_input(B, state);
-            break;
-        case SDLK_DELETE:
-            joypad_set_input(SELECT, state);
-            break;
-        case SDLK_END:
-            joypad_set_input(START, state);
-            break;
-    }
-}
-
 int main(int argc, char *argv[])
 {
     // Common vars
-    SDL_Event event;
     bool cpuDebug = false;
+    bool render = false;
 
     // Boot & Game ROMs
     uint8_t gameROMBanks = 0;
     uint8_t *pGameROM;
-
-    // Init SDL
-    if (SDL_Init(SDL_INIT_VIDEO) != 0 )
-    {
-        fprintf(stdout, "SDL_Init failed(%s)\n", SDL_GetError());
-        return EXIT_FAILURE;
-    }
 
     // Load bootrom
     if (load_bootrom("DMG_ROM.bin"))
@@ -140,6 +95,9 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     if (load_gamerom(argv[1], &pGameROM, &gameROMBanks))
+        return EXIT_FAILURE;
+
+    if (msdl_init())
         return EXIT_FAILURE;
 
     // Init gameboy emulator
@@ -158,58 +116,29 @@ int main(int argc, char *argv[])
 
     while(true)
     {
-        if (SDL_PollEvent(&event))
+        // if (cpu.reg.PC == 0x100)
+        //     cpuDebug = true;
+
+        // Run Gameboy emulation
+        cpu_exec(cpuDebug);
+        render = ppu_exec();
+        timer_exec();
+        // serial_exec();
+        if (!msdl_loop(render))
         {
-            if (event.type == SDL_QUIT)
-            {
 #ifdef DEBUG
                 // Exec 10 more CPU cyles (help debug)
                 for (int i = 0 ; i < 50 ; i++)
                     cpu_exec(true);
-#endif
-                break;
-            }
-
-            // Handle keyboard
-            if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP)
-                handle_keyboard(&event.key);
+#endif 
+            break;
         }
-
-        // if (cpu.reg.PC == 0x2F8)
-        // {
-        //     printf("GAME_STATUS\n");
-        //     cpuDebug = true;
-        // }
-
-        // if (cpu.reg.PC == 0x100)
-        //     cpuDebug = true;
-
-        // if (cpu.reg.PC == 0x0293)
-        // {
-        //     mem_hexdump(0xFF80, 128);
-        //     cpuDebug = true;
-        // }
-
-        // if (cpu.reg.PC == 0x02A0)
-        // {
-        //     mem_hexdump(0xFF80, 128);
-        //     return 0;
-        // }
-
-        // Run Gameboy emulation
-        cpu_exec(cpuDebug);
-        ppu_exec();
-        timer_exec();
-        // serial_exec();
-
     }
 
     free(pGameROM);
 
     // Clean SDL stuff
-    ppu_destroy();
+    msdl_deinit();
 
-    // Clean up
-    SDL_Quit();
     return EXIT_SUCCESS;
 }

@@ -101,7 +101,6 @@ struct ppu_t
     // Screen rendering
     uint8_t x_draw;
     uint8_t x_fetch;
-    uint32_t aScreen[PPU_SCREEN_W][PPU_SCREEN_H];
     struct fifo_t Fifo_BG;
     struct fifo_t Fifo_OAM;
 
@@ -110,23 +109,19 @@ struct ppu_t
 
     bool STAT_Irq;
 
-    // SDL Specific
-    SDL_Texture* pTexture;
-    SDL_Window* pWindow;
-    SDL_Renderer *pRenderer;
-    uint32_t aColor[4];
-
-    // Debug
-    SDL_Texture* pDebugTexture;
-    SDL_Window* pDebugWindow;
-    SDL_Renderer *pDebugRenderer;
+    // Hardware dependant rendering
+    uint32_t *pColors;
+    uint8_t *pPixels;
+    int pitch;
+    uint32_t *pScreenRow;
 };
 
 extern struct ppu_t ppu;
 
 void ppu_init(void);
-void ppu_destroy(void);
-void ppu_exec(void);
+void ppu_set_colors(uint32_t *pColors);
+void ppu_set_video_buffer(uint8_t* pPixels, int pitch);
+bool ppu_exec(void);
 
 void ppu_update_lcdc(void);
 void ppu_update_bgp(void);

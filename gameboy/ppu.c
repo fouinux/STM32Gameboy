@@ -12,8 +12,6 @@
 
 #include <SDL2/SDL.h>
 
-#define SCALE                       2
-
 #define STATE_HBLANK_DURATION       51
 #define STATE_VBLANK_DURATION       114
 #define STATE_OAM_SEARCH_DURATION   20
@@ -264,7 +262,7 @@ static inline void exec_pxl_xfer(void)
     if (ppu.pReg->LCDC_Flags.BGEnable == 0)
     {
         for (int i = 0 ; i < 4 && ppu.x_draw < PPU_SCREEN_W  ; i++)
-            ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = ppu.aColor[0]; // White
+            ppu.pScreenRow[ppu.x_draw++] = ppu.pColors[0]; // White
         return;
     }
 
@@ -309,7 +307,7 @@ static inline void exec_pxl_xfer(void)
                 continue;
             }
 
-            ppu.aScreen[ppu.x_draw++][ppu.pReg->LY] = ppu.aColor[pxl];
+            ppu.pScreenRow[ppu.x_draw++] = ppu.pColors[pxl];
 
             // Start of window
             if (ppu.pReg->LCDC_Flags.WindowEnable && (ppu.pReg->LY >= ppu.pReg->WY))
@@ -379,88 +377,25 @@ void ppu_init(void)
     fifo_init(&ppu.Fifo_OAM);
 
     ppu.STAT_Irq = false;
-
-    // SDL Specific
-    SDL_PixelFormat *pPixelFormat = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
-    ppu.aColor[0] = SDL_MapRGBA(pPixelFormat, 0xFF, 0xFF, 0xFF, 0xFF); // White
-    ppu.aColor[1] = SDL_MapRGBA(pPixelFormat, 0xAA, 0xAA, 0xAA, 0xFF); // Light gray
-    ppu.aColor[2] = SDL_MapRGBA(pPixelFormat, 0x55, 0x55, 0x55, 0xFF); // Dark gray
-    ppu.aColor[3] = SDL_MapRGBA(pPixelFormat, 0x00, 0x00, 0x00, 0xFF); // Black
-
-    // Create Display Window
-    ppu.pWindow = SDL_CreateWindow("STM32 Gameboy",
-                               SDL_WINDOWPOS_UNDEFINED,
-                               SDL_WINDOWPOS_UNDEFINED,
-                               PPU_SCREEN_W * SCALE,
-                               PPU_SCREEN_H * SCALE,
-                               SDL_WINDOW_OPENGL);
-    if(NULL == ppu.pWindow)
-    {
-        // In the case that the window could not be made...
-        printf("Could not create display window: %s\n", SDL_GetError());
-        return;
-    }
-    ppu.pRenderer = SDL_CreateRenderer(ppu.pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    ppu.pTexture = SDL_CreateTexture(ppu.pRenderer,
-                                SDL_PIXELFORMAT_RGBA8888,
-                                SDL_TEXTUREACCESS_STREAMING,
-                                PPU_SCREEN_W,
-                                PPU_SCREEN_H);
-
-    // ppu.pDebugWindow = SDL_CreateWindow("VRAM",
-    //                            SDL_WINDOWPOS_UNDEFINED,
-    //                            SDL_WINDOWPOS_UNDEFINED,
-    //                            PPU_BG_W * SCALE,
-    //                            PPU_BG_H * SCALE,
-    //                            SDL_WINDOW_OPENGL);
-    // if(NULL == ppu.pDebugWindow)
-    // {
-    //     // In the case that the window could not be made...
-    //     printf("Could not create debug window: %s\n", SDL_GetError());
-    //     return;
-    // }
-    // ppu.pDebugRenderer = SDL_CreateRenderer(ppu.pDebugWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    // ppu.pDebugTexture = SDL_CreateTexture(ppu.pDebugRenderer,
-    //                             SDL_PIXELFORMAT_RGBA8888,
-    //                             SDL_TEXTUREACCESS_STREAMING,
-    //                             PPU_BG_W,
-    //                             PPU_BG_H);
 }
 
-void ppu_destroy(void)
+void ppu_set_colors(uint32_t *pColors)
 {
-    // SDL Specific
-    SDL_DestroyWindow(ppu.pWindow);
+    ppu.pColors = pColors;
 }
 
-static inline void sdl_render_display(void)
+void ppu_set_video_buffer(uint8_t* pPixels, int pitch)
 {
-    uint8_t *pPixels;
-    int pitch;
-
-    SDL_LockTexture(ppu.pTexture, NULL, (void**) &pPixels, &pitch);
-
-    // Copy display buffer into SDL window
-    for (int y = 0 ; y < PPU_SCREEN_H ; y++)
-    {
-        uint32_t *pRow = (uint32_t *)(pPixels + pitch*y);
-        for (int x = 0 ; x < PPU_SCREEN_W ; x++)
-        {
-            pRow[x] = ppu.aScreen[x][y];
-        }
-    }
-
-    SDL_UnlockTexture(ppu.pTexture);
-
-    SDL_RenderClear(ppu.pRenderer);
-    SDL_RenderCopy(ppu.pRenderer, ppu.pTexture, NULL, NULL);
-    SDL_RenderPresent(ppu.pRenderer);
+    ppu.pPixels = pPixels;
+    ppu.pitch = pitch;
 }
 
-void ppu_exec(void)
+bool ppu_exec(void)
 {
+    bool render = false;
+
     if (ppu.pReg->LCDC_Flags.DisplayEnable == 0)
-        return;
+        return render;
 
     ppu.state_counter++;
 
@@ -492,7 +427,7 @@ void ppu_exec(void)
                 ppu.pReg->LY++;
                 if (ppu.pReg->LY >= LINE_MAX)
                 {
-                    sdl_render_display();
+                    render = true;
                     ppu.state_counter = 0;
                     ppu.pReg->LY = 0;
                     ppu.state = STATE_OAM_SEARCH;
@@ -516,6 +451,7 @@ void ppu_exec(void)
                 ppu.SCX_lsb = ppu.pReg->SCX & 0x07;
                 ppu.x_draw = 0; // Reset at the begining of the scanline
                 ppu.x_fetch = 0;
+                ppu.pScreenRow = (uint32_t *)(ppu.pPixels + ppu.pitch*ppu.pReg->LY);
 
                 // Flush pixesl FIFO
                 fifo_flush(&ppu.Fifo_BG);
@@ -550,6 +486,8 @@ void ppu_exec(void)
         irq.pIF->Flags.LCDC = 1;
 
     ppu.STAT_Irq = STAT_Irq;
+
+    return render;
 }
 
 void ppu_update_lcdc(void)
@@ -592,88 +530,88 @@ void ppu_update_obp1(void)
     ppu.aOBP1[3] = pOBP1->ID3;
 }
 
-void ppu_print_tiles(void)
-{
-    uint8_t* pVRAM = mem_get_vram();
-    uint8_t *pPixels;
-    int pitch;
+// void ppu_print_tiles(void)
+// {
+//     uint8_t* pVRAM = mem_get_vram();
+//     uint8_t *pPixels;
+//     int pitch;
 
-    SDL_LockTexture(ppu.pDebugTexture, NULL, (void**) &pPixels, &pitch);
+//     SDL_LockTexture(ppu.pDebugTexture, NULL, (void**) &pPixels, &pitch);
 
-    // For all tiles
-    for (int y = 0 ; y < 24 ; y++)
-    {
-        for (int x = 0 ; x < 16 ; x++)
-        {
-            // Get BG tile id
-            uint16_t tile_id = x + y * 16;
-            struct tile_t *pTile = &((struct tile_t *) pVRAM)[tile_id];
+//     // For all tiles
+//     for (int y = 0 ; y < 24 ; y++)
+//     {
+//         for (int x = 0 ; x < 16 ; x++)
+//         {
+//             // Get BG tile id
+//             uint16_t tile_id = x + y * 16;
+//             struct tile_t *pTile = &((struct tile_t *) pVRAM)[tile_id];
 
-            // Draw the tile
-            for (int line = 0 ; line < TILE_LINE ; line++)
-            {
-                uint8_t upper = pTile->Line[line].Upper;
-                uint8_t lower = pTile->Line[line].Lower;
+//             // Draw the tile
+//             for (int line = 0 ; line < TILE_LINE ; line++)
+//             {
+//                 uint8_t upper = pTile->Line[line].Upper;
+//                 uint8_t lower = pTile->Line[line].Lower;
 
-                uint16_t result =  aTileConvertHelper[upper] | (aTileConvertHelper[lower] << 1);
+//                 uint16_t result =  aTileConvertHelper[upper] | (aTileConvertHelper[lower] << 1);
 
-                // Get the line
-                uint32_t *pRow = (uint32_t *)(pPixels + pitch*(y*8+line));
-                for (int pixel = 0 ; pixel < 8 ; pixel++)
-                {
-                    pRow[pixel + x * 8] = ppu.aColor[ppu.aBGP[result & 0x03]];
-                    result >>= 2;
-                }
-            }
-        }
-    }
+//                 // Get the line
+//                 uint32_t *pRow = (uint32_t *)(pPixels + pitch*(y*8+line));
+//                 for (int pixel = 0 ; pixel < 8 ; pixel++)
+//                 {
+//                     pRow[pixel + x * 8] = ppu.aColor[ppu.aBGP[result & 0x03]];
+//                     result >>= 2;
+//                 }
+//             }
+//         }
+//     }
 
-    SDL_UnlockTexture(ppu.pDebugTexture);
+//     SDL_UnlockTexture(ppu.pDebugTexture);
 
-    SDL_RenderClear(ppu.pDebugRenderer);
-    SDL_RenderCopy(ppu.pDebugRenderer, ppu.pDebugTexture, NULL, NULL);
-    SDL_RenderPresent(ppu.pDebugRenderer);
-}
+//     SDL_RenderClear(ppu.pDebugRenderer);
+//     SDL_RenderCopy(ppu.pDebugRenderer, ppu.pDebugTexture, NULL, NULL);
+//     SDL_RenderPresent(ppu.pDebugRenderer);
+// }
 
-void ppu_print_bg(void)
-{
-    uint8_t *pPixels;
-    int pitch;
+// void ppu_print_bg(void)
+// {
+//     uint8_t *pPixels;
+//     int pitch;
 
-    SDL_LockTexture(ppu.pDebugTexture, NULL, (void**) &pPixels, &pitch);
+//     SDL_LockTexture(ppu.pDebugTexture, NULL, (void**) &pPixels, &pitch);
 
-    // Tile map to render
-    for (int y = 0 ; y < TILE_MAP_SIZE ; y++)
-    {
-        for (int x = 0 ; x < TILE_MAP_SIZE ; x++)
-        {
-            // Get BG tile id
-            uint16_t tile_map_id = x + y * TILE_MAP_SIZE;
-            uint8_t tile_id = ppu.pBGTileMap[tile_map_id];
-            struct tile_t *pTile = get_tile(tile_id);
+//     // Tile map to render
+//     for (int y = 0 ; y < TILE_MAP_SIZE ; y++)
+//     {
+//         for (int x = 0 ; x < TILE_MAP_SIZE ; x++)
+//         {
+//             // Get BG tile id
+//             uint16_t tile_map_id = x + y * TILE_MAP_SIZE;
+//             uint8_t tile_id = ppu.pBGTileMap[tile_map_id];
+//             struct tile_t *pTile = get_tile(tile_id);
 
-            // Draw the tile
-            for (int line = 0 ; line < TILE_LINE ; line++)
-            {
-                uint8_t upper = pTile->Line[line].Upper;
-                uint8_t lower = pTile->Line[line].Lower;
+//             // Draw the tile
+//             for (int line = 0 ; line < TILE_LINE ; line++)
+//             {
+//                 uint8_t upper = pTile->Line[line].Upper;
+//                 uint8_t lower = pTile->Line[line].Lower;
 
-                uint16_t result =  aTileConvertHelper[upper] | (aTileConvertHelper[lower] << 1);
+//                 uint16_t result =  aTileConvertHelper[upper] | (aTileConvertHelper[lower] << 1);
 
-                // Get the line
-                uint32_t *pRow = (uint32_t *)(pPixels + pitch*(y*8+line));
-                for (int pixel = 0 ; pixel < 8 ; pixel++)
-                {
-                    pRow[pixel + x * 8] = ppu.aColor[ppu.aBGP[result & 0x03]];
-                    result >>= 2;
-                }
-            }
-        }
-    }
+//                 // Get the line
+//                 uint32_t *pRow = (uint32_t *)(pPixels + pitch*(y*8+line));
+//                 for (int pixel = 0 ; pixel < 8 ; pixel++)
+//                 {
+//                     pRow[pixel + x * 8] = ppu.aColor[ppu.aBGP[result & 0x03]];
+//                     result >>= 2;
+//                 }
+//             }
+//         }
+//     }
 
-    SDL_UnlockTexture(ppu.pDebugTexture);
+//     SDL_UnlockTexture(ppu.pDebugTexture);
 
-    SDL_RenderClear(ppu.pDebugRenderer);
-    SDL_RenderCopy(ppu.pDebugRenderer, ppu.pDebugTexture, NULL, NULL);
-    SDL_RenderPresent(ppu.pDebugRenderer);
-}
+//     SDL_RenderClear(ppu.pDebugRenderer);
+//     SDL_RenderCopy(ppu.pDebugRenderer, ppu.pDebugTexture, NULL, NULL);
+//     SDL_RenderPresent(ppu.pDebugRenderer);
+// }
