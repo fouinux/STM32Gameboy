@@ -109,7 +109,7 @@ struct ppu_t
 
     bool STAT_Irq;
 
-    // Hardware dependant rendering
+    // Hardware dependent rendering
     uint32_t *pColors;
     uint8_t *pPixels;
     int pitch;

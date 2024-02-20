@@ -10,8 +10,6 @@
 #include "irq.h"
 #include "debug.h"
 
-#include <SDL2/SDL.h>
-
 #define STATE_HBLANK_DURATION       51
 #define STATE_VBLANK_DURATION       114
 #define STATE_OAM_SEARCH_DURATION   20
