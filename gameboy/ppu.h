@@ -110,7 +110,7 @@ struct ppu_t
     bool STAT_Irq;
 
     // Hardware dependent rendering
-    uint32_t *pColors;
+    uint32_t *pColor;
     uint8_t *pPixels;
     int pitch;
     uint32_t *pScreenRow;
@@ -119,7 +119,7 @@ struct ppu_t
 extern struct ppu_t ppu;
 
 void ppu_init(void);
-void ppu_set_colors(uint32_t *pColors);
+void ppu_set_color(uint32_t *pColor);
 void ppu_set_video_buffer(uint8_t* pPixels, int pitch);
 bool ppu_exec(void);
 
@@ -128,7 +128,9 @@ void ppu_update_bgp(void);
 void ppu_update_obp0(void);
 void ppu_update_obp1(void);
 
-void ppu_print_tiles(void);
-void ppu_print_bg(void);
+#ifdef PPU_DEBUG
+void ppu_print_tiles(uint8_t *pPixels, int pitch);
+void ppu_print_bg(uint8_t *pPixels, int pitch);
+#endif
 
 #endif /* INC_PPU_H_ */

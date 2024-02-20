@@ -13,7 +13,7 @@ all: $(TARGET)
 release: CFLAGS += -Werror
 release: all
 
-debug: CFLAGS += -g -DDEBUG
+debug: CFLAGS += -g -DDEBUG -DPPU_DEBUG
 debug: all
 
 $(TARGET): $(OBJS)

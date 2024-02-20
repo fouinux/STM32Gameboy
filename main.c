@@ -133,6 +133,11 @@ int main(int argc, char *argv[])
 #endif 
             break;
         }
+
+#ifdef PPU_DEBUG
+        if (render)
+            msdl_render_debug();
+#endif
     }
 
     free(pGameROM);

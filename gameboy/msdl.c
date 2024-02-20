@@ -21,6 +21,9 @@ struct msdl_window_t
 struct msdl_t
 {
     struct msdl_window_t main;
+#ifdef PPU_DEBUG
+    struct msdl_window_t debug;
+#endif
     uint32_t aColor[4];
 };
 
@@ -58,13 +61,34 @@ int msdl_init(void)
                                 PPU_SCREEN_W,
                                 PPU_SCREEN_H);
 
+#ifdef PPU_DEBUG
+    msdl.debug.pWindow = SDL_CreateWindow("Debug",
+                               SDL_WINDOWPOS_UNDEFINED,
+                               SDL_WINDOWPOS_UNDEFINED,
+                               PPU_BG_W * MSDL_SCALE,
+                               PPU_BG_H * MSDL_SCALE,
+                               SDL_WINDOW_OPENGL);
+    if(NULL == msdl.debug.pWindow)
+    {
+        // In the case that the window could not be made...
+        printf("Could not create debug window: %s\n", SDL_GetError());
+        return EXIT_FAILURE;
+    }
+    msdl.debug.pRenderer = SDL_CreateRenderer(msdl.debug.pWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    msdl.debug.pTexture = SDL_CreateTexture(msdl.debug.pRenderer,
+                                SDL_PIXELFORMAT_RGBA8888,
+                                SDL_TEXTUREACCESS_STREAMING,
+                                PPU_BG_W,
+                                PPU_BG_H);
+#endif
+
     // Alloc colors
     SDL_PixelFormat *pPixelFormat = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
     msdl.aColor[0] = SDL_MapRGBA(pPixelFormat, 0xFF, 0xFF, 0xFF, 0xFF); // White
     msdl.aColor[1] = SDL_MapRGBA(pPixelFormat, 0xAA, 0xAA, 0xAA, 0xFF); // Light gray
     msdl.aColor[2] = SDL_MapRGBA(pPixelFormat, 0x55, 0x55, 0x55, 0xFF); // Dark gray
     msdl.aColor[3] = SDL_MapRGBA(pPixelFormat, 0x00, 0x00, 0x00, 0xFF); // Black
-    ppu_set_colors(&msdl.aColor[0]);
+    ppu_set_color(&msdl.aColor[0]);
 
     SDL_LockTexture(msdl.main.pTexture, NULL, (void**) &pPixels, &pitch);
     ppu_set_video_buffer(pPixels, pitch);
@@ -75,6 +99,9 @@ int msdl_init(void)
 void msdl_deinit(void)
 {
     SDL_DestroyWindow(msdl.main.pWindow);
+#ifdef PPU_DEBUG
+    SDL_DestroyWindow(msdl.debug.pWindow);
+#endif
     SDL_Quit();
 }
 
@@ -141,3 +168,20 @@ bool msdl_loop(bool Render)
 
     return true;
 }
+
+#ifdef PPU_DEBUG
+void msdl_render_debug(void)
+{
+    uint8_t *pPixels;
+    int pitch;
+    SDL_LockTexture(msdl.debug.pTexture, NULL, (void**) &pPixels, &pitch);
+
+    ppu_print_bg(pPixels, pitch);
+
+    SDL_UnlockTexture(msdl.debug.pTexture);
+
+    SDL_RenderClear(msdl.debug.pRenderer);
+    SDL_RenderCopy(msdl.debug.pRenderer, msdl.debug.pTexture, NULL, NULL);
+    SDL_RenderPresent(msdl.debug.pRenderer);
+}
+#endif
