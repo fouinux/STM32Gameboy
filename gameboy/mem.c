@@ -264,7 +264,13 @@ static void mbc1_write(uint16_t Addr, uint8_t Value)
         mem.RAMIndex = mem.MBC1.ROMIndex1_MSB;
     }
 
+    mem.CartridgeRAM_Enabled = mem.MBC1.RAM_Enabled;
     mem.ROMIndex1 = (mem.MBC1.ROMIndex1_LSB == 0) ? 1 : mem.MBC1.ROMIndex1_LSB;
+
+    // printf("MBC1: %04x : %02x\n", Addr, Value);
+    // printf("\tROMIndex0 = %d\n", mem.ROMIndex0);
+    // printf("\tROMIndex1 = %d\n", mem.ROMIndex1);
+    // printf("\tRAMIndex = %d\n", mem.RAMIndex);
 }
 
 void mem_init()
@@ -327,7 +333,7 @@ void mem_write_u8(uint16_t Addr, uint8_t Value)
         uint8_t *pU8 = (uint8_t *) mem_translation(Addr, false);
         if (NULL != pU8)
         {
-            if (Addr >= 0xFF00 && Addr <= 0xFF7F && aIOPortsActionOnWrMap[Addr -  0xFF00] == true)
+            if (Addr >= 0xFF00 && Addr <= 0xFF7F && (aIOPortsActionOnWrMap[Addr - 0xFF00] == true))
                 action_on_w8(Addr, Value, pU8);
             else
             {
