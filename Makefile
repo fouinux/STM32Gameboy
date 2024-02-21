@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -Wall
 LDFLAGS = -lSDL2
 
-SRCS := $(wildcard main.c gameboy/*.c)
+SRCS := $(wildcard *.c gameboy/*.c)
 OBJS := $(patsubst %.c,%.o,$(SRCS))
 
 TARGET = STM32Gameboy

@@ -12,7 +12,8 @@
 #include "gameboy/joypad.h"
 #include "gameboy/serial.h"
 #include "gameboy/debug.h"
-#include "gameboy/msdl.h"
+
+#include "msdl.h"
 
 uint8_t aBootROM[256];
 
@@ -130,7 +131,7 @@ int main(int argc, char *argv[])
                 // Exec 10 more CPU cyles (help debug)
                 for (int i = 0 ; i < 50 ; i++)
                     cpu_exec(true);
-#endif 
+#endif
             break;
         }
 

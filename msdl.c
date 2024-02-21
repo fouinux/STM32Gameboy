@@ -6,8 +6,8 @@
  */
 
 #include "msdl.h"
-#include "ppu.h"
-#include "joypad.h"
+#include "gameboy/ppu.h"
+#include "gameboy/joypad.h"
 
 #include <SDL2/SDL.h>
 
