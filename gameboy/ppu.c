@@ -174,8 +174,8 @@ static const uint16_t aTileConvertMirrorHelper[256] = {
 
 static inline void fetch_bg_tile(void)
 {
-    uint8_t tile_x = (ppu.pReg->SCX + ppu.x_fetch) >> 3;
-    uint8_t tile_y = (ppu.pReg->SCY + ppu.pReg->LY) >> 3;
+    uint8_t tile_x = ((ppu.pReg->SCX + ppu.x_fetch) & 0xFF) >> 3;
+    uint8_t tile_y = ((ppu.pReg->SCY + ppu.pReg->LY) & 0xFF) >> 3;
     uint16_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
 
     uint8_t tile_id = ppu.pBGTileMap[tile_map_id];
@@ -436,7 +436,7 @@ bool ppu_exec(void)
         case STATE_OAM_SEARCH:
             // if (ppu.state_counter == 1 && ppu.pReg->LY == 0)
             // {
-            //     //     ppu_print_reg();
+            //     ppu_print_reg();
             //     ppu_print_bg();
             // }
 
