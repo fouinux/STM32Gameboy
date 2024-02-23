@@ -1,5 +1,5 @@
 /*
- * memory.h
+ * mem.h
  *
  *  Created on: Jul 6, 2020
  *      Author: Guillaume Fouilleul
@@ -42,6 +42,10 @@ uint8_t* mem_get_vram(void);
 
 void mem_set_bootrom(uint8_t *pBootROM);
 void mem_load_gamerom(uint8_t *pGameROM);
+
+void mem_set_rombank0(uint8_t Bank);
+void mem_set_rombank1(uint8_t Bank);
+void mem_set_rambank(bool Enable, uint8_t Bank);
 
 void mem_hexdump(const uint16_t Addr, const size_t Size);
 

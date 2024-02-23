@@ -1,5 +1,5 @@
 /*
- * memory.c
+ * mem.c
  *
  *  Created on: 6 juil. 2020
  *      Author: Guillaume Fouilleul
@@ -7,6 +7,7 @@
 
 #include "cpu.h"
 #include "mem.h"
+#include "mbc.h"
 #include "ppu.h"
 #include "joypad.h"
 #include <stdio.h>
@@ -38,15 +39,6 @@ struct cartridge_header_t
     uint8_t aGlobalChecksum[2];
 };
 
-// MBC1 specific
-struct mbc1_t
-{
-    bool RAM_Enabled;
-    uint8_t ROMIndex1_LSB;
-    uint8_t ROMIndex1_MSB;
-    bool BankingMode; // 0 : simple; 1 : advanced
-};
-
 struct memory_map_t
 {
     bool BootROMEnabled;
@@ -72,12 +64,11 @@ struct memory_map_t
 
     bool dma_ongoing;
 
-    // Cartidge specs
+    // Cartridge specs
     uint8_t ROMSize;
     uint8_t RAMSize;
 
-    // MBCx
-    struct mbc1_t MBC1;
+    mbc_func_t pMBC;
 
 } mem;
 
@@ -235,44 +226,6 @@ static void action_on_w8(uint16_t Addr, uint8_t Value, uint8_t *pU8)
     }
 }
 
-static void mbc1_write(uint16_t Addr, uint8_t Value)
-{
-    switch (Addr & 0x6000) // Look only bits 13 & 14
-    {
-        case 0x0000: // RAM Enable
-            mem.MBC1.RAM_Enabled = ((Value & 0x0F) == 0x0A);
-            break;
-        case 0x2000: // ROM Bank Number
-            mem.MBC1.ROMIndex1_LSB = Value & 0x1F;
-            break;
-        case 0x4000: // RAM Bank Number
-            mem.MBC1.ROMIndex1_MSB = Value & 0x03;
-            break;
-        case 0x6000: // Banking Mode Select
-            mem.MBC1.BankingMode = Value & 0x01;
-            break;
-    }
-
-    if (mem.MBC1.BankingMode == 0)
-    {
-        mem.ROMIndex0 = 0;
-        mem.RAMIndex = 0;
-    }
-    else
-    {
-        mem.ROMIndex0 = (mem.MBC1.ROMIndex1_MSB << 5);
-        mem.RAMIndex = mem.MBC1.ROMIndex1_MSB;
-    }
-
-    mem.CartridgeRAM_Enabled = mem.MBC1.RAM_Enabled;
-    mem.ROMIndex1 = (mem.MBC1.ROMIndex1_LSB == 0) ? 1 : mem.MBC1.ROMIndex1_LSB;
-
-    // printf("MBC1: %04x : %02x\n", Addr, Value);
-    // printf("\tROMIndex0 = %d\n", mem.ROMIndex0);
-    // printf("\tROMIndex1 = %d\n", mem.ROMIndex1);
-    // printf("\tRAMIndex = %d\n", mem.RAMIndex);
-}
-
 void mem_init()
 {
     // Init BootROM location
@@ -297,6 +250,9 @@ void mem_init()
     mem.CartridgeRAM_Enabled = false;
     mem.ROMSize = 0;
     mem.RAMSize = 0;
+
+    // MBC
+    mem.pMBC = NULL;
 }
 
 uint8_t mem_read_u8(uint16_t Addr)
@@ -341,9 +297,9 @@ void mem_write_u8(uint16_t Addr, uint8_t Value)
             }
         }
     }
-    else
+    else if (mem.pMBC != NULL)
     {
-        mbc1_write(Addr, Value);
+        mem.pMBC(Addr, Value);
     }
 }
 
@@ -461,6 +417,25 @@ void mem_load_gamerom(uint8_t *pGameROM)
             mem.aCartridgeRAMBank[bank] = &mem.pCartridgeRAM[MEM_CARTRIDGE_RAM_BANK_SIZE * bank];
         }
     }
+
+    // Select MBC
+    mem.pMBC = mbc_get_callback(pHeader->CartridgeType);
+}
+
+void mem_set_rombank0(uint8_t Bank)
+{
+    mem.ROMIndex0 = Bank;
+}
+
+void mem_set_rombank1(uint8_t Bank)
+{
+    mem.ROMIndex1 = Bank;
+}
+
+void mem_set_rambank(bool Enable, uint8_t Bank)
+{
+    mem.CartridgeRAM_Enabled = Enable;
+    mem.RAMIndex = Bank;
 }
 
 void mem_hexdump(const uint16_t Addr, const size_t Size)
