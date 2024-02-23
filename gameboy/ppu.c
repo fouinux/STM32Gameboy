@@ -423,10 +423,10 @@ bool ppu_exec(void)
             if (ppu.state_counter >= STATE_VBLANK_DURATION)
             {
                 ppu.pReg->LY++;
+                ppu.state_counter = 0;
                 if (ppu.pReg->LY >= LINE_MAX)
                 {
                     render = true;
-                    ppu.state_counter = 0;
                     ppu.pReg->LY = 0;
                     ppu.state = STATE_OAM_SEARCH;
                 }
