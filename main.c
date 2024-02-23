@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
     uint8_t *pGameROM;
 
     // Load bootrom
-    if (load_bootrom("DMG_ROM.bin"))
+    if (load_bootrom("DMG_ROM.gb"))
         return EXIT_FAILURE;
 
     // Load gamerom
