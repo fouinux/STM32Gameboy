@@ -75,6 +75,19 @@ static inline int load_gamerom(const char *pFilename, uint8_t **pGameROM, uint8_
     return EXIT_SUCCESS;
 }
 
+void skip_boot(void)
+{
+    cpu.reg.AF = 0x01B0;
+    cpu.reg.BC = 0x0013;
+    cpu.reg.DE = 0x00D8;
+    cpu.reg.HL = 0x014D;
+    cpu.reg.SP = 0xFFFE;
+    cpu.reg.PC = 0x0100;
+
+    // Disable bootrom
+    mem_write_u8(0xFF50, 0x01);
+}
+
 int main(int argc, char *argv[])
 {
     // Common vars
@@ -114,6 +127,8 @@ int main(int argc, char *argv[])
     // Load Boot ROM and game ROM
     mem_set_bootrom(&aBootROM[0]);
     mem_load_gamerom(pGameROM);
+
+    skip_boot();
 
     while(true)
     {
