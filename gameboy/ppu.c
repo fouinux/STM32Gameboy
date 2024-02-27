@@ -240,15 +240,20 @@ static inline void fetch_win_tile(void)
 static inline void fetch_sprite(uint8_t id)
 {
     struct oam_entry_t *pSprite = &((struct oam_entry_t*) ppu.pOAMTileMap)[id];
-    struct tile_t *pTile = &((struct tile_t*)ppu.pOAMTileData)[pSprite->TileId];
+    uint8_t tile_id = pSprite->TileId;
+
+    if (ppu.pReg->LCDC_Flags.OBJSize == 1) // 8x16 - Ignore bit 0
+        tile_id &= 0xFE;
+
+    struct tile_t *pTile = &((struct tile_t*)ppu.pOAMTileData)[tile_id];
 
     uint8_t line = ppu.pReg->LY - (pSprite->Y - 0x10);
     if (pSprite->Attributes_Flags.Y_Flip == 1)
     {
         if (ppu.pReg->LCDC_Flags.OBJSize == 0) // 8x8
-            line = 8 - line;
+            line = 7 - line;
         else // 8x16
-            line = 16 - line;
+            line = 15 - line;
     }
 
     // Use overflow to make it work perfectly for 8x8 and 8x16
