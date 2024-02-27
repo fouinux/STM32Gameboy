@@ -52,6 +52,8 @@ bool irq_check(void)
             // Disable IRQ
             irq.ime = false;
 
+            printf("IRQ: %02x\n", mask);
+
             // Search for active IRQ according to priorities
             if (mask & IRQ_MASK_VBLANK) // V-Blank
             {

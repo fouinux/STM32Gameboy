@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <time.h>
 
 #include "gameboy/cpu.h"
 #include "gameboy/irq.h"
@@ -16,7 +15,6 @@
 #include "msdl.h"
 
 uint8_t aBootROM[256];
-
 
 static inline int load_bootrom(const char *pFilename)
 {
@@ -91,7 +89,6 @@ void skip_boot(void)
 int main(int argc, char *argv[])
 {
     // Common vars
-    bool cpuDebug = false;
     bool render = false;
 
     // Boot & Game ROMs
@@ -124,28 +121,34 @@ int main(int argc, char *argv[])
     joypad_init();
     serial_init();
 
+    debug_init();
+
     // Load Boot ROM and game ROM
     mem_set_bootrom(&aBootROM[0]);
     mem_load_gamerom(pGameROM);
 
-    skip_boot();
+    // skip_boot();
 
     while(true)
     {
         // if (cpu.reg.PC == 0x100)
-        //     cpuDebug = true;
+        //     cpu.debug = true;
 
         // Run Gameboy emulation
-        cpu_exec(cpuDebug);
+        cpu_exec();
         render = ppu_exec();
         timer_exec();
         // serial_exec();
         if (!msdl_loop(render))
         {
+            debug.cpu = true;
+            for (int i = 0 ; i < 50 ; i++)
+                cpu_exec();
+            mem_hexdump(0x0000, 0x100);
 #ifdef DEBUG
                 // Exec 10 more CPU cyles (help debug)
                 for (int i = 0 ; i < 50 ; i++)
-                    cpu_exec(true);
+                    cpu_exec();
 #endif
             break;
         }

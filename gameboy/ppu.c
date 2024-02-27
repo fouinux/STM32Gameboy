@@ -8,6 +8,7 @@
 #include "ppu.h"
 #include "mem.h"
 #include "irq.h"
+
 #include "debug.h"
 
 #define STATE_HBLANK_DURATION       51
@@ -519,8 +520,11 @@ bool ppu_exec(void)
     // Handling PPU interrupts
     bool STAT_Irq = false;
     // LYC = LY
-    if (ppu.pReg->STAT_Flags.LYCeqLY && ppu.pReg->STAT_Flags.LYCeqLY)
+    if (ppu.pReg->STAT_Flags.LYCeqLY && ppu.pReg->STAT_Flags.LYCeqLY_Flag)
+    {
         STAT_Irq = true;
+        debug.cpu = true;
+    }
     // mode 0-2 interrupts
     if (ppu.pReg->STAT_Flags.Mode0_HBlank && ppu.state == STATE_HBLANK)
         STAT_Irq = true;
