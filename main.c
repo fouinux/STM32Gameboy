@@ -141,14 +141,11 @@ int main(int argc, char *argv[])
         // serial_exec();
         if (!msdl_loop(render))
         {
+#ifdef DEBUG
+            // Exec 10 more CPU cyles (help debug)
             debug.cpu = true;
             for (int i = 0 ; i < 50 ; i++)
                 cpu_exec();
-            mem_hexdump(0x0000, 0x100);
-#ifdef DEBUG
-                // Exec 10 more CPU cyles (help debug)
-                for (int i = 0 ; i < 50 ; i++)
-                    cpu_exec();
 #endif
             break;
         }

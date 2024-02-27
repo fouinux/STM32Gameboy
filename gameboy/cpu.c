@@ -17,16 +17,19 @@
 
 #include <SDL2/SDL.h>
 
+#define PREFIX  0xCB
+
 // Exported to be use directly
 struct cpu_t cpu;
 
 static void cpu_print_opcode(uint8_t Opcode)
 {
-    if (true == cpu.prefix_cb)
-        printf("%04X: %s\n", cpu.reg.PC - 1, opcodeCbList[Opcode].pFuncName);
-    else
-        printf("%04X: %s\n", cpu.reg.PC, opcodeList[Opcode].pFuncName);
+    printf("%04X: %s\n", cpu.reg.PC, opcodeList[Opcode].pFuncName);
+}
 
+static void cpu_print_prefixed_opcode(uint8_t Opcode)
+{
+    printf("%04X: %s\n", cpu.reg.PC - 1, opcodeCbList[Opcode].pFuncName);
 }
 
 static void cpu_print_regs(void)
@@ -91,32 +94,28 @@ void cpu_exec(void)
                 uint8_t opcode = mem_read_u8(cpu.reg.PC);
 
                 // Execute opcode
-                if (cpu.prefix_cb)
-                {
-                    if (debug.cpu)
-                        cpu_print_opcode(opcode);
+                if (debug.cpu && opcode != PREFIX)
+                    cpu_print_opcode(opcode);
 
-                    cpu.prefix_cb = false;
-                    cpu.cycle_counter = opcodeCbList[opcode].func();
+                cpu.cycle_counter = opcodeList[opcode].func();
+
+                if (opcodeList[opcode].update_pc) // Update Program Counter
+                    cpu.reg.PC += opcodeList[opcode].length;
+
+                if (opcode == PREFIX)
+                {
+                    // Read opcode
+                    uint8_t opcode = mem_read_u8(cpu.reg.PC);
+
+                    if (debug.cpu)
+                        cpu_print_prefixed_opcode(opcode);
+
+                    cpu.cycle_counter += opcodeCbList[opcode].func();
                     cpu.reg.PC++; //  All CB opcode have a size of 1
-
-                    if (debug.cpu)
-                        cpu_print_regs();
-                }
-                else
-                {
-                    if (debug.cpu && opcode != 0xCB)
-                        cpu_print_opcode(opcode);
-
-                    cpu.cycle_counter = opcodeList[opcode].func();
-
-                    if (opcodeList[opcode].update_pc) // Update Program Counter
-                        cpu.reg.PC += opcodeList[opcode].length;
-
-                    if (debug.cpu && opcode != 0xCB)
-                        cpu_print_regs();
                 }
 
+                if (debug.cpu)
+                    cpu_print_regs();
             }
         }
     }

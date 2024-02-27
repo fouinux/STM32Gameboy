@@ -72,7 +72,6 @@ struct cpu_t
     struct cpu_reg_t reg;
     bool halted;
     uint8_t cycle_counter;
-    bool prefix_cb;
 
 	bool debug;
 };

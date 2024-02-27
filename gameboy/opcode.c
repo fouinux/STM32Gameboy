@@ -941,7 +941,6 @@ static uint8_t EI(void)
 // PREFIX CB
 static uint8_t PREFIX_CB(void)
 {
-    cpu.prefix_cb = true;
     return 1;
 }
 
