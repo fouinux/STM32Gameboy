@@ -37,6 +37,8 @@ struct timer_t
     bool lastBit; // Used for falling edge detection
 };
 
+extern struct timer_t timer;
+
 void timer_init(void);
 void timer_exec(void);
 

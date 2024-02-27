@@ -9,6 +9,7 @@
 #define INC_GAMEBOY_APU_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 struct apu_reg_t
 {
@@ -239,13 +240,43 @@ struct apu_reg_t
     } Wave[16]; // 0xFF30 - 0xFF3F : Wave pattern RAM
 } __attribute__ ((__packed__));
 
+
+struct ch4_t
+{
+    bool enabled;
+    uint16_t lfsr;
+    uint8_t volume;
+
+    // Length Timer
+    bool len_timer_en;
+    uint8_t len_timer;
+
+    // Envelope Sweep
+    bool env_sweep_en;
+    uint8_t sweep_pace;
+    uint8_t env_dir;
+
+    // Frequency & Random
+};
+
 struct apu_t
 {
     struct apu_reg_t *pReg;
 
+    uint8_t div_apu;
+    uint8_t div_apu_cnt;
+
     // Channel 1 : Pulse
+
+    // Channel 2 : Pulse
+
+    // Channel 4 : Noise
+    struct ch4_t ch4;
 };
 
+extern struct apu_t apu;
+
 void apu_init(void);
+void apu_exec(void);
 
 #endif /* INC_GAMEBOY_APU_H_ */
