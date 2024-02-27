@@ -11,6 +11,8 @@
 #include "opcode.h"
 #include "opcode_cb.h"
 
+#include "debug.h"
+
 #include <stdio.h>
 
 #include <SDL2/SDL.h>
@@ -66,9 +68,12 @@ void cpu_init(void)
     // Init Flags
     cpu.halted = false;
     cpu.cycle_counter = 1;
+
+    // Debug
+    cpu.debug = false;
 }
 
-void cpu_exec(bool PrintState)
+void cpu_exec(void)
 {
     if (cpu.halted == false || irq_pending())
     {
@@ -88,19 +93,19 @@ void cpu_exec(bool PrintState)
                 // Execute opcode
                 if (cpu.prefix_cb)
                 {
-                    if (PrintState)
+                    if (debug.cpu)
                         cpu_print_opcode(opcode);
 
                     cpu.prefix_cb = false;
                     cpu.cycle_counter = opcodeCbList[opcode].func();
                     cpu.reg.PC++; //  All CB opcode have a size of 1
 
-                    if (PrintState)
+                    if (debug.cpu)
                         cpu_print_regs();
                 }
                 else
                 {
-                    if (PrintState && opcode != 0xCB)
+                    if (debug.cpu && opcode != 0xCB)
                         cpu_print_opcode(opcode);
 
                     cpu.cycle_counter = opcodeList[opcode].func();
@@ -108,7 +113,7 @@ void cpu_exec(bool PrintState)
                     if (opcodeList[opcode].update_pc) // Update Program Counter
                         cpu.reg.PC += opcodeList[opcode].length;
 
-                    if (PrintState && opcode != 0xCB)
+                    if (debug.cpu && opcode != 0xCB)
                         cpu_print_regs();
                 }
 

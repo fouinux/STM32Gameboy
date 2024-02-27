@@ -8,6 +8,7 @@
 #include "ppu.h"
 #include "mem.h"
 #include "irq.h"
+
 #include "debug.h"
 
 #define STATE_HBLANK_DURATION       51
@@ -61,6 +62,22 @@ struct palette_t
     uint8_t ID1 : 2;
     uint8_t ID2 : 2;
     uint8_t ID3 : 2;
+} __attribute__ ((__packed__));
+
+struct pixel_t
+{
+    union
+    {
+        struct
+        {
+            uint8_t Color : 2;
+            uint8_t Palette : 1;
+            uint8_t Priority : 1;
+            uint8_t : 4;
+        };
+        uint8_t Value;
+    };
+
 } __attribute__ ((__packed__));
 
 struct ppu_t ppu;
@@ -198,7 +215,7 @@ static inline void fetch_bg_tile(void)
 
 static inline void fetch_win_tile(void)
 {
-    uint8_t tile_x = (ppu.x_fetch - ppu.pReg->WX + 7) >> 3;
+    uint8_t tile_x = ppu.x_fetch >> 3;
     uint8_t tile_y = (ppu.pReg->LY - ppu.pReg->WY) >> 3;
     uint8_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
 
@@ -244,12 +261,35 @@ static inline void fetch_sprite(uint8_t id)
     else
         result = aTileConvertMirrorHelper[upper] | (aTileConvertMirrorHelper[lower] << 1);
 
+    uint8_t prev_sprite = ppu.Fifo_OAM.Size;
+    struct pixel_t prev_pxl;
+
+    struct pixel_t pxl;
+    pxl.Palette = pSprite->Attributes_Flags.Palette;
+    pxl.Priority = pSprite->Attributes_Flags.Priority;
+
     // Extract and put pixels in FIFO
     for (uint8_t i = 0 ; i < 8 ; i++)
     {
         // Enqueue only if visible
         if (pSprite->X - 8 + i >= 0)
-            fifo_enqueue(&ppu.Fifo_OAM, result & 0x03);
+        {
+            pxl.Color = result & 0x03;
+
+            // Mix with previous sprite
+            if (prev_sprite > 0)
+            {
+                prev_sprite--;
+                prev_pxl.Value = fifo_dequeue(&ppu.Fifo_OAM);
+
+                if (prev_pxl.Color == 0 && pxl.Color) // Previous pixel is transparent
+                    fifo_enqueue(&ppu.Fifo_OAM, pxl.Value); // New Sprite
+                else
+                    fifo_enqueue(&ppu.Fifo_OAM, prev_pxl.Value); // Previous sprite
+            }
+            else
+                fifo_enqueue(&ppu.Fifo_OAM, pxl.Value);
+        }
         result >>= 2;
     }
 }
@@ -276,14 +316,12 @@ static inline void exec_pxl_xfer(void)
             // Sprite ?
             if (ppu.pReg->LCDC_Flags.OBJEnable == 1 && ppu.OAM_counter > 0)
             {
-                if (ppu.aOAM_visible_x[ppu.OAM_visible_id] <= ppu.x_draw)
+                while (ppu.OAM_counter > 0 && ppu.aOAM_visible_x[ppu.OAM_visible_id] <= ppu.x_draw)
                 {
                     // Fetch Sprite
                     fetch_sprite(ppu.aOAM_visible[ppu.OAM_visible_id]);
                     ppu.OAM_visible_id++;
                     ppu.OAM_counter--;
-
-                    // TODO Multiple sprite at same x
                 }
             }
 
@@ -293,9 +331,22 @@ static inline void exec_pxl_xfer(void)
             // Sprite pixel available
             if (ppu.Fifo_OAM.Size > 0)
             {
-                uint8_t sprite_pxl = fifo_dequeue(&ppu.Fifo_OAM);
-                if (sprite_pxl != 0) //  If not transparent, overwrite pixel
-                    pxl = ppu.aOBP0[sprite_pxl];
+                struct pixel_t sprite_pxl;
+                sprite_pxl.Value = fifo_dequeue(&ppu.Fifo_OAM);
+                if (sprite_pxl.Priority == 0 && sprite_pxl.Color != 0) //  If not transparent, overwrite pixel
+                {
+                    if (sprite_pxl.Palette == 0)
+                        pxl = ppu.aOBP0[sprite_pxl.Color];
+                    else
+                        pxl = ppu.aOBP1[sprite_pxl.Color];
+                }
+                else if (sprite_pxl.Priority == 1 && pxl == 0)
+                {
+                    if (sprite_pxl.Palette == 0)
+                        pxl = ppu.aOBP0[sprite_pxl.Color];
+                    else
+                        pxl = ppu.aOBP1[sprite_pxl.Color];
+                }
             }
 
             // Discard SCX & 0x07 first elements
@@ -335,7 +386,6 @@ static inline void exec_pxl_xfer(void)
 
         ppu.x_fetch += 8;
     }
-
 }
 
 static inline void ppu_print_reg(void)
@@ -470,8 +520,11 @@ bool ppu_exec(void)
     // Handling PPU interrupts
     bool STAT_Irq = false;
     // LYC = LY
-    if (ppu.pReg->STAT_Flags.LYCeqLY && ppu.pReg->STAT_Flags.LYCeqLY)
+    if (ppu.pReg->STAT_Flags.LYCeqLY && ppu.pReg->STAT_Flags.LYCeqLY_Flag)
+    {
         STAT_Irq = true;
+        debug.cpu = true;
+    }
     // mode 0-2 interrupts
     if (ppu.pReg->STAT_Flags.Mode0_HBlank && ppu.state == STATE_HBLANK)
         STAT_Irq = true;

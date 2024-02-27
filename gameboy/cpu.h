@@ -73,11 +73,13 @@ struct cpu_t
     bool halted;
     uint8_t cycle_counter;
     bool prefix_cb;
+
+	bool debug;
 };
 
 extern struct cpu_t cpu;
 
 void cpu_init(void);
-void cpu_exec(bool PrintState);
+void cpu_exec(void);
 
 #endif /* INC_GAMEBOY_CPU_H_ */

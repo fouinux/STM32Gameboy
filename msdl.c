@@ -127,15 +127,18 @@ static inline void handle_keyboard(SDL_KeyboardEvent *pEvent)
             joypad_set_input(LEFT, state);
             break;
         case SDLK_KP_PERIOD:
+        case SDLK_a:
             joypad_set_input(A, state);
             break;
         case SDLK_KP_0:
+        case SDLK_z:
             joypad_set_input(B, state);
             break;
         case SDLK_DELETE:
             joypad_set_input(SELECT, state);
             break;
         case SDLK_END:
+        case SDLK_ESCAPE:
             joypad_set_input(START, state);
             break;
     }

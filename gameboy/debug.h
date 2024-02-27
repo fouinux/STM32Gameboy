@@ -9,7 +9,17 @@
 #define INC_GAMEBOY_DEBUG_H_
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <time.h>
+
+struct debug_t
+{
+    bool cpu;
+};
+
+extern struct debug_t debug;
+
+void debug_init(void);
 
 static inline void debug_print_clock_diff(const char* pString, struct timespec* pStart, struct timespec* pStop)
 {
