@@ -214,7 +214,7 @@ static inline void fetch_bg_tile(void)
 
 static inline void fetch_win_tile(void)
 {
-    uint8_t tile_x = (ppu.x_fetch - ppu.pReg->WX + 7) >> 3;
+    uint8_t tile_x = ppu.x_fetch >> 3;
     uint8_t tile_y = (ppu.pReg->LY - ppu.pReg->WY) >> 3;
     uint8_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
 
@@ -385,7 +385,6 @@ static inline void exec_pxl_xfer(void)
 
         ppu.x_fetch += 8;
     }
-
 }
 
 static inline void ppu_print_reg(void)
