@@ -216,7 +216,7 @@ static inline void fetch_bg_tile(void)
 static inline void fetch_win_tile(void)
 {
     uint8_t tile_x = ppu.x_fetch >> 3;
-    uint8_t tile_y = (ppu.pReg->LY - ppu.pReg->WY) >> 3;
+    uint8_t tile_y = ppu.y_win_internal >> 3;
     uint8_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
 
     uint16_t tile_id = ppu.pWinTileMap[tile_map_id];
@@ -370,6 +370,7 @@ static inline void exec_pxl_xfer(void)
                 {
                     fifo_flush(&ppu.Fifo_BG);
                     ppu.x_fetch = 0; // Reset to start drawing window
+                    ppu.y_win_internal++;
                     break;
                 }
             }
@@ -414,6 +415,7 @@ void ppu_init(void)
     ppu.pReg->LY = 0;
     ppu.x_draw = 0;
     ppu.x_fetch = 0;
+    ppu.y_win_internal = -1;
 
     // Tile maps and data
     ppu_update_lcdc();
@@ -483,6 +485,7 @@ bool ppu_exec(void)
                 {
                     render = true;
                     ppu.pReg->LY = 0;
+                    ppu.y_win_internal = -1;
                     ppu.state = STATE_OAM_SEARCH;
                 }
             }
@@ -626,7 +629,7 @@ void ppu_print_bg(uint8_t *pPixels, int pitch)
         {
             // Get BG tile id
             uint16_t tile_map_id = x + y * TILE_MAP_SIZE;
-            uint8_t tile_id = ppu.pBGTileMap[tile_map_id];
+            uint8_t tile_id = ppu.pWinTileMap[tile_map_id];
             struct tile_t *pTile = get_tile(tile_id);
 
             // Draw the tile
