@@ -102,6 +102,7 @@ struct ppu_t
     uint8_t x_draw;
     uint8_t x_fetch;
     uint8_t y_win_internal;
+    bool win_started;
     struct fifo_t Fifo_BG;
     struct fifo_t Fifo_OAM;
 

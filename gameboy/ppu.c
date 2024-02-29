@@ -217,7 +217,7 @@ static inline void fetch_win_tile(void)
 {
     uint8_t tile_x = ppu.x_fetch >> 3;
     uint8_t tile_y = ppu.y_win_internal >> 3;
-    uint8_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
+    uint16_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
 
     uint16_t tile_id = ppu.pWinTileMap[tile_map_id];
     struct tile_t *pTile = get_tile(tile_id);
@@ -364,14 +364,18 @@ static inline void exec_pxl_xfer(void)
             ppu.pScreenRow[ppu.x_draw++] = ppu.pColor[pxl];
 
             // Start of window
-            if (ppu.pReg->LCDC_Flags.WindowEnable && (ppu.pReg->LY >= ppu.pReg->WY))
+            if (ppu.pReg->LCDC_Flags.WindowEnable && ppu.win_started == false)
             {
-                if (ppu.x_draw + 7 == ppu.pReg->WX)
+                if (ppu.pReg->LY >= ppu.pReg->WY)
                 {
-                    fifo_flush(&ppu.Fifo_BG);
-                    ppu.x_fetch = 0; // Reset to start drawing window
-                    ppu.y_win_internal++;
-                    break;
+                    if (ppu.x_draw + 7 >= ppu.pReg->WX)
+                    {
+                        fifo_flush(&ppu.Fifo_BG);
+                        ppu.x_fetch = 0; // Reset to start drawing window
+                        ppu.y_win_internal++;
+                        ppu.win_started = true;
+                        break;
+                    }
                 }
             }
         }
@@ -416,6 +420,7 @@ void ppu_init(void)
     ppu.x_draw = 0;
     ppu.x_fetch = 0;
     ppu.y_win_internal = -1;
+    ppu.win_started = false;
 
     // Tile maps and data
     ppu_update_lcdc();
@@ -469,7 +474,7 @@ bool ppu_exec(void)
                     ppu.state = STATE_VBLANK;
                     irq.pIF->Flags.VBlank = 1; // VBlank Interrupt
                 }
-                else
+                else // New scanline
                 {
                     ppu.state = STATE_OAM_SEARCH;
                 }
@@ -492,12 +497,6 @@ bool ppu_exec(void)
             break;
 
         case STATE_OAM_SEARCH:
-            // if (ppu.state_counter == 1 && ppu.pReg->LY == 0)
-            // {
-            //     ppu_print_reg();
-            //     ppu_print_bg();
-            // }
-
             if (ppu.state_counter == 1)
                 exec_oam_search();
             if (ppu.state_counter >= STATE_OAM_SEARCH_DURATION)
@@ -507,6 +506,7 @@ bool ppu_exec(void)
                 ppu.SCX_lsb = ppu.pReg->SCX & 0x07;
                 ppu.x_draw = 0; // Reset at the begining of the scanline
                 ppu.x_fetch = 0;
+                ppu.win_started = false;
                 ppu.pScreenRow = (uint32_t *)(ppu.pPixels + ppu.pitch*ppu.pReg->LY);
 
                 // Flush pixesl FIFO
