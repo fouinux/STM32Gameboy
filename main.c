@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
         cpu_exec();
         render = ppu_exec();
         timer_exec();
-        // serial_exec();
+        serial_exec();
         if (!msdl_loop(render))
         {
 #ifdef DEBUG
