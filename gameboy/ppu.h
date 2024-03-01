@@ -99,15 +99,9 @@ struct ppu_t
     uint8_t aOBP1[4];
 
     // Screen rendering
-    uint8_t x_draw;
-    uint8_t x_fetch;
     uint8_t y_win_internal;
-    bool win_started;
     struct fifo_t Fifo_BG;
     struct fifo_t Fifo_OAM;
-
-    // Current scanline related
-    uint8_t SCX_lsb; // Save SCX & 0x07 value a the begining of the scanline
 
     // Interrupts
     bool STAT_Irq;

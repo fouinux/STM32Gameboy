@@ -189,9 +189,9 @@ static const uint16_t aTileConvertMirrorHelper[256] = {
     0x5500, 0x5501, 0x5504, 0x5505, 0x5510, 0x5511, 0x5514, 0x5515, 0x5540, 0x5541, 0x5544, 0x5545, 0x5550, 0x5551, 0x5554, 0x5555
 };
 
-static inline void fetch_bg_tile(void)
+static inline void fetch_bg_tile(uint8_t x_fetch)
 {
-    uint8_t tile_x = ((ppu.pReg->SCX + ppu.x_fetch) & 0xFF) >> 3;
+    uint8_t tile_x = ((ppu.pReg->SCX + x_fetch) & 0xFF) >> 3;
     uint8_t tile_y = ((ppu.pReg->SCY + ppu.pReg->LY) & 0xFF) >> 3;
     uint16_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
 
@@ -213,9 +213,9 @@ static inline void fetch_bg_tile(void)
     }
 }
 
-static inline void fetch_win_tile(void)
+static inline void fetch_win_tile(uint8_t x_fetch)
 {
-    uint8_t tile_x = ppu.x_fetch >> 3;
+    uint8_t tile_x = x_fetch >> 3;
     uint8_t tile_y = ppu.y_win_internal >> 3;
     uint16_t tile_map_id = tile_x + tile_y * TILE_MAP_SIZE;
 
@@ -301,27 +301,54 @@ static inline void fetch_sprite(uint8_t id)
 
 static inline void exec_pxl_xfer(void)
 {
+    uint8_t x_draw = 0;
+
     // BG and Window disabled
     if (ppu.pReg->LCDC_Flags.BGEnable == 0)
     {
-        for (int i = 0 ; i < 4 && ppu.x_draw < PPU_SCREEN_W  ; i++)
-            ppu.pScreenRow[ppu.x_draw++] = ppu.pColor[0]; // White
+        while (x_draw < PPU_SCREEN_W)
+            ppu.pScreenRow[x_draw++] = ppu.pColor[0]; // White
         return;
     }
 
-    // Pixels mixing
-    if (ppu.Fifo_BG.Size > 8)
-    {
-        for (int i = 0 ; i < 4 && ppu.x_draw < PPU_SCREEN_W  ; i++)
-        {
-            // Can out a pixel only if fifo has more than 8 pixels
-            if (ppu.Fifo_BG.Size <= 8)
-                break;
+    uint8_t x_discard = ppu.pReg->SCX & 0x07;
+    uint8_t x_fetch = 0;
+    bool win_present = false;
+    bool win_drawing = false;
 
+    fifo_flush(&ppu.Fifo_BG);
+    fifo_flush(&ppu.Fifo_OAM);
+
+    // Start of window ?
+    if (ppu.pReg->LCDC_Flags.WindowEnable && ppu.pReg->LY >= ppu.pReg->WY)
+    {
+        win_present = true;
+        if (ppu.pReg->WX <= 7)
+        {
+            ppu.y_win_internal++;
+            win_drawing = true;
+        }
+    }
+
+    while (x_draw < PPU_SCREEN_W)
+    {
+        // Fetch BG or WIN
+        if (ppu.Fifo_BG.Size <= 8)
+        {
+            if (win_drawing)
+                fetch_win_tile(x_fetch);
+            else
+                fetch_bg_tile(x_fetch);
+            x_fetch += 8;
+        }
+
+        // Pixel mixing
+        while (ppu.Fifo_BG.Size > 8 && x_draw < PPU_SCREEN_W)
+        {
             // Sprite ?
             if (ppu.pReg->LCDC_Flags.OBJEnable == 1 && ppu.OAM_counter > 0)
             {
-                while (ppu.OAM_counter > 0 && ppu.aOAM_visible_x[ppu.OAM_visible_id] <= ppu.x_draw)
+                while (ppu.OAM_counter > 0 && ppu.aOAM_visible_x[ppu.OAM_visible_id] <= x_draw)
                 {
                     // Fetch Sprite
                     fetch_sprite(ppu.aOAM_visible[ppu.OAM_visible_id]);
@@ -355,46 +382,27 @@ static inline void exec_pxl_xfer(void)
             }
 
             // Discard SCX & 0x07 first elements
-            if (ppu.SCX_lsb > 0)
+            if (x_discard > 0)
             {
-                ppu.SCX_lsb--;
+                x_discard--;
                 continue;
             }
 
-            ppu.pScreenRow[ppu.x_draw++] = ppu.pColor[pxl];
+            // Draw the pixel
+            ppu.pScreenRow[x_draw++] = ppu.pColor[pxl];
 
             // Start of window
-            if (ppu.pReg->LCDC_Flags.WindowEnable && ppu.win_started == false)
+            if (win_present == true && win_drawing == false)
             {
-                if (ppu.pReg->LY >= ppu.pReg->WY)
+                if (x_draw + 7 >= ppu.pReg->WX)
                 {
-                    if (ppu.x_draw + 7 >= ppu.pReg->WX)
-                    {
-                        fifo_flush(&ppu.Fifo_BG);
-                        ppu.x_fetch = 0; // Reset to start drawing window
-                        ppu.y_win_internal++;
-                        ppu.win_started = true;
-                        break;
-                    }
+                    fifo_flush(&ppu.Fifo_BG);
+                    x_fetch = 0; // Reset to start drawing window
+                    ppu.y_win_internal++;
+                    win_drawing = true;
                 }
             }
         }
-    }
-
-    // Fetch BG or Window
-    if (ppu.Fifo_BG.Size <= 8)
-    {
-        if (ppu.pReg->LCDC_Flags.WindowEnable && (ppu.pReg->LY >= ppu.pReg->WY))
-        {
-            if (ppu.x_draw + 7 >= ppu.pReg->WX)
-                fetch_win_tile();
-            else
-                fetch_bg_tile();
-        }
-        else
-            fetch_bg_tile();
-
-        ppu.x_fetch += 8;
     }
 }
 
@@ -417,10 +425,7 @@ void ppu_init(void)
 
     // Start at y = 0 & x = 0
     ppu.pReg->LY = 0;
-    ppu.x_draw = 0;
-    ppu.x_fetch = 0;
     ppu.y_win_internal = -1;
-    ppu.win_started = false;
 
     // Tile maps and data
     ppu_update_lcdc();
@@ -503,21 +508,15 @@ bool ppu_exec(void)
             {
                 ppu.state_counter = 0;
                 ppu.state = STATE_PXL_XFER;
-                ppu.SCX_lsb = ppu.pReg->SCX & 0x07;
-                ppu.x_draw = 0; // Reset at the begining of the scanline
-                ppu.x_fetch = 0;
-                ppu.win_started = false;
                 ppu.pScreenRow = (uint32_t *)(ppu.pPixels + ppu.pitch*ppu.pReg->LY);
 
-                // Flush pixesl FIFO
-                fifo_flush(&ppu.Fifo_BG);
-                fifo_flush(&ppu.Fifo_OAM);
             }
             break;
 
         case STATE_PXL_XFER:
-            exec_pxl_xfer();
-            if (ppu.x_draw >= PPU_SCREEN_W)
+            if (ppu.state_counter == 1)
+                exec_pxl_xfer();
+            if (ppu.state_counter >= STATE_PXL_XFER_DURATION)
                 ppu.state = STATE_HBLANK;
             break;
     }
@@ -552,11 +551,6 @@ void ppu_update_lcdc(void)
     ppu.pBGTileMap = &pVRAM[(ppu.pReg->LCDC_Flags.BGTileMapAddr == 0) ? 0x1800 : 0x1C00];
     ppu.pWinTileMap = &pVRAM[(ppu.pReg->LCDC_Flags.WindowTileMapAddr == 0) ? 0x1800 : 0x1C00];
     ppu.pBGWinTileData = &pVRAM[(ppu.pReg->LCDC_Flags.BGWindowTileData == 0) ? 0x0800 : 0x0000];
-
-    // printf("LCDC: %02x\n", ppu.pReg->LCDC);
-    // printf("pBGTileMap = %04lx\n", ppu.pBGTileMap - pVRAM);
-    // printf("pWinTileMap = %04lx\n", ppu.pWinTileMap - pVRAM);
-    // printf("pBGWinTileData = %04lx\n", ppu.pBGWinTileData - pVRAM);
 }
 
 void ppu_update_bgp(void)
