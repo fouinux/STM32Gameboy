@@ -48,6 +48,9 @@ void mem_set_rombank0(uint8_t Bank);
 void mem_set_rombank1(uint8_t Bank);
 void mem_set_rambank(bool Enable, uint8_t Bank);
 
+int mem_ram_load(void);
+int mem_ram_save(void);
+
 void mem_hexdump(const uint16_t Addr, const size_t Size);
 
 #endif /* INC_GAMEBOY_MEM_H_ */

@@ -10,9 +10,14 @@
 #include "mbc.h"
 #include "ppu.h"
 #include "joypad.h"
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #define MEM_SRAM_SIZE                   8192 // 8 kiB
 #define MEM_VRAM_SIZE                   8192 // 8 kiB
@@ -23,6 +28,8 @@
 #define BOOT_ROM_SIZE                   256
 
 #define MEM_DMA_SIZE                    160
+
+#define SAVE_EXTENSION                  ".sav"
 
 struct cartridge_header_t
 {
@@ -71,8 +78,9 @@ struct mem_t
     uint8_t ROMSize;
     uint8_t RAMSize;
 
-    // Save filename
+    // Save
     char *pSaveFilename;
+    FILE *pSaveFile;
 
     mbc_func_t pMBC;
 
@@ -258,7 +266,9 @@ void mem_init(void)
     mem.ROMSize = 0;
     mem.RAMSize = 0;
 
+    // Save
     mem.pSaveFilename = NULL;
+    mem.pSaveFile = NULL;
 
     // MBC
     mem.pMBC = NULL;
@@ -266,6 +276,16 @@ void mem_init(void)
 
 void mem_deinit(void)
 {
+    // Save RAM ?
+    if (mem.pSaveFile)
+    {
+        mem_ram_save();
+        fclose(mem.pSaveFile);
+    }
+
+    if (mem.pSaveFilename)
+        free(mem.pSaveFilename);
+
     if (mem.pBootROM)
         free(mem.pBootROM);
 
@@ -476,32 +496,39 @@ int mem_load_gamerom(char *pFilename)
 
     struct cartridge_header_t *pHeader = (struct cartridge_header_t*) &mem.pCartridgeROM[0x100];
 
-    mem.ROMSize = pHeader->ROM_Size;
-    mem.RAMSize = pHeader->RAM_Size;
-
-    uint16_t rom_bank = get_romsize(mem.ROMSize);
-    uint8_t ram_bank = get_ramsize(mem.RAMSize);
+    mem.ROMSize = get_romsize(pHeader->ROM_Size);
+    mem.RAMSize = get_ramsize(pHeader->RAM_Size);
 
     printf("Title : %.16s\n", pHeader->aTitle);
     printf("MBC type: %02x\n", pHeader->CartridgeType);
-    printf("ROM Size : %d (%02x)\n", rom_bank, pHeader->ROM_Size);
-    printf("RAM Size : %d (%02x)\n", ram_bank, pHeader->RAM_Size);
+    printf("ROM Size : %d (%02x)\n", mem.ROMSize, pHeader->ROM_Size);
+    printf("RAM Size : %d (%02x)\n", mem.RAMSize, pHeader->RAM_Size);
 
-    for (int bank = 0 ; bank < rom_bank ; bank++)
+    for (int bank = 0 ; bank < mem.ROMSize ; bank++)
     {
         mem.aCartridgeROMBank[bank] = &mem.pCartridgeROM[MEM_CARTRIDGE_ROM_BANK_SIZE * bank];
     }
 
     // Alloc Cartridge RAM
-    if (ram_bank > 0)
+    if (mem.RAMSize > 0)
     {
-        mem.pCartridgeRAM = (uint8_t*) malloc(ram_bank * MEM_CARTRIDGE_RAM_BANK_SIZE);
+        mem.pCartridgeRAM = (uint8_t*) malloc(mem.RAMSize * MEM_CARTRIDGE_RAM_BANK_SIZE);
 
-        for (int bank = 0 ; bank < ram_bank ; bank++)
+        for (int bank = 0 ; bank < mem.RAMSize ; bank++)
         {
             mem.aCartridgeRAMBank[bank] = &mem.pCartridgeRAM[MEM_CARTRIDGE_RAM_BANK_SIZE * bank];
         }
     }
+
+    // Save filename
+    mem.pSaveFilename = (char*) malloc(strlen(pFilename) + strlen(SAVE_EXTENSION));
+    if (NULL == mem.pSaveFilename)
+    {
+        printf("Error: Cannot allocate memory for pSaveFilename\n");
+        return EXIT_FAILURE;
+    }
+    strcpy(mem.pSaveFilename, pFilename);
+    strcat(mem.pSaveFilename, SAVE_EXTENSION);
 
     // Select MBC
     mem.pMBC = mbc_get_callback(pHeader->CartridgeType);
@@ -525,14 +552,58 @@ void mem_set_rambank(bool Enable, uint8_t Bank)
     mem.RAMIndex = Bank;
 }
 
-void mem_ram_load(void)
+int mem_ram_load(void)
 {
+    struct stat buffer;
 
+    // File exist ?
+    if (stat(mem.pSaveFilename, &buffer) == 0)
+    {
+        if (buffer.st_size != mem.RAMSize * MEM_CARTRIDGE_RAM_BANK_SIZE)
+        {
+            printf("Warning: Wrong save file size\n");
+            goto create_file;
+        }
+        else
+        {
+            mem.pSaveFile = fopen(mem.pSaveFilename, "rb+");
+            if (NULL == mem.pSaveFile)
+            {
+                printf("Error: Cannot open save file %s\n", mem.pSaveFilename);
+                return EXIT_FAILURE;
+            }
+            
+            // Load RAM
+            size_t read_size = fread(mem.pCartridgeRAM, MEM_CARTRIDGE_RAM_BANK_SIZE, mem.RAMSize, mem.pSaveFile);
+            if (read_size != mem.RAMSize)
+            {
+                printf("Error: Cannot read entire file %s\n", mem.pSaveFilename);
+                return EXIT_FAILURE;
+            }
+            return EXIT_SUCCESS;
+        }
+
+    }
+
+create_file:
+    mem.pSaveFile = fopen(mem.pSaveFilename, "wb+");
+    if (NULL == mem.pSaveFile)
+    {
+        printf("Error: Cannot open save file %s\n", mem.pSaveFilename);
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
 }
 
-void mem_ram_save(void)
+int mem_ram_save(void)
 {
-
+    rewind(mem.pSaveFile);
+    if (1 != fwrite(mem.pCartridgeRAM, MEM_CARTRIDGE_RAM_BANK_SIZE, mem.RAMSize, mem.pSaveFile))
+    {
+        printf("Error: Cannot write save file\n");
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
 }
 
 void mem_hexdump(const uint16_t Addr, const size_t Size)

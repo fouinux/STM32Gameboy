@@ -39,6 +39,17 @@ struct mbc_t
     struct mbc3_t MBC3;
 } mbc;
 
+void mbc_init(void)
+{
+    // MBC1
+    mbc.MBC1.RAM_Enabled = false;
+    mbc.MBC1.ROMIndex_L = 0;
+    mbc.MBC1.ROMIndex_H = 0;
+    mbc.MBC1.BankingMode = 0;
+
+    // MBC2
+}
+
 void mbc1(uint16_t Addr, uint8_t Value)
 {
     // Decode MBC request
@@ -131,11 +142,16 @@ mbc_func_t mbc_get_callback(uint8_t Code)
         case 0x00: // ROM Only
             return NULL;
         case 0x01: // MBC1
+            return &mbc1;
         case 0x02: // MBC1 + RAM
+            return &mbc1;
         case 0x03: // MBC1 + RAM + BATTERY
+            mem_ram_load();
             return &mbc1;
         case 0x05: // MBC2
+            return &mbc2;
         case 0x06: // MBC2 + BATTERY
+            mem_ram_load();
             return &mbc2;
         case 0x0F: // MBC3 + TIMER + BATTERY
         case 0x10: // MBC3 + TIMER + RAM + BATTERY
