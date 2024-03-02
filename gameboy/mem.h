@@ -29,7 +29,8 @@ enum IOPorts_reg
     IE,
 };
 
-void mem_init();
+void mem_init(void);
+void mem_deinit(void);
 uint8_t mem_read_u8(uint16_t Addr);
 int8_t mem_read_s8(uint16_t Addr);
 uint16_t mem_read_u16(uint16_t Addr);
@@ -40,8 +41,8 @@ uint8_t* mem_get_register(enum IOPorts_reg reg);
 uint8_t* mem_get_oam_ram(void);
 uint8_t* mem_get_vram(void);
 
-void mem_set_bootrom(uint8_t *pBootROM);
-void mem_load_gamerom(uint8_t *pGameROM);
+int mem_load_bootrom(char *pFilename);
+int mem_load_gamerom(char *pFilename);
 
 void mem_set_rombank0(uint8_t Bank);
 void mem_set_rombank1(uint8_t Bank);

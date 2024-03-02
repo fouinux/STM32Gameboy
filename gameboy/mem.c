@@ -20,6 +20,8 @@
 #define MEM_HRAM_SIZE                   128
 #define MEM_IO_PORTS_SIZE               128
 
+#define BOOT_ROM_SIZE                   256
+
 #define MEM_DMA_SIZE                    160
 
 struct cartridge_header_t
@@ -39,10 +41,11 @@ struct cartridge_header_t
     uint8_t aGlobalChecksum[2];
 };
 
-struct memory_map_t
+struct mem_t
 {
     bool BootROMEnabled;
     uint8_t *pBootROM; // BootROM
+    uint8_t *pCartridgeROM;
     uint8_t *pCartridgeRAM;
     bool CartridgeRAM_Enabled;
 
@@ -67,6 +70,9 @@ struct memory_map_t
     // Cartridge specs
     uint8_t ROMSize;
     uint8_t RAMSize;
+
+    // Save filename
+    char *pSaveFilename;
 
     mbc_func_t pMBC;
 
@@ -226,13 +232,14 @@ static void action_on_w8(uint16_t Addr, uint8_t Value, uint8_t *pU8)
     }
 }
 
-void mem_init()
+void mem_init(void)
 {
     // Init BootROM location
     mem.pBootROM = (uint8_t *) 0x08100000;
     mem.BootROMEnabled = true;
 
     // Init Cartridge ROM banks location
+    mem.pCartridgeROM = NULL;
     memset(mem.aCartridgeROMBank, 0, MEM_CARTRIDGE_ROM_BANK_MAX * sizeof(uint8_t *));
     mem.aCartridgeROMBank[0] = (uint8_t *) 0x08110000;
     mem.aCartridgeROMBank[1] = (uint8_t *) 0x08118000;
@@ -251,8 +258,22 @@ void mem_init()
     mem.ROMSize = 0;
     mem.RAMSize = 0;
 
+    mem.pSaveFilename = NULL;
+
     // MBC
     mem.pMBC = NULL;
+}
+
+void mem_deinit(void)
+{
+    if (mem.pBootROM)
+        free(mem.pBootROM);
+
+    if (mem.pCartridgeROM)
+        free(mem.pCartridgeROM);
+
+    if (mem.pCartridgeRAM)
+        free(mem.pCartridgeRAM);
 }
 
 uint8_t mem_read_u8(uint16_t Addr)
@@ -352,9 +373,62 @@ uint8_t* mem_get_vram(void)
     return &mem.VRAM[0];
 }
 
-void mem_set_bootrom(uint8_t *pBootROM)
+static inline int read_file(char *pFilename, uint8_t **pMem, size_t *pSize)
 {
-    mem.pBootROM = pBootROM;
+    FILE *pFile = fopen(pFilename, "rb");
+    if (NULL == pFile)
+    {
+        printf("Cannot open file: %s\n", pFilename);
+        return EXIT_FAILURE;
+    }
+
+    // Get the size of the game
+    fseek(pFile, 0L, SEEK_END);
+    size_t file_size = ftell(pFile);
+    rewind(pFile);
+
+    // Allocate Game memory
+    *pMem = (uint8_t*) malloc(file_size);
+    if (NULL == *pMem)
+    {
+        printf("Cannot allocate memory for file (%lu B)\n", file_size);
+        return EXIT_FAILURE;
+    }
+
+    // Load Game
+    size_t read_size = fread(*pMem, sizeof(uint8_t), file_size, pFile);
+    if (read_size != file_size)
+    {
+        printf("Error loading file: %d\n", (int) read_size);
+        return EXIT_FAILURE;
+    }
+    fclose(pFile);
+
+    *pSize = file_size;
+
+    return EXIT_SUCCESS;
+}
+
+int mem_load_bootrom(char *pFilename)
+{
+    if (NULL == pFilename)
+        return EXIT_FAILURE;
+
+    size_t boot_size;
+
+    if (read_file(pFilename, &mem.pBootROM, &boot_size))
+    {
+        printf("Error: Cannot load BOOT ROM\n");
+        return EXIT_FAILURE;
+    }
+
+    if (BOOT_ROM_SIZE != boot_size)
+    {
+        printf("Error: BOOT ROM wrong size\n");
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
 
 static inline uint16_t get_romsize(uint8_t code)
@@ -387,9 +461,20 @@ static inline uint8_t get_ramsize(uint8_t code)
     }
 }
 
-void mem_load_gamerom(uint8_t *pGameROM)
+int mem_load_gamerom(char *pFilename)
 {
-    struct cartridge_header_t *pHeader = (struct cartridge_header_t*) &pGameROM[0x100];
+    if (NULL == pFilename)
+        return EXIT_FAILURE;
+
+    size_t game_size;
+
+    if (read_file(pFilename, &mem.pCartridgeROM, &game_size))
+    {
+        printf("Error: Cannot load Game ROM\n");
+        return EXIT_FAILURE;
+    }
+
+    struct cartridge_header_t *pHeader = (struct cartridge_header_t*) &mem.pCartridgeROM[0x100];
 
     mem.ROMSize = pHeader->ROM_Size;
     mem.RAMSize = pHeader->RAM_Size;
@@ -404,7 +489,7 @@ void mem_load_gamerom(uint8_t *pGameROM)
 
     for (int bank = 0 ; bank < rom_bank ; bank++)
     {
-        mem.aCartridgeROMBank[bank] = &pGameROM[MEM_CARTRIDGE_ROM_BANK_SIZE * bank];
+        mem.aCartridgeROMBank[bank] = &mem.pCartridgeROM[MEM_CARTRIDGE_ROM_BANK_SIZE * bank];
     }
 
     // Alloc Cartridge RAM
@@ -420,6 +505,8 @@ void mem_load_gamerom(uint8_t *pGameROM)
 
     // Select MBC
     mem.pMBC = mbc_get_callback(pHeader->CartridgeType);
+
+    return EXIT_SUCCESS;
 }
 
 void mem_set_rombank0(uint8_t Bank)
@@ -436,6 +523,16 @@ void mem_set_rambank(bool Enable, uint8_t Bank)
 {
     mem.CartridgeRAM_Enabled = Enable;
     mem.RAMIndex = Bank;
+}
+
+void mem_ram_load(void)
+{
+
+}
+
+void mem_ram_save(void)
+{
+
 }
 
 void mem_hexdump(const uint16_t Addr, const size_t Size)
