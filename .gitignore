@@ -3,5 +3,6 @@ Release/
 *.bin
 *.gb
 *.gch
+*.sav
 *.o
 STM32Gameboy
