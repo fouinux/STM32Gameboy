@@ -13,6 +13,9 @@ all: $(TARGET)
 release: CFLAGS += -Werror
 release: all
 
+perf: CFLAGS += -O0 -ggdb3 -fno-omit-frame-pointer
+perf: all
+
 debug: CFLAGS += -g -DDEBUG -DPPU_DEBUG
 debug: all
 
