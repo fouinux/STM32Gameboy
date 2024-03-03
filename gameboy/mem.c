@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define MEM_SRAM_SIZE                   8192 // 8 kiB
 #define MEM_VRAM_SIZE                   8192 // 8 kiB
@@ -600,7 +601,7 @@ int mem_ram_save(void)
     rewind(mem.pSaveFile);
     if (1 != fwrite(mem.pCartridgeRAM, MEM_CARTRIDGE_RAM_BANK_SIZE, mem.RAMSize, mem.pSaveFile))
     {
-        printf("Error: Cannot write save file\n");
+        printf("Error: Cannot write save file (%s)\n", strerror(errno));
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

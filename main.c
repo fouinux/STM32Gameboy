@@ -64,9 +64,6 @@ int main(int argc, char *argv[])
 
     while(true)
     {
-        // if (cpu.reg.PC == 0x100)
-        //     cpu.debug = true;
-
         // Run Gameboy emulation
         cpu_exec();
         render = ppu_exec();
@@ -75,7 +72,7 @@ int main(int argc, char *argv[])
         if (!msdl_loop(render))
         {
 #ifdef DEBUG
-            // Exec 10 more CPU cyles (help debug)
+            // Exec 50 more CPU cyles (help debug)
             debug.cpu = true;
             for (int i = 0 ; i < 50 ; i++)
                 cpu_exec();

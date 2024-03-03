@@ -32,11 +32,27 @@ struct mbc3_t
     uint8_t RAMIndex;
 };
 
+struct mbc5_t
+{
+    bool RAM_Enabled;
+    union 
+    {
+        uint16_t ROMIndex;
+        struct
+        {
+            uint8_t ROMIndex_L;
+            uint8_t ROMIndex_H;
+        };
+    };
+    uint8_t RAMIndex;
+};
+
 struct mbc_t
 {
     struct mbc1_t MBC1;
     struct mbc2_t MBC2;
     struct mbc3_t MBC3;
+    struct mbc5_t MBC5;
 } mbc;
 
 void mbc_init(void)
@@ -48,6 +64,18 @@ void mbc_init(void)
     mbc.MBC1.BankingMode = 0;
 
     // MBC2
+    mbc.MBC2.RAM_Enabled = false;
+    mbc.MBC2.ROMIndex = 0;
+
+    // MBC3
+    mbc.MBC3.RAM_Enabled = false;
+    mbc.MBC3.ROMIndex = 1;
+    mbc.MBC3.RAMIndex = 0;
+
+    // MBC5
+    mbc.MBC5.RAM_Enabled = false;
+    mbc.MBC5.ROMIndex = 0;
+    mbc.MBC5.RAMIndex = 0;
 }
 
 void mbc1(uint16_t Addr, uint8_t Value)
@@ -130,6 +158,32 @@ void mbc3(uint16_t Addr, uint8_t Value)
     }
 }
 
+void mbc5(uint16_t Addr, uint8_t Value)
+{
+    // Decode MBC request
+    switch (Addr & 0x7000) // Look only bits 12 to 14
+    {
+        case 0x0000: // RAM & Timer Enable
+        case 0x1000:
+            mbc.MBC5.RAM_Enabled = ((Value & 0x0F) == 0x0A);
+            mem_set_rambank(mbc.MBC5.RAM_Enabled, mbc.MBC5.RAMIndex);
+            break;
+        case 0x2000: // ROM Bank Number 8 LSB
+            mbc.MBC5.ROMIndex_L = Value;
+            mem_set_rombank1(mbc.MBC5.ROMIndex);
+            break;
+        case 0x3000: // ROM Bank Number bit 9
+            mbc.MBC5.ROMIndex_L = Value;
+            mem_set_rombank1(mbc.MBC5.ROMIndex);
+            break;
+        case 0x4000: // RAM Bank Number
+        case 0x5000:
+            mbc.MBC5.RAMIndex = Value & 0x0F;
+            mem_set_rambank(mbc.MBC5.RAM_Enabled, mbc.MBC5.RAMIndex);
+            break;
+    }
+}
+
 void mbc_unknown(uint16_t Addr, uint8_t Value)
 {
     printf("MBC: Unknown action\n");
@@ -142,7 +196,6 @@ mbc_func_t mbc_get_callback(uint8_t Code)
         case 0x00: // ROM Only
             return NULL;
         case 0x01: // MBC1
-            return &mbc1;
         case 0x02: // MBC1 + RAM
             return &mbc1;
         case 0x03: // MBC1 + RAM + BATTERY
@@ -155,10 +208,27 @@ mbc_func_t mbc_get_callback(uint8_t Code)
             return &mbc2;
         case 0x0F: // MBC3 + TIMER + BATTERY
         case 0x10: // MBC3 + TIMER + RAM + BATTERY
+            mem_ram_load();
+            return &mbc3;
         case 0x11: // MBC3
         case 0x12: // MBC3 + RAM
-        case 0x13: // MBC3 + RAM + BATTERY
             return &mbc3;
+        case 0x13: // MBC3 + RAM + BATTERY
+            mem_ram_load();
+            return &mbc3;
+        case 0x19: // MBC5
+        case 0x1A: // MBC5 + RAM
+            return &mbc5;
+        case 0x1B: // MBC5 + RAM + BATTERY
+            mem_ram_load();
+            return &mbc5;
+        case 0x1C: // MBC5 + RUMBLE
+            return &mbc5;
+        case 0x1E: // MBC5 + RUMBLE + RAM + BATTERY
+            mem_ram_load();
+            return &mbc5;
+        case 0x1D: // MBC5 + RUMBLE + RAM
+            return &mbc5;
         default: //  Not supported
             return &mbc_unknown;
     }
