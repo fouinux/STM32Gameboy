@@ -80,6 +80,7 @@ struct ppu_t
     struct ppu_reg_t *pReg;
     enum ppu_state_t state;
     uint8_t state_counter;
+    uint8_t xfer_len;
 
     uint8_t OAM_counter;
     uint8_t aOAM_visible[PPU_OAM_VISIBLE_MAX];

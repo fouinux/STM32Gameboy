@@ -28,6 +28,8 @@
 #define get_tile_offset(ID)         (ID * TILE_SIZE)
 #define get_tile_line_offset(ID, LINE)  (get_tile_offset(ID) + 2 * LINE)
 
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+
 struct tile_t
 {
     struct
@@ -299,19 +301,22 @@ static inline void fetch_sprite(uint8_t id)
     }
 }
 
-static inline void exec_pxl_xfer(void)
+static inline uint8_t exec_pxl_xfer(void)
 {
     uint8_t x_draw = 0;
+    uint16_t xfer_len = 172; // Minimum length: 160 + 12
 
     // BG and Window disabled
     if (ppu.pReg->LCDC_Flags.BGEnable == 0)
     {
         while (x_draw < PPU_SCREEN_W)
             ppu.pScreenRow[x_draw++] = ppu.pColor[0]; // White
-        return;
+        return xfer_len / 4;
     }
 
     uint8_t x_discard = ppu.pReg->SCX & 0x07;
+    xfer_len += x_discard; // Background scrolling
+
     uint8_t x_fetch = 0;
     bool win_present = false;
     bool win_drawing = false;
@@ -325,6 +330,7 @@ static inline void exec_pxl_xfer(void)
         win_present = true;
         if (ppu.pReg->WX <= 7)
         {
+            xfer_len += 6; // Start of window
             ppu.y_win_internal++;
             win_drawing = true;
         }
@@ -354,6 +360,7 @@ static inline void exec_pxl_xfer(void)
                     fetch_sprite(ppu.aOAM_visible[ppu.OAM_visible_id]);
                     ppu.OAM_visible_id++;
                     ppu.OAM_counter--;
+                    xfer_len += 11 - min(5, (x_draw + ppu.pReg->SCX) % 8);
                 }
             }
 
@@ -400,10 +407,13 @@ static inline void exec_pxl_xfer(void)
                     x_fetch = 0; // Reset to start drawing window
                     ppu.y_win_internal++;
                     win_drawing = true;
+                    xfer_len += 6; // Start of window
                 }
             }
         }
     }
+
+    return xfer_len / 4;
 }
 
 static inline void ppu_print_reg(void)
@@ -508,6 +518,7 @@ bool ppu_exec(void)
             {
                 ppu.state_counter = 0;
                 ppu.state = STATE_PXL_XFER;
+                ppu.xfer_len = STATE_PXL_XFER_DURATION; // Default value
                 ppu.pScreenRow = (uint32_t *)(ppu.pPixels + ppu.pitch*ppu.pReg->LY);
 
             }
@@ -515,8 +526,8 @@ bool ppu_exec(void)
 
         case STATE_PXL_XFER:
             if (ppu.state_counter == 1)
-                exec_pxl_xfer();
-            if (ppu.state_counter >= STATE_PXL_XFER_DURATION)
+                ppu.xfer_len = exec_pxl_xfer();
+            if (ppu.state_counter >= ppu.xfer_len)
                 ppu.state = STATE_HBLANK;
             break;
     }
